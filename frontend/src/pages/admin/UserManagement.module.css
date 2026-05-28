@@ -1,0 +1,133 @@
+.userManagement {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: white;
+  padding: 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+.sectionHeader h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0 0 0.25rem 0;
+}
+.sectionHeader p {
+  color: #64748b;
+  margin: 0;
+  font-size: 0.875rem;
+}
+.btnPrimary {
+  background-color: #2563eb;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.25rem;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: background-color 0.2s;
+}
+.btnPrimary:hover {
+  background-color: #1d4ed8;
+}
+.tableContainer {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  overflow-x: auto;
+}
+.dataTable {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+.dataTable th, .dataTable td {
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+.dataTable th {
+  background-color: #f8fafc;
+  color: #475569;
+  font-weight: 600;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.userCell {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+.avatarSmall {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: #e0e7ff;
+  color: #4338ca;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+.badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  display: inline-block;
+  margin-right: 0.25rem;
+}
+.roleBadge {
+  background-color: #f1f5f9;
+  color: #475569;
+}
+.statusBadge {
+  text-transform: capitalize;
+}
+.statusBadge.active {
+  background-color: #dcfce7;
+  color: #166534;
+}
+.statusBadge.inactive {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+.actionBtns {
+  display: flex;
+  gap: 0.5rem;
+}
+.btnIcon {
+  background: none;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+.btnIcon:hover {
+  background-color: #f1f5f9;
+  color: #1e293b;
+}
+.btnIcon.delete:hover {
+  background-color: #fee2e2;
+  color: #ef4444;
+}
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 3rem;
+  color: #64748b;
+  font-size: 1.125rem;
+}

@@ -1,0 +1,196 @@
+.container {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 2rem;
+  font-family: 'Inter', sans-serif;
+  color: #111827;
+}
+.header {
+  margin-bottom: 2rem;
+}
+.btnBack {
+  background: none;
+  border: none;
+  color: #6b7280;
+  font-size: 0.9rem;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 1rem;
+  display: inline-block;
+  transition: color 0.2s;
+}
+.btnBack:hover { color: #6366f1; }
+.title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 0.25rem;
+}
+.subtitle {
+  font-size: 0.9rem;
+  color: #6b7280;
+  margin: 0;
+}
+.errorAlert {
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+  border-radius: 10px;
+  padding: 0.9rem 1.25rem;
+  margin-bottom: 1.5rem;
+  font-size: 0.9rem;
+}
+.form { display: flex; flex-direction: column; gap: 1.5rem; }
+.card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.05);
+  border: 1px solid #e5e7eb;
+}
+.cardTitle {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 1.5rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #f3f4f6;
+}
+.grid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+  margin-bottom: 1.25rem;
+}
+@media (max-width: 600px) {
+  .grid2 { grid-template-columns: 1fr; }
+}
+.formGroup { display: flex; flex-direction: column; gap: 0.4rem; }
+.label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #374151;
+}
+.input,
+.select,
+.textarea {
+  padding: 0.6rem 0.9rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  background: #fff;
+  color: #111827;
+}
+.input:focus,
+.select:focus,
+.textarea:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.12);
+}
+.textarea { resize: vertical; }
+.checkboxRow {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 1.25rem;
+}
+.checkbox { width: 16px; height: 16px; accent-color: #6366f1; cursor: pointer; }
+.checkboxLabel {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #374151;
+  cursor: pointer;
+}
+.quoteResult {
+  background: linear-gradient(135deg, #eff6ff, #f5f3ff);
+  border: 1px solid #c7d2fe;
+  border-radius: 12px;
+  padding: 1rem 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 1rem;
+  color: #374151;
+}
+.quoteResult strong {
+  font-size: 1.3rem;
+  color: #6366f1;
+  font-weight: 700;
+}
+.formActions {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+}
+.btnPrimary {
+  padding: 0.7rem 1.5rem;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.btnPrimary:hover:not(:disabled) { opacity: 0.9; }
+.btnPrimary:disabled { opacity: 0.55; cursor: not-allowed; }
+.btnOutline {
+  padding: 0.7rem 1.5rem;
+  background: #fff;
+  color: #6366f1;
+  border: 1.5px solid #6366f1;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btnOutline:hover:not(:disabled) {
+  background: #eff6ff;
+}
+.btnOutline:disabled { opacity: 0.55; cursor: not-allowed; }
+.successCard {
+  max-width: 500px;
+  margin: 4rem auto;
+  text-align: center;
+  background: #fff;
+  border-radius: 20px;
+  padding: 3rem 2rem;
+  box-shadow: 0 8px 32px rgba(99,102,241,0.12);
+  border: 1px solid #e0e7ff;
+  font-family: 'Inter', sans-serif;
+}
+.successIcon {
+  width: 72px;
+  height: 72px;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 0 auto 1.5rem;
+}
+.successCard h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 0.5rem;
+}
+.successCard p {
+  font-size: 0.95rem;
+  color: #6b7280;
+  margin-bottom: 2rem;
+}
+.successActions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}

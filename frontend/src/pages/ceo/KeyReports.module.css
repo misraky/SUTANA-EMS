@@ -1,0 +1,48 @@
+.reportsContainer {
+  font-family: 'Inter', sans-serif;
+  color: #1e293b;
+}
+.pageHeader {
+  margin-bottom: 2.5rem;
+}
+.pageTitle {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 0.5rem;
+  letter-spacing: -0.025em;
+}
+.pageSubtitle {
+  font-size: 1rem;
+  color: #64748b;
+  margin: 0;
+}
+.emptyState {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 4rem 2rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  border: 1px dashed #cbd5e1;
+  text-align: center;
+  max-width: 600px;
+  margin: 0 auto;
+}
+.iconWrapper {
+  font-size: 3rem;
+  margin-bottom: 1.5rem;
+}
+.emptyState h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0 0 1rem;
+}
+.emptyState p {
+  color: #475569;
+  margin: 0 0 0.5rem;
+  font-size: 1.05rem;
+}
+.textMuted {
+  color: #94a3b8 !important;
+  font-size: 0.9rem !important;
+}

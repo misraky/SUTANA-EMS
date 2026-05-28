@@ -1,0 +1,26 @@
+.adminDashboard {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-height: 100vh;
+  background-color: #f8fafc;
+}
+.dashboardContent {
+  padding: 2rem;
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+.pageHeader {
+  margin-bottom: 2rem;
+}
+.pageTitle {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 0.5rem;
+}
+.pageSubtitle {
+  color: #64748b;
+  font-size: 1rem;
+}

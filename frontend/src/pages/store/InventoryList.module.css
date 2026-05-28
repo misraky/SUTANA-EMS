@@ -1,0 +1,168 @@
+.container {
+  padding: 2rem;
+  background-color: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
+  font-family: 'Inter', sans-serif;
+  color: #111827;
+}
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 2rem;
+  border-bottom: 1px solid #f3f4f6;
+  padding-bottom: 1.5rem;
+}
+.title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin: 0 0 0.5rem 0;
+  color: #111827;
+}
+.subtitle {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin: 0;
+}
+.actions {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+.searchInput {
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  width: 300px;
+  font-size: 0.875rem;
+  transition: all 0.2s;
+  background-color: #f9fafb;
+}
+.searchInput:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  background-color: #ffffff;
+}
+.btnPrimary {
+  padding: 0.75rem 1.5rem;
+  background-color: #111827;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.btnPrimary:hover {
+  background-color: #374151;
+  transform: translateY(-1px);
+}
+.tableContainer {
+  overflow-x: auto;
+  border-radius: 8px;
+  border: 1px solid #f3f4f6;
+}
+.dataTable {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  text-align: left;
+}
+.dataTable th {
+  background-color: #f9fafb;
+  color: #4b5563;
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 1rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+.dataTable td {
+  padding: 1rem;
+  font-size: 0.875rem;
+  border-bottom: 1px solid #f3f4f6;
+  color: #1f2937;
+}
+.dataTable tr:last-child td {
+  border-bottom: none;
+}
+.dataTable tr:hover td {
+  background-color: #f9fafb;
+}
+.sku {
+  font-family: 'JetBrains Mono', monospace;
+  color: #6b7280;
+  font-size: 0.75rem;
+  background-color: #f3f4f6;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+}
+.productName {
+  font-weight: 600;
+  color: #111827;
+  display: block;
+}
+.alertText {
+  color: #ef4444;
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-top: 0.25rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+.stockCount {
+  font-weight: 600;
+}
+.stockCount.ok {
+  color: #10b981;
+}
+.stockCount.low {
+  color: #ef4444;
+}
+.badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+.badge.inStock {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+.badge.outOfStock {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+.actionBtns {
+  display: flex;
+  gap: 0.5rem;
+}
+.btnIcon {
+  background: none;
+  border: none;
+  color: #9ca3af;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+.btnIcon:hover {
+  background-color: #f3f4f6;
+  color: #111827;
+}
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 400px;
+  font-size: 1.125rem;
+  color: #6b7280;
+}
