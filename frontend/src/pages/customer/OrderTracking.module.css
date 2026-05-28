@@ -1,0 +1,148 @@
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 2rem;
+  font-family: 'Inter', sans-serif;
+  color: #111827;
+}
+.btnBack {
+  background: none;
+  border: none;
+  color: #6b7280;
+  font-size: 0.9rem;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 1.5rem;
+  font-weight: 500;
+}
+.btnBack:hover { color: #6366f1; }
+.card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.05);
+  border: 1px solid #e5e7eb;
+}
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid #f3f4f6;
+}
+.title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0 0 0.25rem;
+}
+.subtitle {
+  color: #6b7280;
+  font-size: 0.9rem;
+  margin: 0;
+}
+.statusBadge {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff;
+  padding: 0.5rem 1rem;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+.trackingWrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-bottom: 3rem;
+  position: relative;
+}
+.trackingWrapper::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 19px;
+  width: 2px;
+  background: #e5e7eb;
+  z-index: 1;
+}
+.step {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.5rem;
+  position: relative;
+  z-index: 2;
+}
+.stepIcon {
+  width: 40px;
+  height: 40px;
+  background: #fff;
+  border: 2px solid #e5e7eb;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  color: #9ca3af;
+  flex-shrink: 0;
+  transition: all 0.3s;
+}
+.completed .stepIcon {
+  background: #6366f1;
+  border-color: #6366f1;
+  color: #fff;
+}
+.current .stepIcon {
+  border-color: #6366f1;
+  color: #6366f1;
+  box-shadow: 0 0 0 4px rgba(99,102,241,0.2);
+}
+.stepContent h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0 0 0.25rem;
+  color: #9ca3af;
+}
+.completed .stepContent h3,
+.current .stepContent h3 {
+  color: #111827;
+}
+.stepContent p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #6366f1;
+  font-weight: 500;
+}
+.detailsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  background: #f9fafb;
+  padding: 1.5rem;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+}
+.detailBox {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.detailLabel {
+  font-size: 0.85rem;
+  color: #6b7280;
+  font-weight: 500;
+}
+.detailValue {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #111827;
+}
+.centerState, .errorState {
+  text-align: center;
+  padding: 4rem;
+  font-size: 1.1rem;
+  color: #6b7280;
+}
+.errorState {
+  color: #b91c1c;
+}

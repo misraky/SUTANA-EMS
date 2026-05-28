@@ -1,0 +1,16 @@
+node_modules/
+.env
+.env.local
+.env.production
+dist/
+build/
+uploads/
+*.log
+.DS_Store
+Thumbs.db
+backend/strip_comments.js
+backend/strip_safe.js
+backend/migrate_reset_token.js
+backend/migrate_support_tickets.js
+migrate_reset_token.js
+backend/LATEST_RESET_LINK.txt

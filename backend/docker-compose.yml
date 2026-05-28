@@ -1,0 +1,154 @@
+# =====================================================
+# SUTANA EMS - DOCKER COMPOSE
+# Complete stack: Backend + MySQL + Redis
+# =====================================================
+
+version: '3.8'
+
+services:
+  # =====================================================
+  # MySQL Database
+  # =====================================================
+  mysql:
+    image: mysql:8.0
+    container_name: sutana-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root123
+      MYSQL_DATABASE: sutana_ems_dev
+      MYSQL_USER: sutana_user
+      MYSQL_PASSWORD: sutana_pass
+      TZ: Africa/Addis_Ababa
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./database/schema:/docker-entrypoint-initdb.d
+    command: 
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-authentication-plugin=mysql_native_password
+    networks:
+      - sutana-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # =====================================================
+  # Redis Cache & Session Store
+  # =====================================================
+  redis:
+    image: redis:7-alpine
+    container_name: sutana-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --requirepass redis_pass
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - sutana-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # =====================================================
+  # Backend API
+  # =====================================================
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sutana-backend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: development
+      PORT: 5000
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USER: sutana_user
+      DB_PASSWORD: sutana_pass
+      DB_NAME: sutana_ems_dev
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: redis_pass
+      JWT_SECRET: dev_jwt_secret_key_do_not_use_in_production_12345
+      JWT_REFRESH_SECRET: dev_refresh_secret_key_do_not_use_in_production_67890
+      ENCRYPTION_KEY: dev_32_char_encryption_key_123456
+      FRONTEND_URL: http://localhost:3000
+      LOG_LEVEL: debug
+    ports:
+      - "5000:5000"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./src:/app/src
+      - ./logs:/app/logs
+      - ./backups:/app/backups
+      - ./uploads:/app/uploads
+    networks:
+      - sutana-network
+    command: npm run dev
+
+  # =====================================================
+  # PHPMyAdmin (Database Management - Development Only)
+  # =====================================================
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: sutana-phpmyadmin
+    restart: unless-stopped
+    environment:
+      PMA_HOST: mysql
+      PMA_PORT: 3306
+      PMA_ARBITRARY: 1
+      UPLOAD_LIMIT: 100M
+    ports:
+      - "8080:80"
+    depends_on:
+      - mysql
+    networks:
+      - sutana-network
+    profiles:
+      - dev
+
+  # =====================================================
+  # Redis Commander (Redis Management - Development Only)
+  # =====================================================
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: sutana-redis-commander
+    restart: unless-stopped
+    environment:
+      REDIS_HOSTS: local:redis:6379:0:redis_pass
+    ports:
+      - "8081:8081"
+    depends_on:
+      - redis
+    networks:
+      - sutana-network
+    profiles:
+      - dev
+
+# =====================================================
+# Volumes
+# =====================================================
+volumes:
+  mysql_data:
+    driver: local
+  redis_data:
+    driver: local
+
+# =====================================================
+# Networks
+# =====================================================
+networks:
+  sutana-network:
+    driver: bridge
+    name: sutana-network

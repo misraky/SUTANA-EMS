@@ -1,0 +1,142 @@
+.homeContainer {
+  font-family: 'Inter', sans-serif;
+  color: #1e293b;
+}
+.pageHeader {
+  margin-bottom: 2.5rem;
+}
+.pageTitle {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 0.5rem;
+  letter-spacing: -0.025em;
+}
+.pageSubtitle {
+  font-size: 1rem;
+  color: #64748b;
+  margin: 0;
+}
+.loadingContainer {
+  display: flex;
+  justify-content: center;
+  padding: 4rem;
+  color: #64748b;
+  font-size: 1.1rem;
+}
+.kpiGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2.5rem;
+}
+.kpiCard {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  border: 1px solid #e2e8f0;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.kpiCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+.kpiLabel {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  margin-bottom: 0.5rem;
+  letter-spacing: 0.05em;
+}
+.kpiValue {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 0.75rem;
+}
+.kpiTrend {
+  font-size: 0.875rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+.trendUp {
+  color: #16a34a;
+}
+.trendDown {
+  color: #dc2626;
+}
+.chartsGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+@media (min-width: 1024px) {
+  .chartsGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+.chartCard {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e2e8f0;
+}
+.chartTitle {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0 0 1.5rem;
+}
+.mockChartContainer {
+  height: 300px;
+  display: flex;
+  align-items: flex-end;
+  gap: 2rem;
+  padding: 1rem;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #f1f5f9;
+}
+.barGroup {
+  flex: 1;
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-end;
+  height: 100%;
+}
+.bar {
+  width: 40px;
+  border-radius: 4px 4px 0 0;
+  transition: height 0.5s ease-in-out;
+}
+.barRevenue {
+  background: #3b82f6;
+}
+.barExpense {
+  background: #ef4444;
+}
+.pieChartContainer {
+  height: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #f1f5f9;
+}
+.pieChart {
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  background: conic-gradient(#3b82f6 0% 45%, #10b981 45% 75%, #f59e0b 75% 100%);
+  box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+  transition: transform 0.3s ease;
+}
+.pieChart:hover {
+  transform: scale(1.05);
+}

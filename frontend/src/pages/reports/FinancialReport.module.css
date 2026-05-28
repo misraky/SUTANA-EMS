@@ -1,0 +1,168 @@
+.container {
+  padding: 2rem;
+  font-family: 'Inter', sans-serif;
+  color: #111827;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+.title {
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin: 0 0 0.5rem;
+}
+.subtitle {
+  color: #6b7280;
+  margin: 0;
+}
+.btnExport {
+  background: #fff;
+  color: #dc2626;
+  border: 1px solid #fca5a5;
+  padding: 0.6rem 1.25rem;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.btnExport:hover:not(:disabled) {
+  background: #fef2f2;
+  border-color: #ef4444;
+}
+.btnExport:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.filterCard {
+  background: #fff;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+  border: 1px solid #e5e7eb;
+  margin-bottom: 2rem;
+}
+.filterForm {
+  display: flex;
+  gap: 1.5rem;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  flex: 1;
+  min-width: 200px;
+}
+.formGroup label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #4b5563;
+}
+.input {
+  padding: 0.6rem 0.9rem;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  outline: none;
+  background: #fff;
+}
+.input:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
+}
+.formAction {
+  flex-shrink: 0;
+}
+.btnPrimary {
+  padding: 0.7rem 1.5rem;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  height: 42px;
+}
+.pnlCard {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.04);
+  border: 1px solid #e5e7eb;
+  overflow: hidden;
+}
+.pnlHeader {
+  background: #f9fafb;
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+.pnlHeader h2 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #374151;
+  font-weight: 600;
+}
+.pnlBody {
+  padding: 2rem;
+}
+.section {
+  margin-bottom: 2.5rem;
+}
+.sectionTitle {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 1rem 0;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #f3f4f6;
+}
+.lineItem {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.75rem 0;
+  font-size: 0.95rem;
+  color: #4b5563;
+}
+.subtotalRow {
+  display: flex;
+  justify-content: space-between;
+  padding: 1rem 0 0.5rem;
+  margin-top: 0.5rem;
+  border-top: 1px solid #e5e7eb;
+  font-weight: 600;
+  color: #111827;
+}
+.netProfitSection {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  background: #f8fafc;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+.positive { color: #059669; }
+.negative { color: #dc2626; }
+.loadingState, .emptyState {
+  padding: 4rem;
+  text-align: center;
+  color: #6b7280;
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+}
