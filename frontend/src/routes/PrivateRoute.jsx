@@ -7,10 +7,7 @@ const PrivateRoute = ({ children }) => {
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
-  const user = authService.getCurrentUser();
-  if (user && user.mustChangePassword) {
-    return <Navigate to="/auth/change-password" replace />;
-  }
+  // No forced password change redirect — users go directly to their dashboard
   return children;
 };
 export default PrivateRoute;

@@ -1,35 +1,43 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
+import {
+  Home, Users, ClipboardList, Settings, BarChart2, ShoppingCart, FileText, Wallet,
+  CreditCard, TrendingUp, Package, Truck, Printer, Layers, Receipt, AreaChart,
+  List, User, FilePlus, Box, ArrowRight, Bell, Search, LogOut, ChevronDown, Monitor, CheckCircle
+} from 'lucide-react';
 import './DashboardLayout.css';
+
 const ICONS = {
-  dashboard:     '🏠',
-  users:         '👥',
-  clipboard:     '📋',
-  settings:      '⚙️',
-  'bar-chart':   '📊',
-  'shopping-cart':'🛒',
-  'file-text':   '📄',
-  wallet:        '💰',
-  'credit-card': '💳',
-  'trending-up': '📈',
-  package:       '📦',
-  truck:         '🚚',
-  printer:       '🖨️',
-  layers:        '🗂️',
-  receipt:       '🧾',
-  analytics:     '📉',
-  home:          '🏠',
-  list:          '📑',
-  user:          '👤',
-  'file-plus':   '📝',
-  box:           '📦',
-  'arrow-right': '➡️',
+  dashboard:     <Home size={18} strokeWidth={2.5} />,
+  users:         <Users size={18} strokeWidth={2.5} />,
+  clipboard:     <ClipboardList size={18} strokeWidth={2.5} />,
+  settings:      <Settings size={18} strokeWidth={2.5} />,
+  'bar-chart':   <BarChart2 size={18} strokeWidth={2.5} />,
+  'shopping-cart':<ShoppingCart size={18} strokeWidth={2.5} />,
+  'file-text':   <FileText size={18} strokeWidth={2.5} />,
+  wallet:        <Wallet size={18} strokeWidth={2.5} />,
+  'credit-card': <CreditCard size={18} strokeWidth={2.5} />,
+  'trending-up': <TrendingUp size={18} strokeWidth={2.5} />,
+  package:       <Package size={18} strokeWidth={2.5} />,
+  truck:         <Truck size={18} strokeWidth={2.5} />,
+  printer:       <Printer size={18} strokeWidth={2.5} />,
+  layers:        <Layers size={18} strokeWidth={2.5} />,
+  receipt:       <Receipt size={18} strokeWidth={2.5} />,
+  analytics:     <AreaChart size={18} strokeWidth={2.5} />,
+  home:          <Home size={18} strokeWidth={2.5} />,
+  list:          <List size={18} strokeWidth={2.5} />,
+  user:          <User size={18} strokeWidth={2.5} />,
+  'file-plus':   <FilePlus size={18} strokeWidth={2.5} />,
+  box:           <Box size={18} strokeWidth={2.5} />,
+  'arrow-right': <ArrowRight size={18} strokeWidth={2.5} />,
+  default:       <CheckCircle size={18} strokeWidth={2.5} />
 };
 const DashboardLayout = ({ children, menuItems }) => {
   const { user, logout } = useAuth();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const handleLogout = () => {
@@ -72,7 +80,7 @@ const DashboardLayout = ({ children, menuItems }) => {
               onClick={() => handleNav(item.path)}
               title={sidebarCollapsed ? item.label : ''}
             >
-              <span className="nav-icon">{ICONS[item.icon] || '●'}</span>
+              <span className="nav-icon">{ICONS[item.icon] || ICONS.default}</span>
               <span>{item.label}</span>
             </button>
           ))}
@@ -97,21 +105,43 @@ const DashboardLayout = ({ children, menuItems }) => {
           </div>
           <div className="dash-topbar-right">
             <button className="dash-notif-btn" title="Notifications">
-              🔔
-              <span style={{ position: 'absolute', top: '6px', right: '6px', width: '8px', height: '8px', background: 'var(--danger)', borderRadius: '50%', border: '2px solid var(--surface)' }}></span>
+              <Bell size={18} />
+              <span className="notif-dot"></span>
             </button>
-            <div className="dash-user-chip" title={user?.roles?.[0]}>
-              <div className="dash-avatar">
-                {user?.fullName?.charAt(0)?.toUpperCase() || 'U'}
-              </div>
-              <div className="dash-user-info">
-                <div className="dash-user-name">{user?.fullName || 'User'}</div>
-                <div className="dash-user-role">{user?.roles?.[0] || 'Staff'}</div>
-              </div>
+            <div className="dash-profile-dropdown">
+              <button 
+                className={`dash-user-chip ${profileOpen ? 'open' : ''}`} 
+                onClick={() => setProfileOpen(!profileOpen)}
+                title={user?.roles?.[0]}
+              >
+                <div className="dash-avatar">
+                  {user?.fullName?.charAt(0)?.toUpperCase() || <User size={14} />}
+                </div>
+                <div className="dash-user-info">
+                  <div className="dash-user-name">{user?.fullName || 'User'}</div>
+                  <div className="dash-user-role">{user?.roles?.[0] || 'Staff'}</div>
+                </div>
+                <ChevronDown size={14} className={`dropdown-arrow ${profileOpen ? 'rotate' : ''}`} />
+              </button>
+              
+              {profileOpen && (
+                <div className="dash-dropdown-menu">
+                  <div className="dropdown-header">
+                    <p className="dropdown-name">{user?.fullName || 'User'}</p>
+                    <p className="dropdown-email">{user?.email || 'user@sutana.com'}</p>
+                  </div>
+                  <div className="dropdown-divider"></div>
+                  <button className="dropdown-item" onClick={() => navigate(user?.roles?.includes('Admin') ? '/admin/settings' : '/customer/profile')}>
+                    <User size={16} />
+                    My Profile
+                  </button>
+                  <button className="dropdown-item text-danger" onClick={handleLogout}>
+                    <LogOut size={16} />
+                    Logout
+                  </button>
+                </div>
+              )}
             </div>
-            <button className="dash-logout-btn" onClick={handleLogout}>
-              🚪 <span className="logout-text">Logout</span>
-            </button>
           </div>
         </header>
         {}

@@ -13,6 +13,7 @@ const AddUserModal = ({ isOpen, onClose, onSuccess, initialData = null }) => {
   const [rolesList, setRolesList] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   useEffect(() => {
     if (isOpen) {
       fetchDropdownData();
@@ -54,14 +55,24 @@ const AddUserModal = ({ isOpen, onClose, onSuccess, initialData = null }) => {
     setFormData({ ...formData, [name]: value });
   };
   const handleRoleChange = (e) => {
-    const options = e.target.options;
-    const selectedRoles = [];
-    for (let i = 0; i < options.length; i++) {
-      if (options[i].selected) {
-        selectedRoles.push(Number(options[i].value));
+    const selectedRoleId = Number(e.target.value);
+    setFormData(prev => {
+      const newData = { ...prev, roleIds: [selectedRoleId] };
+      // Try to auto-select department based on role name
+      const selectedRole = rolesList.find(r => r.id === selectedRoleId);
+      if (selectedRole) {
+        // Find a matching department
+        // e.g. "Farming Manager" -> "Farming"
+        const matchingDept = departments.find(d => 
+          selectedRole.name.toLowerCase().includes(d.name.toLowerCase()) || 
+          d.name.toLowerCase().includes(selectedRole.name.toLowerCase().split(' ')[0])
+        );
+        if (matchingDept) {
+          newData.departmentId = matchingDept.id;
+        }
       }
-    }
-    setFormData({ ...formData, roleIds: selectedRoles });
+      return newData;
+    });
   };
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -69,9 +80,9 @@ const AddUserModal = ({ isOpen, onClose, onSuccess, initialData = null }) => {
     setError('');
     try {
       if (initialData) {
-        await apiClient.put(`/admin/users/${initialData.id}`, formData);
+        await apiClient.put(`/users/${initialData.id}`, formData);
       } else {
-        await apiClient.post('/admin/users', formData);
+        await apiClient.post('/users', formData);
       }
       onSuccess();
       onClose();
@@ -142,21 +153,44 @@ const AddUserModal = ({ isOpen, onClose, onSuccess, initialData = null }) => {
               ))}
             </select>
           </div>
-          <div className="form-group">
-            <label>Roles (Hold Ctrl to select multiple)</label>
-            <select 
-              name="roleIds" 
-              multiple 
-              value={formData.roleIds} 
-              onChange={handleRoleChange}
-              required
-              style={{ width: '100%', height: '100px', padding: '0.5rem', marginTop: '0.25rem', borderRadius: '4px', border: '1px solid #ddd' }}
-            >
-              {rolesList.map(role => (
-                <option key={role.id} value={role.id}>{role.name}</option>
-              ))}
-            </select>
-          </div>
+          {!initialData && (
+            <div className="form-group">
+              <label>Initial Password</label>
+              <div style={{ display: 'flex', alignItems: 'center', position: 'relative' }}>
+                <input 
+                  type={showPassword ? "text" : "password"} 
+                  name="password" 
+                  value={formData.password || ''} 
+                  onChange={handleChange} 
+                  required 
+                  minLength={8}
+                  style={{ width: '100%', padding: '0.5rem', marginTop: '0.25rem', borderRadius: '4px', border: '1px solid #ddd' }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  style={{ position: 'absolute', right: '10px', top: '15px', background: 'none', border: 'none', cursor: 'pointer' }}
+                >
+                  {showPassword ? '👁️' : '👁️‍🗨️'}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+        <div className="form-group mb-4">
+          <label>Role</label>
+          <select 
+            name="roleIds" 
+            value={formData.roleIds.length > 0 ? formData.roleIds[0] : ''} 
+            onChange={handleRoleChange}
+            required
+            style={{ width: '100%', padding: '0.5rem', marginTop: '0.25rem', borderRadius: '4px', border: '1px solid #ddd' }}
+          >
+            <option value="">Select Role</option>
+            {rolesList.map(role => (
+              <option key={role.id} value={role.id}>{role.name}</option>
+            ))}
+          </select>
         </div>
         <div className="modal-form-actions" style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1.5rem' }}>
           <button type="button" onClick={onClose} disabled={loading} style={{ padding: '0.5rem 1rem', background: '#f3f4f6', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>

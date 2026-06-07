@@ -44,8 +44,7 @@ const createDefaultTemplates = async () => {
       <h2>Hello {{name}},</h2>
       <p>Your account has been successfully created.</p>
       <p><strong>Email:</strong> {{email}}</p>
-      <p><strong>Temporary Password:</strong> {{temporaryPassword}}</p>
-      <p>Please change your password after your first login.</p>
+      <p>Please use the password provided to you to login.</p>
       <a href="{{loginUrl}}" class="button">Login to Your Account</a>
       <p>If you have any questions, please contact our support team.</p>
     </div>
@@ -208,9 +207,6 @@ const sendEmail = async (options) => {
       } catch (e) {
         console.error('Failed to write reset link to file');
       }
-    } else if (data.temporaryPassword) {
-      logger.info(`🔑 TEMP PASSWORD: ${data.temporaryPassword}`);
-      console.log(`🔑 TEMP PASSWORD: ${data.temporaryPassword}`);
     } else {
       logger.info(`📝 DATA: ${JSON.stringify(data)}`);
     }
@@ -328,7 +324,7 @@ const logEmailCommunication = async (recipient, subject, content, status, respon
     logger.error('Failed to log email communication:', error.message);
   }
 };
-const sendWelcomeEmail = async (user, temporaryPassword) => {
+const sendWelcomeEmail = async (user) => {
   return sendEmail({
     to: user.email,
     subject: 'Welcome to Sutana EMS',
@@ -336,7 +332,6 @@ const sendWelcomeEmail = async (user, temporaryPassword) => {
     data: {
       name: user.full_name,
       email: user.email,
-      temporaryPassword,
       loginUrl: `${config.cors.frontendUrl}/login`
     }
   });
