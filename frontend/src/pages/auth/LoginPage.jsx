@@ -18,14 +18,14 @@ const LoginPage = () => {
     setError('');
     try {
       const user = await authService.login(formData);
-      // Determine dashboard based on role
-      if (user.roles?.includes('Admin')) navigate('/admin');
-      else if (user.roles?.includes('CEO')) navigate('/ceo');
-      else if (user.roles?.includes('Finance')) navigate('/finance');
-      else if (user.roles?.includes('Purchase')) navigate('/purchase');
-      else if (user.roles?.includes('Store Worker')) navigate('/store');
-      else if (user.roles?.includes('Sales/Cashier')) navigate('/sales');
-      else if (user.roles?.includes('Printing Supervisor')) navigate('/printing');
+      const userRoles = user.roles ? user.roles.map(r => r.toLowerCase()) : [];
+      if (userRoles.includes('admin')) navigate('/admin');
+      else if (userRoles.includes('ceo')) navigate('/ceo');
+      else if (userRoles.includes('finance')) navigate('/finance');
+      else if (userRoles.includes('purchase')) navigate('/purchase');
+      else if (userRoles.includes('store manager')) navigate('/store');
+      else if (userRoles.includes('sales/cashier')) navigate('/sales');
+      else if (userRoles.includes('printing supervisor')) navigate('/printing');
       else navigate('/customer');
     } catch (err) {
       setError(err.message || 'Invalid credentials. Please try again.');

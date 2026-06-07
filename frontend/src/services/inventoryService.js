@@ -18,6 +18,15 @@ const inventoryService = {
   adjustStock: async (data) => {
     return await apiClient.post('/inventory/adjustments', data);
   },
+  getPendingAdjustments: async () => {
+    return await apiClient.get('/inventory/adjustments/pending');
+  },
+  approveAdjustment: async (id) => {
+    return await apiClient.post(`/inventory/adjustments/${id}/approve`);
+  },
+  rejectAdjustment: async (id, reason) => {
+    return await apiClient.post(`/inventory/adjustments/${id}/reject`, { reason });
+  },
   registerStock: async (productId, quantity, unitCost, reason) => {
     return await apiClient.post('/inventory/adjustments', {
       productId,

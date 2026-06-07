@@ -9,7 +9,8 @@ const AddProductModal = ({ isOpen, onClose, onSuccess }) => {
     unitId: '',
     sellingPrice: '',
     reorderLevel: '0',
-    expiryDate: ''
+    expiryDate: '',
+    requiresSerial: false
   });
   const [categories, setCategories] = useState([]);
   const [units, setUnits] = useState([]);
@@ -33,8 +34,11 @@ const AddProductModal = ({ isOpen, onClose, onSuccess }) => {
     }
   };
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+    const { name, value, type, checked } = e.target;
+    setFormData({ 
+      ...formData, 
+      [name]: type === 'checkbox' ? checked : value 
+    });
   };
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -47,6 +51,7 @@ const AddProductModal = ({ isOpen, onClose, onSuccess }) => {
         unitId: parseInt(formData.unitId),
         sellingPrice: parseFloat(formData.sellingPrice),
         reorderLevel: parseInt(formData.reorderLevel) || 0,
+        requires_serial: formData.requiresSerial
       };
       if (formData.expiryDate) {
         payload.expiryDate = formData.expiryDate;
@@ -58,7 +63,7 @@ const AddProductModal = ({ isOpen, onClose, onSuccess }) => {
       onSuccess();
       setFormData({
         name: '', sku: '', categoryId: '', unitId: '',
-        sellingPrice: '', reorderLevel: '0', expiryDate: ''
+        sellingPrice: '', reorderLevel: '0', expiryDate: '', requiresSerial: false
       });
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to add product');
@@ -165,6 +170,18 @@ const AddProductModal = ({ isOpen, onClose, onSuccess }) => {
                   onChange={handleChange} 
                   className={styles.input} 
                 />
+              </div>
+              <div className={styles.formGroup}>
+                <label className={styles.label} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '2rem', cursor: 'pointer' }}>
+                  <input 
+                    type="checkbox" 
+                    name="requiresSerial" 
+                    checked={formData.requiresSerial} 
+                    onChange={handleChange} 
+                    style={{ width: '1.2rem', height: '1.2rem' }}
+                  />
+                  Requires Serial Number Tracking
+                </label>
               </div>
             </div>
           </div>

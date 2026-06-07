@@ -71,9 +71,76 @@ exports.getSupplierById = catchAsync(async (req, res) => {
     .where('supplier_id', id)
     .orderBy('created_at', 'desc')
     .limit(10);
+
+  // Price history: get all line items across POs for this supplier
+  const priceHistory = await db('purchase_order_items as poi')
+    .join('purchase_orders as po', 'poi.purchase_order_id', 'po.id')
+    .leftJoin('products as p', 'poi.product_id', 'p.id')
+    .select(
+      'po.po_number',
+      'po.created_at as order_date',
+      'po.status',
+      'poi.product_name',
+      'p.sku',
+      'poi.quantity_ordered',
+      'poi.unit_price',
+      db.raw('(poi.quantity_ordered * poi.unit_price) as line_total')
+    )
+    .where('po.supplier_id', id)
+    .whereIn('po.status', ['Approved', 'Sent to Supplier', 'Partial Received', 'Complete'])
+    .orderBy('po.created_at', 'desc')
+    .limit(100);
+
   res.json({
     status: 'success',
-    data: { supplier, recentPOs }
+    data: { supplier, recentPOs, priceHistory }
+  });
+});
+exports.getReorderSuggestions = catchAsync(async (req, res) => {
+  // Get all low-stock products and find their preferred supplier from last PO
+  const lowStockItems = await db('products as p')
+    .leftJoin('inventory as i', 'p.id', 'i.product_id')
+    .leftJoin('product_categories as pc', 'p.category_id', 'pc.id')
+    .leftJoin('units as u', 'p.unit_id', 'u.id')
+    .leftJoin('suppliers as s', 'p.supplier_id', 's.id')
+    .select(
+      'p.id',
+      'p.name',
+      'p.sku',
+      'p.reorder_level',
+      'p.selling_price',
+      'pc.name as category_name',
+      'u.abbreviation as unit',
+      's.id as supplier_id',
+      's.name as supplier_name',
+      db.raw('COALESCE(i.quantity, 0) as current_stock'),
+      db.raw('COALESCE(i.unit_cost, 0) as last_unit_cost')
+    )
+    .whereNull('p.deleted_at')
+    .where('p.is_active', true)
+    .whereRaw('COALESCE(i.quantity, 0) <= p.reorder_level')
+    .orderByRaw('COALESCE(i.quantity, 0) ASC')
+    .limit(20);
+
+  // For each item, find the last unit price from completed POs
+  for (const item of lowStockItems) {
+    const lastPriceRecord = await db('purchase_order_items as poi')
+      .join('purchase_orders as po', 'poi.purchase_order_id', 'po.id')
+      .where('poi.product_id', item.id)
+      .whereIn('po.status', ['Approved', 'Sent to Supplier', 'Partial Received', 'Complete'])
+      .orderBy('po.created_at', 'desc')
+      .select('poi.unit_price', 'po.supplier_id', 'po.created_at')
+      .first();
+
+    item.suggested_order_qty = Math.max(item.reorder_level * 2, 10);
+    item.suggested_unit_price = lastPriceRecord ? parseFloat(lastPriceRecord.unit_price) : parseFloat(item.last_unit_cost);
+    item.last_ordered_date = lastPriceRecord ? lastPriceRecord.created_at : null;
+    item.suggested_supplier_id = lastPriceRecord ? lastPriceRecord.supplier_id : item.supplier_id;
+  }
+
+  res.json({
+    status: 'success',
+    data: { suggestions: lowStockItems }
   });
 });
 exports.createSupplier = catchAsync(async (req, res) => {
@@ -321,7 +388,8 @@ exports.getPurchaseOrderById = catchAsync(async (req, res) => {
     .select(
       'pi.*',
       'p.name as product_name',
-      'p.sku'
+      'p.sku',
+      'p.requires_serial'
     )
     .where('pi.po_id', id);
   purchaseOrder.items = items;
@@ -791,6 +859,23 @@ exports.registerReceiving = catchAsync(async (req, res) => {
             .update({ product_id: productId });
         }
         
+        const product = await trx('products').where('id', productId).first();
+        if (product.requires_serial) {
+          if (!item.serialNumbers || item.serialNumbers.length !== goodQuantity) {
+            throw new AppError(`Product ${product.name} requires exactly ${goodQuantity} serial numbers. You provided ${item.serialNumbers ? item.serialNumbers.length : 0}.`, 400);
+          }
+          for (const serial of item.serialNumbers) {
+            await trx('inventory_serials').insert({
+              product_id: productId,
+              serial_number: serial,
+              status: 'In Stock',
+              reference_type: 'Purchase Order',
+              reference_id: poId
+            });
+          }
+        }
+
+        
         const currentInventory = await trx('inventory')
           .where('product_id', productId)
           .first();
@@ -816,6 +901,7 @@ exports.registerReceiving = catchAsync(async (req, res) => {
         await trx('inventory_movements').insert({
           product_id: productId,
           transaction_type: 'Purchase',
+          model_number: 19,
           quantity_change: goodQuantity,
           quantity_before: currentInventory?.quantity || 0,
           quantity_after: (currentInventory?.quantity || 0) + goodQuantity,

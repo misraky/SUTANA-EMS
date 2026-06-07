@@ -37,7 +37,9 @@ const authService = {
   },
   hasRole: (role) => {
     const user = authService.getCurrentUser();
-    return user?.roles?.includes(role) || user?.roles?.includes('Admin');
+    if (!user || !user.roles) return false;
+    const userRoles = user.roles.map(r => r.toLowerCase());
+    return userRoles.includes(role.toLowerCase());
   },
   hasPermission: (permission) => {
     const user = authService.getCurrentUser();

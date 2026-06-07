@@ -191,3 +191,92 @@
   color: #059669;
   font-size: 0.875rem;
 }
+
+/* Reorder Suggestions */
+.reorderSection {
+  background: white;
+  border-radius: 0.75rem;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  border-left: 4px solid #f59e0b;
+}
+
+.reorderHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.reorderCount {
+  background: #fef3c7;
+  color: #92400e;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.reorderHint {
+  color: #64748b;
+  font-size: 0.82rem;
+  margin-bottom: 1rem;
+}
+
+.reorderTable {
+  overflow-x: auto;
+}
+
+.skuCell {
+  font-family: 'Courier New', monospace;
+  font-size: 0.8rem;
+  color: #6366f1;
+  font-weight: 600;
+}
+
+.outBadge {
+  background: #fee2e2;
+  color: #b91c1c;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.lowBadge {
+  background: #fef3c7;
+  color: #92400e;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.suggestedQty {
+  font-weight: 700;
+  color: #059669;
+}
+
+.reorderActions {
+  margin-top: 1rem;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.btnCreatePO {
+  background: #2563eb;
+  color: white;
+  border: none;
+  padding: 0.65rem 1.25rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btnCreatePO:hover {
+  background: #1d4ed8;
+}

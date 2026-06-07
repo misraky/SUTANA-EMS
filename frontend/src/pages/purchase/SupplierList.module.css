@@ -113,3 +113,90 @@
   font-size: 1.125rem;
   color: #6b7280;
 }
+
+/* Expanded row */
+.rowExpanded td {
+  background: #f0f4ff;
+}
+
+.expandedCell {
+  padding: 0 !important;
+  background: #fafbff;
+}
+
+/* Price History Panel */
+.priceHistoryPanel {
+  padding: 1.25rem 1.5rem;
+}
+
+.panelTitle {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0 0 1rem 0;
+}
+
+.panelLoading {
+  padding: 2rem;
+  text-align: center;
+  color: #94a3b8;
+}
+
+.panelEmpty {
+  padding: 1.5rem;
+  text-align: center;
+  color: #94a3b8;
+  font-size: 0.875rem;
+}
+
+.innerTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+
+.innerTable th {
+  background: #eef2ff;
+  color: #4338ca;
+  font-weight: 600;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid #c7d2fe;
+}
+
+.innerTable td {
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid #e2e8f0;
+  color: #334155;
+}
+
+.poNum {
+  font-family: monospace;
+  color: #6366f1;
+  font-weight: 600;
+}
+
+.skuText {
+  font-family: monospace;
+  color: #64748b;
+  font-size: 0.78rem;
+}
+
+/* History button */
+.btnHistory {
+  background: #eef2ff;
+  border: 1px solid #c7d2fe;
+  color: #4338ca;
+  padding: 0.3rem 0.65rem;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.btnHistory:hover {
+  background: #c7d2fe;
+}
