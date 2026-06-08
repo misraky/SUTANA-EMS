@@ -82,6 +82,26 @@ const userIdParamValidation = [
 ];
 
 router.get(
+  '/export',
+  authenticate,
+  authorize(['users:read', 'reports:export']),
+  query('format').isIn(['csv', 'excel']).withMessage('Format must be csv or excel'),
+  validate,
+  UserController.exportUsers
+);
+router.get(
+  '/departments',
+  authenticate,
+  UserController.getDepartments
+);
+router.get(
+  '/roles',
+  authenticate,
+  authorize(['users:read']),
+  UserController.getRoles
+);
+
+router.get(
   '/',
   authenticate,
   authorize(['users:read']),
@@ -195,5 +215,4 @@ router.delete(
   validate,
   UserController.removeRole
 );
-
 module.exports = router;

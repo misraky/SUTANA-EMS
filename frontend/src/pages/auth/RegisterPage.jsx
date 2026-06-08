@@ -7,6 +7,7 @@ const RegisterPage = () => {
   const [formData, setFormData] = useState({ fullName: '', email: '', phone: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
     if (error) setError('');
@@ -16,11 +17,13 @@ const RegisterPage = () => {
     setLoading(true);
     setError('');
     try {
+      // Register the customer account
       await authService.register(formData);
-      // Registration complete, route to login or handle auto-login
-      navigate('/login', { state: { message: 'Registration successful! Please login.' } });
+      
+      // Navigate to login page
+      navigate('/login');
     } catch (err) {
-      setError(err.response?.data?.message || 'Registration failed. Please check your details.');
+      setError(err.response?.data?.message || err.message || 'Registration failed. Please check your details.');
     } finally {
       setLoading(false);
     }
@@ -30,8 +33,8 @@ const RegisterPage = () => {
       <div className={styles.formSection}>
         <div className={styles.formWrapper}>
           <div className={styles.logo}>SUTANA</div>
-          <h2>Create Account</h2>
-          <p className={styles.subtitle}>Join SUTANA Enterprise Management System.</p>
+          <h2>Create Customer Account</h2>
+          <p className={styles.subtitle}>Join SUTANA — manage your orders, track status & more.</p>
           {error && <div className={styles.errorAlert}>{error}</div>}
           <form onSubmit={handleSubmit} className={styles.form}>
             <div className={styles.formGroup}>
@@ -74,23 +77,38 @@ const RegisterPage = () => {
             </div>
             <div className={styles.formGroup}>
               <label>Password</label>
-              <input
-                type="password"
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                placeholder="Minimum 8 characters"
-                required
-                minLength={8}
-                className={styles.input}
-              />
+              <div className={styles.passwordInputWrapper} style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                <input
+                  type={showPassword ? "text" : "password"}
+                  name="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  placeholder="Minimum 8 characters"
+                  required
+                  minLength={8}
+                  className={styles.input}
+                  style={{ width: '100%', paddingRight: '40px' }}
+                />
+                <button
+                  type="button"
+                  className={styles.passwordToggle}
+                  onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  style={{ position: 'absolute', right: '10px', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                >
+                  {showPassword ? '👁️' : '👁️‍🗨️'}
+                </button>
+              </div>
             </div>
             <button type="submit" className={styles.btnPrimary} disabled={loading}>
-              {loading ? 'Creating Account...' : 'Register'}
+              {loading ? 'Creating Account...' : 'Create My Account'}
             </button>
           </form>
           <p className={styles.loginPrompt}>
             Already have an account? <Link to="/login" className={styles.loginLink}>Sign In</Link>
+          </p>
+          <p className={styles.staffNote}>
+            Are you staff? Your account is created by an administrator — <Link to="/login" className={styles.loginLink}>Sign in here</Link>.
           </p>
         </div>
       </div>

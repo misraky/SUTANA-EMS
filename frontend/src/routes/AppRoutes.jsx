@@ -12,7 +12,6 @@ const RegisterPage       = lazy(() => import('../pages/auth/RegisterPage'));
 const ForgotPasswordPage = lazy(() => import('../pages/auth/ForgotPasswordPage'));
 const ResetPasswordPage  = lazy(() => import('../pages/auth/ResetPasswordPage'));
 const TwoFactorPage      = lazy(() => import('../pages/auth/TwoFactorPage'));
-const ForceChangePasswordPage = lazy(() => import('../pages/auth/ForceChangePasswordPage'));
 const AdminDashboard    = lazy(() => import('../pages/admin/AdminDashboard'));
 const CEODashboard      = lazy(() => import('../pages/ceo/CEODashboard'));
 const FinanceDashboard  = lazy(() => import('../pages/finance/FinanceDashboard'));
@@ -21,6 +20,9 @@ const StoreDashboard    = lazy(() => import('../pages/store/StoreDashboard'));
 const SalesDashboard    = lazy(() => import('../pages/sales/SalesDashboard'));
 const PrintingDashboard = lazy(() => import('../pages/printing/PrintingDashboard'));
 const CustomerDashboard = lazy(() => import('../pages/customer/CustomerPortal'));
+const FarmingDashboard  = lazy(() => import('../pages/farming/FarmingDashboard'));
+const PharmacyDashboard = lazy(() => import('../pages/pharmacy/PharmacyDashboard'));
+const CarRentingDashboard = lazy(() => import('../pages/car-renting/CarRentingDashboard'));
 const ReportsIndex    = lazy(() => import('../pages/reports/ReportsIndex'));
 const Loader = () => (
   <div style={{
@@ -47,7 +49,6 @@ const AppRoutes = () => {
         <Route path="/auth/forgot-password" element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} />
         <Route path="/auth/reset-password" element={<PublicRoute><ResetPasswordPage /></PublicRoute>} />
         <Route path="/auth/two-factor" element={<PublicRoute><TwoFactorPage /></PublicRoute>} />
-        <Route path="/auth/change-password" element={<ForceChangePasswordPage />} />
         {}
         <Route path="/admin/*" element={
           <RoleBasedRoute role="Admin">
@@ -95,6 +96,24 @@ const AppRoutes = () => {
           <PrivateRoute>
             <CustomerDashboard />
           </PrivateRoute>
+        } />
+        {}
+        <Route path="/farming/*" element={
+          <RoleBasedRoute role="Farming Manager">
+            <FarmingDashboard />
+          </RoleBasedRoute>
+        } />
+        {}
+        <Route path="/pharmacy/*" element={
+          <RoleBasedRoute role="Pharmacist">
+            <PharmacyDashboard />
+          </RoleBasedRoute>
+        } />
+        {}
+        <Route path="/car-renting/*" element={
+          <RoleBasedRoute role="Car Renting Manager">
+            <CarRentingDashboard />
+          </RoleBasedRoute>
         } />
         {}
         <Route path="/reports/*" element={

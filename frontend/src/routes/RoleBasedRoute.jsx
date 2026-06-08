@@ -6,10 +6,7 @@ const RoleBasedRoute = ({ children, role, permission }) => {
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
-  const user = authService.getCurrentUser();
-  if (user && user.mustChangePassword) {
-    return <Navigate to="/auth/change-password" replace />;
-  }
+  // No forced password change redirect — users go directly to their dashboard
   const hasRole = role ? (Array.isArray(role) ? role.some(r => authService.hasRole(r)) : authService.hasRole(role)) : true;
   const hasPermission = permission ? authService.hasPermission(permission) : true;
   if (!hasRole || !hasPermission) {

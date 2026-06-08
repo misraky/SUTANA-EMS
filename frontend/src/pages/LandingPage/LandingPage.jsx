@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PublicNav, PublicFooter } from './ServicesPage';
+import authService from '../../services/authService';
 import './PublicLayout.css';
 import ToggleSection from './ToggleSection';
 
@@ -323,7 +324,7 @@ const LandingPage = () => {
           <p>Join forward-thinking Ethiopian businesses using SUTANA EMS to eliminate manual work, eliminate data silos, and gain real-time visibility into every corner of their operations. Your team will thank you.</p>
           <div className="cnx-cta-actions">
             <button className="cnx-btn-primary" onClick={() => navigate('/login')}>
-              Sign In Now →
+              {authService.isAuthenticated() ? 'Go to Dashboard →' : 'Sign In Now →'}
             </button>
             <button className="cnx-btn-ghost cnx-btn-ghost--light" onClick={() => navigate('/contact')}>
               Talk to Our Team

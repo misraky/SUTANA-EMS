@@ -53,7 +53,6 @@ const CustomerPortal = () => {
     { label: 'Receipts', path: '/customer/receipts', icon: 'file-text' },
     { label: 'Invoices', path: '/customer/invoices', icon: 'credit-card' },
     { label: 'Support', path: '/customer/support', icon: 'message-circle' },
-    { label: 'My Profile', path: '/customer/profile', icon: 'user' },
   ];
   return (
     <div className={styles.portalWrapper}>

@@ -110,18 +110,7 @@ const authenticate = async (req, res, next) => {
       mustChangePassword: !!user.must_change_password,
       twoFactorEnabled: !!user.two_factor_enabled
     };
-    // Force password change on first login before accessing any other API features
-    if (req.user.mustChangePassword) {
-      const allowedPaths = [
-        '/api/v1/auth/change-password',
-        '/api/v1/auth/logout',
-        '/api/v1/auth/me'
-      ];
-      const currentPath = req.originalUrl.split('?')[0].replace(/\/$/, '');
-      if (!allowedPaths.includes(currentPath)) {
-        throw new AppError('Password change required on first login.', 403);
-      }
-    }
+    // Password change requirement is completely disabled
     next();
   } catch (error) {
     next(error);
