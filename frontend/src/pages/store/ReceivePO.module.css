@@ -191,3 +191,26 @@
   color: #991b1b;
   border: 1px solid #fecaca;
 }
+.serialBadge {
+  font-size: 0.75rem;
+  color: #8b5cf6;
+  font-weight: 600;
+  background-color: #ede9fe;
+  padding: 0.1rem 0.5rem;
+  border-radius: 9999px;
+  margin-left: 0.5rem;
+}
+.serialWrapper {
+  padding: 1rem;
+  background-color: #f9fafb;
+  border-radius: 6px;
+  border: 1px dashed #c4b5fd;
+  margin-bottom: 1rem;
+}
+.serialWrapper label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #4b5563;
+  margin-bottom: 0.5rem;
+}

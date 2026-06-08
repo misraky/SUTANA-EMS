@@ -2,13 +2,39 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import inventoryService from '../../services/inventoryService';
 import { formatCurrency, formatNumber } from '../../utils/formatters';
+import { useAuth } from '../../hooks/useAuth';
 import styles from './StoreHome.module.css';
 const StoreHome = () => {
   const [stats, setStats] = useState(null);
   const [lowStock, setLowStock] = useState([]);
+  const [pendingAdjustments, setPendingAdjustments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
+  const { hasPermission } = useAuth();
+  const canApprove = hasPermission('inventory:manager_approve');
+
+  const handleApprove = async (id) => {
+    try {
+      await inventoryService.approveAdjustment(id);
+      setPendingAdjustments(prev => prev.filter(a => a.id !== id));
+      // Refresh stats
+      inventoryService.getStatistics().then(res => setStats(res.data));
+    } catch (e) {
+      alert('Failed to approve adjustment');
+    }
+  };
+
+  const handleReject = async (id) => {
+    const reason = prompt('Reason for rejection:');
+    if (!reason) return;
+    try {
+      await inventoryService.rejectAdjustment(id, reason);
+      setPendingAdjustments(prev => prev.filter(a => a.id !== id));
+    } catch (e) {
+      alert('Failed to reject adjustment');
+    }
+  };
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -21,6 +47,13 @@ const StoreHome = () => {
       } catch (err) {
         console.error('Failed to fetch store stats:', err);
         setError('Failed to load store data. Please refresh.');
+      }
+
+      try {
+        const pendingRes = await inventoryService.getPendingAdjustments();
+        setPendingAdjustments(pendingRes.data?.adjustments || []);
+      } catch (err) {
+        // user might not have inventory:approve permission, ignore
       } finally {
         setLoading(false);
       }
@@ -132,9 +165,9 @@ const StoreHome = () => {
     <div className={styles.storeHome}>
       <div className={styles.pageHeader}>
         <div>
-          <h1 className={styles.pageTitle}>Warehouse Overview</h1>
+          <h1 className={styles.pageTitle}>Store Manager Dashboard</h1>
           <p className={styles.pageSubtitle}>
-            Real-time status of inventory levels and stock value
+            Real-time status of inventory levels, stock adjustments and approvals
           </p>
         </div>
         <div className={styles.headerMeta}>
@@ -238,6 +271,55 @@ const StoreHome = () => {
                 <span className={styles.movementCount}>{formatNumber(p.total_movement)} units</span>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {pendingAdjustments.length > 0 && (
+        <div className={styles.alertSection} style={{ marginTop: '2rem' }}>
+          <div className={styles.alertHeader}>
+            <h2 className={styles.sectionTitle}>⏳ Pending Adjustments (Manager Approval)</h2>
+          </div>
+          <div className={styles.alertTable}>
+            <table>
+              <thead>
+                <tr>
+                  <th>Product</th>
+                  <th>SKU</th>
+                  <th>Requested Change</th>
+                  <th>Reason</th>
+                  <th>Requested By</th>
+                  <th>Date</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pendingAdjustments.map((item) => (
+                  <tr key={item.id}>
+                    <td><strong>{item.product_name}</strong></td>
+                    <td className={styles.skuCell}>{item.sku}</td>
+                    <td>
+                      <span className={item.quantity_change > 0 ? styles.positiveStatus : styles.negativeStatus} style={{ fontWeight: 'bold', color: item.quantity_change > 0 ? '#10b981' : '#ef4444' }}>
+                        {item.quantity_change > 0 ? '+' : ''}{item.quantity_change}
+                      </span>
+                    </td>
+                    <td>{item.reason}</td>
+                    <td>{item.requester_name}</td>
+                    <td>{new Date(item.created_at).toLocaleDateString()}</td>
+                    <td>
+                      {canApprove ? (
+                        <>
+                          <button onClick={() => handleApprove(item.id)} style={{ background: '#10b981', color: '#fff', border: 'none', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', marginRight: '8px' }}>Approve</button>
+                          <button onClick={() => handleReject(item.id)} style={{ background: '#ef4444', color: '#fff', border: 'none', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer' }}>Reject</button>
+                        </>
+                      ) : (
+                        <span style={{ color: '#94a3b8', fontSize: '0.8rem' }}>Awaiting Manager</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       )}

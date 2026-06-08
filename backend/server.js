@@ -18,6 +18,9 @@ const startServer = async () => {
     // Initialize application (database, redis, etc.)
     await initializeApp();
     
+    // Initialize scheduled cron jobs
+    require('./src/services/cron');
+    
     // Start listening on configured port
     server = app.listen(config.port, () => {
       logger.info(`🚀 Sutana EMS Server Started`);

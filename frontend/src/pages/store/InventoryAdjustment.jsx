@@ -42,8 +42,8 @@ const InventoryAdjustment = () => {
       } else {
         delete payload.referenceId;
       }
-      await inventoryService.adjustStock(payload);
-      setMessage({ type: 'success', text: 'Stock adjusted successfully!' });
+      const response = await inventoryService.adjustStock(payload);
+      setMessage({ type: 'success', text: response.message || 'Stock adjusted successfully!' });
       setFormData({
         productId: '',
         quantityChange: '',

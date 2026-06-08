@@ -2,10 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import purchaseService from '../../services/purchaseService';
 import styles from './SupplierList.module.css';
+
 const SupplierList = () => {
   const navigate = useNavigate();
   const [suppliers, setSuppliers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+
   useEffect(() => {
     const fetchSuppliers = async () => {
       try {
@@ -19,7 +22,9 @@ const SupplierList = () => {
     };
     fetchSuppliers();
   }, []);
+
   if (loading) return <div className={styles.loading}>Loading suppliers...</div>;
+
   if (suppliers.length === 0) return (
     <div className={styles.container}>
       <div className={styles.header}>
@@ -32,6 +37,14 @@ const SupplierList = () => {
       </div>
     </div>
   );
+
+  const filtered = suppliers.filter(s =>
+    search === '' ||
+    s.name.toLowerCase().includes(search.toLowerCase()) ||
+    (s.contact_person || '').toLowerCase().includes(search.toLowerCase()) ||
+    (s.email || '').toLowerCase().includes(search.toLowerCase())
+  );
+
   return (
     <div className={styles.container}>
       <div className={styles.header}>
@@ -39,7 +52,15 @@ const SupplierList = () => {
           <h2 className={styles.title}>Suppliers</h2>
           <p className={styles.subtitle}>Maintain your network of product and service providers</p>
         </div>
-        <button className={styles.btnPrimary} onClick={() => navigate('/purchase/suppliers/create')}>Add Supplier</button>
+        <div className={styles.headerActions}>
+          <input
+            className={styles.searchInput}
+            placeholder="🔍 Search suppliers..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+          />
+          <button className={styles.btnPrimary} onClick={() => navigate('/purchase/suppliers/create')}>+ Add Supplier</button>
+        </div>
       </div>
       <div className={styles.tableContainer}>
         <table className={styles.dataTable}>
@@ -50,15 +71,27 @@ const SupplierList = () => {
               <th>Phone</th>
               <th>Email</th>
               <th>Payment Terms</th>
-              <th>Active POs</th>
+              <th>Total POs</th>
               <th>Status</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
-            {suppliers.map((s) => (
-              <tr key={s.id}>
-                <td><strong className={styles.supplierName}>{s.name}</strong></td>
+            {filtered.length === 0 ? (
+              <tr>
+                <td colSpan="8" className={styles.emptyRow}>No suppliers match your search.</td>
+              </tr>
+            ) : filtered.map((s) => (
+              <tr key={s.id} className={styles.dataRow}>
+                <td>
+                  <strong
+                    className={styles.supplierNameLink}
+                    onClick={() => navigate(`/purchase/suppliers/${s.id}`)}
+                    title="View supplier profile"
+                  >
+                    {s.name}
+                  </strong>
+                </td>
                 <td>{s.contact_person}</td>
                 <td>{s.phone}</td>
                 <td>{s.email}</td>
@@ -71,8 +104,20 @@ const SupplierList = () => {
                 </td>
                 <td>
                   <div className={styles.actionBtns}>
-                    <button className={styles.btnIcon}><i className="icon-edit"></i></button>
-                    <button className={styles.btnIcon}><i className="icon-external-link"></i></button>
+                    <button
+                      className={styles.btnProfile}
+                      onClick={() => navigate(`/purchase/suppliers/${s.id}`)}
+                      title="View full profile & price history"
+                    >
+                      📊 View Profile
+                    </button>
+                    <button
+                      className={styles.btnNewPO}
+                      onClick={() => navigate('/purchase/orders/create', { state: { supplierId: s.id, supplierName: s.name } })}
+                      title="Create a new PO for this supplier"
+                    >
+                      + PO
+                    </button>
                   </div>
                 </td>
               </tr>
@@ -83,4 +128,5 @@ const SupplierList = () => {
     </div>
   );
 };
+
 export default SupplierList;
