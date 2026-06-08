@@ -1,24 +1,33 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import purchaseService from '../../services/purchaseService';
 import inventoryService from '../../services/inventoryService';
 import styles from './CreatePurchaseOrder.module.css';
 const CreatePurchaseOrder = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const prefill = location.state || {};
   const [suppliers, setSuppliers] = useState([]);
   const [sectors, setSectors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState(null);
+  const [prefillBanner, setPrefillBanner] = useState(!!prefill.suggestedItems);
   const [formData, setFormData] = useState({
-    supplierId: '',
+    supplierId: prefill.supplierId ? String(prefill.supplierId) : '',
     expectedDeliveryDate: '',
     sectorId: '',
     notes: '',
   });
-  const [items, setItems] = useState([
-    { productName: '', quantityOrdered: 1, unitPrice: 0 }
-  ]);
+  const [items, setItems] = useState(
+    prefill.suggestedItems && prefill.suggestedItems.length > 0
+      ? prefill.suggestedItems.map(i => ({
+          productName: i.productName || '',
+          quantityOrdered: i.quantityOrdered || 1,
+          unitPrice: i.unitPrice || 0,
+        }))
+      : [{ productName: '', quantityOrdered: 1, unitPrice: 0 }]
+  );
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -96,6 +105,13 @@ const CreatePurchaseOrder = () => {
           </div>
         </div>
       </div>
+      {/* Pre-fill banner */}
+      {prefillBanner && (
+        <div className={styles.prefillBanner}>
+          <span>✅ <strong>Auto-filled from Reorder Suggestions</strong> — Supplier and items have been pre-populated. Review and adjust before submitting.</span>
+          <button className={styles.prefillDismiss} onClick={() => setPrefillBanner(false)}>✕</button>
+        </div>
+      )}
       {message && (
         <div className={`${styles.alert} ${styles[message.type]}`}>
           {message.text}

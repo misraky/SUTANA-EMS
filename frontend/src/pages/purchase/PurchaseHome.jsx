@@ -90,60 +90,91 @@ const PurchaseHome = () => {
         </div>
       </div>
 
-      {/* Reorder Suggestions */}
-      {suggestions.length > 0 && (
-        <div className={styles.reorderSection}>
-          <div className={styles.reorderHeader}>
-            <h2 className={styles.cardTitle} style={{ borderBottom: 'none', paddingBottom: 0, marginBottom: 0 }}>
-              🔔 Auto-Reorder Suggestions
-            </h2>
-            <span className={styles.reorderCount}>{suggestions.length} items below reorder level</span>
+      {/* Reorder Suggestions — grouped by supplier */}
+      {suggestions.length > 0 && (() => {
+        // Group suggestions by suggested_supplier_id
+        const groups = {};
+        suggestions.forEach(item => {
+          const key = item.suggested_supplier_id || 'unassigned';
+          if (!groups[key]) {
+            groups[key] = {
+              supplierId: item.suggested_supplier_id,
+              supplierName: item.supplier_name || 'Unassigned Supplier',
+              items: []
+            };
+          }
+          groups[key].items.push(item);
+        });
+        const groupList = Object.values(groups);
+        return (
+          <div className={styles.reorderSection}>
+            <div className={styles.reorderHeader}>
+              <h2 className={styles.cardTitle} style={{ borderBottom: 'none', paddingBottom: 0, marginBottom: 0 }}>
+                🔔 Auto-Reorder Suggestions
+              </h2>
+              <span className={styles.reorderCount}>{suggestions.length} items below reorder level</span>
+            </div>
+            <p className={styles.reorderHint}>
+              Items grouped by suggested supplier. Prices are based on your last purchase orders. Click "Create PO" to open a pre-filled order.
+            </p>
+            {groupList.map((group, gi) => (
+              <div key={gi} className={styles.reorderGroup}>
+                <div className={styles.reorderGroupHeader}>
+                  <span className={styles.reorderGroupName}>🏭 {group.supplierName}</span>
+                  <span className={styles.reorderGroupBadge}>{group.items.length} item{group.items.length > 1 ? 's' : ''}</span>
+                  <button
+                    className={styles.btnCreatePO}
+                    onClick={() => navigate('/purchase/orders/create', {
+                      state: {
+                        supplierId: group.supplierId,
+                        supplierName: group.supplierName,
+                        suggestedItems: group.items.map(item => ({
+                          productName: item.name,
+                          productId: item.id,
+                          quantityOrdered: item.suggested_order_qty,
+                          unitPrice: item.suggested_unit_price || 0
+                        }))
+                      }
+                    })}
+                  >
+                    Create PO for {group.supplierName} →
+                  </button>
+                </div>
+                <div className={styles.reorderTable}>
+                  <table className={styles.table}>
+                    <thead>
+                      <tr>
+                        <th>SKU</th>
+                        <th>Product</th>
+                        <th>Current Stock</th>
+                        <th>Reorder Level</th>
+                        <th>Suggested Qty</th>
+                        <th>Est. Unit Price</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {group.items.map((item) => (
+                        <tr key={item.id}>
+                          <td className={styles.skuCell}>{item.sku}</td>
+                          <td><strong>{item.name}</strong></td>
+                          <td>
+                            <span className={item.current_stock === 0 ? styles.outBadge : styles.lowBadge}>
+                              {formatNumber(item.current_stock)} {item.unit || ''}
+                            </span>
+                          </td>
+                          <td>{formatNumber(item.reorder_level)}</td>
+                          <td className={styles.suggestedQty}>{formatNumber(item.suggested_order_qty)}</td>
+                          <td>{formatCurrency(item.suggested_unit_price)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ))}
           </div>
-          <p className={styles.reorderHint}>
-            These products are at or below their reorder level. Suggested quantities and prices are based on your last purchase orders.
-          </p>
-          <div className={styles.reorderTable}>
-            <table className={styles.table}>
-              <thead>
-                <tr>
-                  <th>SKU</th>
-                  <th>Product</th>
-                  <th>Current Stock</th>
-                  <th>Reorder Level</th>
-                  <th>Suggested Qty</th>
-                  <th>Est. Unit Price</th>
-                  <th>Supplier</th>
-                </tr>
-              </thead>
-              <tbody>
-                {suggestions.slice(0, 10).map((item) => (
-                  <tr key={item.id}>
-                    <td className={styles.skuCell}>{item.sku}</td>
-                    <td><strong>{item.name}</strong></td>
-                    <td>
-                      <span className={item.current_stock === 0 ? styles.outBadge : styles.lowBadge}>
-                        {formatNumber(item.current_stock)} {item.unit || ''}
-                      </span>
-                    </td>
-                    <td>{formatNumber(item.reorder_level)}</td>
-                    <td className={styles.suggestedQty}>{formatNumber(item.suggested_order_qty)}</td>
-                    <td>{formatCurrency(item.suggested_unit_price)}</td>
-                    <td>{item.supplier_name || '—'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <div className={styles.reorderActions}>
-            <button
-              className={styles.btnCreatePO}
-              onClick={() => navigate('/purchase/orders/create')}
-            >
-              Create Purchase Order →
-            </button>
-          </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Recent POs + Top Suppliers */}
       <div className={styles.contentGrid}>
