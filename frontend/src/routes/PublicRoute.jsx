@@ -5,18 +5,33 @@ const PublicRoute = ({ children }) => {
   const isAuthenticated = authService.isAuthenticated();
   if (isAuthenticated) {
     const user = authService.getCurrentUser();
-    const role = user?.roles?.[0] || 'Customer';
     const dashboardMap = {
       'Admin': '/admin',
       'CEO': '/ceo',
       'Finance': '/finance',
-      'Printing Supervisor': '/printing',
       'Purchase': '/purchase',
       'Store Worker': '/store',
       'Sales/Cashier': '/sales',
+      'Printing Supervisor': '/printing',
+      'Farming Manager': '/farming',
+      'Pharmacist': '/pharmacy',
+      'Car Renting Manager': '/car-renting',
       'Customer': '/customer'
     };
-    return <Navigate to={dashboardMap[role] || '/'} replace />;
+    const rolePriority = [
+      'Admin', 'CEO', 'Finance', 'Purchase', 'Store Worker', 'Sales/Cashier', 
+      'Printing Supervisor', 'Farming Manager', 'Pharmacist', 'Car Renting Manager', 'Customer'
+    ];
+    let targetPath = '/customer';
+    if (user?.roles) {
+      for (const r of rolePriority) {
+        if (user.roles.includes(r)) {
+          targetPath = dashboardMap[r];
+          break;
+        }
+      }
+    }
+    return <Navigate to={targetPath} replace />;
   }
   return children;
 };
