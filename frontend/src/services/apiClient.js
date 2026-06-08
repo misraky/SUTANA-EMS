@@ -25,23 +25,7 @@ apiClient.interceptors.response.use(
   (response) => response.data,
   (error) => {
     if (error.response) {
-      // Handle 403 "must change password" responses from auth middleware
-      if (
-        error.response.status === 403 &&
-        error.response.data?.message?.toLowerCase().includes('password change required') &&
-        !window.location.pathname.includes('/auth/change-password')
-      ) {
-        // Ensure localStorage reflects the requirement
-        try {
-          const user = JSON.parse(localStorage.getItem('user'));
-          if (user) {
-            user.mustChangePassword = true;
-            localStorage.setItem('user', JSON.stringify(user));
-          }
-        } catch (_) { /* ignore parse errors */ }
-        window.location.href = '/auth/change-password';
-        return new Promise(() => {}); // prevent further error handling
-      }
+      // Change password interceptor removed
       if (error.response.status === 401 && !window.location.pathname.includes('/login')) {
         localStorage.removeItem('token');
         localStorage.removeItem('user');

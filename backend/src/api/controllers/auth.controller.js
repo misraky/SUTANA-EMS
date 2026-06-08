@@ -81,8 +81,6 @@ exports.login = catchAsync(async (req, res) => {
     lockout_until: null,
     updated_at: db.fn.now()
   });
-  if (user.must_change_password) {
-  }
   const roleNames = user.role_names ? user.role_names.split(',') : [];
   let allPermissions = [];
   if (user.permission_sets) {
@@ -159,6 +157,9 @@ exports.login = catchAsync(async (req, res) => {
 exports.register = catchAsync(async (req, res) => {
   const { fullName, email, phone, password } = req.body;
   const ip = req.ip;
+  if (!password) {
+    throw new AppError('Password is required', 400);
+  }
   const existingUser = await db('users')
     .where('email', email)
     .orWhere('phone', phone)
@@ -166,9 +167,7 @@ exports.register = catchAsync(async (req, res) => {
   if (existingUser) {
     throw new AppError('User with this email or phone already exists', 400);
   }
-  const isTemporaryPassword = !password;
-  const actualPassword = password || generateTemporaryPassword();
-  const hashedPassword = await hashPassword(actualPassword);
+  const hashedPassword = await hashPassword(password);
   const customerRole = await db('roles').where('name', 'Customer').first();
   const activeStatus = await db('user_statuses').where('status_code', 'active').first();
   const customerDept = await db('departments').where('name', 'Customer').first();
@@ -183,7 +182,7 @@ exports.register = catchAsync(async (req, res) => {
       password: hashedPassword,
       department_id: customerDept.id,
       status_id: activeStatus.id,
-      must_change_password: isTemporaryPassword, 
+      must_change_password: false, 
       created_at: db.fn.now()
     });
     await trx('user_roles').insert({
@@ -202,20 +201,10 @@ exports.register = catchAsync(async (req, res) => {
     });
     return userId;
   });
-  if (isTemporaryPassword) {
-    await sendEmail({
-      to: email,
-      subject: 'Welcome to Sutana EMS',
-      template: 'welcome',
-      data: { name: fullName, email, temporaryPassword: actualPassword, loginUrl: `${config.frontendUrl}/login` }
-    }).catch(err => console.error('Email failed:', err.message));
-  }
   await audit('USER_REGISTERED', result, { ip, details: { email, phone } });
   res.status(201).json({
     status: 'success',
-    message: isTemporaryPassword 
-      ? 'Registration successful. Check your email for temporary password.'
-      : 'Registration successful. You can now login with your password.'
+    message: 'Registration successful. You can now login with your password.'
   });
 });
 exports.logout = catchAsync(async (req, res) => {

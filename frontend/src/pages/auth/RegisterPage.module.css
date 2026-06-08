@@ -148,3 +148,10 @@
   font-weight: 600;
 }
 .loginLink:hover { color: #0057CC; text-decoration: underline; }
+.staffNote {
+  margin-top: 0.75rem;
+  text-align: center;
+  font-size: 0.8rem;
+  color: #9CA3AF;
+  font-style: italic;
+}

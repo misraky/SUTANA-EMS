@@ -18,7 +18,7 @@ const LoginPage = () => {
     setError('');
     try {
       const user = await authService.login(formData);
-      // Determine dashboard based on role
+      // Determine dashboard based on role — no forced password change redirect
       if (user.roles?.includes('Admin')) navigate('/admin');
       else if (user.roles?.includes('CEO')) navigate('/ceo');
       else if (user.roles?.includes('Finance')) navigate('/finance');
@@ -26,6 +26,9 @@ const LoginPage = () => {
       else if (user.roles?.includes('Store Worker')) navigate('/store');
       else if (user.roles?.includes('Sales/Cashier')) navigate('/sales');
       else if (user.roles?.includes('Printing Supervisor')) navigate('/printing');
+      else if (user.roles?.includes('Farming Manager')) navigate('/farming');
+      else if (user.roles?.includes('Pharmacist')) navigate('/pharmacy');
+      else if (user.roles?.includes('Car Renting Manager')) navigate('/car-renting');
       else navigate('/customer');
     } catch (err) {
       setError(err.message || 'Invalid credentials. Please try again.');
@@ -89,9 +92,13 @@ const LoginPage = () => {
               {loading ? 'Signing in...' : 'Sign In'}
             </button>
           </form>
-          <p className={styles.registerPrompt}>
-            Don't have an account? <Link to="/auth/register" className={styles.registerLink}>Register here</Link>
-          </p>
+          <div className={styles.registerSection}>
+            <div className={styles.divider}><span>New here?</span></div>
+            <Link to="/auth/register" className={styles.registerBtn}>
+              🛍️ Register as a Customer
+            </Link>
+            <p className={styles.adminNote}>Admin &amp; staff accounts are created by an administrator.</p>
+          </div>
         </div>
       </div>
     </div>

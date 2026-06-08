@@ -74,6 +74,26 @@ const userIdParamValidation = [
     .toInt()
 ];
 router.get(
+  '/export',
+  authenticate,
+  authorize(['users:read', 'reports:export']),
+  query('format').isIn(['csv', 'excel']).withMessage('Format must be csv or excel'),
+  validate,
+  UserController.exportUsers
+);
+router.get(
+  '/departments',
+  authenticate,
+  UserController.getDepartments
+);
+router.get(
+  '/roles',
+  authenticate,
+  authorize(['users:read']),
+  UserController.getRoles
+);
+
+router.get(
   '/',
   authenticate,
   authorize(['users:read']),
@@ -155,24 +175,5 @@ router.delete(
   param('roleId').isInt(),
   validate,
   UserController.removeRole
-);
-router.get(
-  '/export',
-  authenticate,
-  authorize(['users:read', 'reports:export']),
-  query('format').isIn(['csv', 'excel']).withMessage('Format must be csv or excel'),
-  validate,
-  UserController.exportUsers
-);
-router.get(
-  '/departments',
-  authenticate,
-  UserController.getDepartments
-);
-router.get(
-  '/roles',
-  authenticate,
-  authorize(['users:read']),
-  UserController.getRoles
 );
 module.exports = router;

@@ -11,6 +11,7 @@ const AdminDashboard = () => {
   const menuItems = [
     { label: 'Overview', path: '/admin/overview', icon: 'dashboard' },
     { label: 'Users', path: '/admin/users', icon: 'users' },
+    { label: 'Customers', path: '/customer', icon: 'users' },
     { label: 'Purchase Orders', path: '/purchase/orders', icon: 'clipboard' },
     { label: 'Audit Logs', path: '/admin/audit', icon: 'clipboard' },
     { label: 'Backups', path: '/admin/backups', icon: 'database' },

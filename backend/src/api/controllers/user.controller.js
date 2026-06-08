@@ -103,7 +103,7 @@ exports.getUserById = catchAsync(async (req, res) => {
   });
 });
 exports.createUser = catchAsync(async (req, res) => {
-  const { fullName, email, phone, departmentId, roleIds, statusId } = req.body;
+  const { fullName, email, phone, password, departmentId, roleIds, statusId } = req.body;
   const adminId = req.user.id;
   const ip = req.ip;
   const existingUser = await db('users')
@@ -113,8 +113,10 @@ exports.createUser = catchAsync(async (req, res) => {
   if (existingUser) {
     throw new AppError('User with this email or phone already exists', 400);
   }
-  const tempPassword = generateTemporaryPassword();
-  const hashedPassword = await hashPassword(tempPassword);
+  if (!password) {
+    throw new AppError('Password is required', 400);
+  }
+  const hashedPassword = await hashPassword(password);
   let finalStatusId = statusId;
   if (!finalStatusId) {
     const activeStatus = await db('user_statuses').where('status_code', 'active').first();
@@ -128,7 +130,7 @@ exports.createUser = catchAsync(async (req, res) => {
       password: hashedPassword,
       department_id: departmentId,
       status_id: finalStatusId,
-      must_change_password: true,
+      must_change_password: false,
       created_by: adminId,
       created_at: db.fn.now()
     });
@@ -149,13 +151,12 @@ exports.createUser = catchAsync(async (req, res) => {
     data: {
       name: fullName,
       email,
-      temporaryPassword: tempPassword,
       loginUrl: `${process.env.FRONTEND_URL}/login`
     }
   });
   await sendSMS({
     to: phone,
-    message: `Welcome ${fullName} to Sutana EMS! Use email ${email} and temporary password sent to your email to login. Please change your password after first login.`
+    message: `Welcome ${fullName} to Sutana EMS! You can now login using your email: ${email}.`
   }).catch(err => console.error('Failed to send SMS:', err.message));
   await audit('USER_CREATED', result, {
     ip,
@@ -163,7 +164,7 @@ exports.createUser = catchAsync(async (req, res) => {
   });
   res.status(201).json({
     status: 'success',
-    message: 'User created successfully. Welcome email sent with temporary password.',
+    message: 'User created successfully.',
     data: { userId: result }
   });
 });
@@ -297,14 +298,17 @@ exports.restoreUser = catchAsync(async (req, res) => {
 });
 exports.forcePasswordReset = catchAsync(async (req, res) => {
   const { id } = req.params;
+  const { password } = req.body;
   const adminId = req.user.id;
   const ip = req.ip;
+  if (!password) {
+    throw new AppError('Password is required', 400);
+  }
   const user = await db('users').where('id', id).whereNull('deleted_at').first();
   if (!user) {
     throw new AppError('User not found', 404);
   }
-  const tempPassword = generateTemporaryPassword();
-  const hashedPassword = await hashPassword(tempPassword);
+  const hashedPassword = await hashPassword(password);
   await transaction(async (trx) => {
     await trx('password_history').insert({
       user_id: id,
@@ -314,24 +318,14 @@ exports.forcePasswordReset = catchAsync(async (req, res) => {
       .where('id', id)
       .update({
         password: hashedPassword,
-        must_change_password: true,
+        must_change_password: false,
         updated_at: db.fn.now()
       });
-  });
-  await sendEmail({
-    to: user.email,
-    subject: 'Password Reset by Administrator',
-    template: 'force-password-reset',
-    data: {
-      name: user.full_name,
-      temporaryPassword: tempPassword,
-      loginUrl: `${process.env.FRONTEND_URL}/login`
-    }
   });
   await audit('FORCE_PASSWORD_RESET', id, { ip, details: { resetBy: adminId } });
   res.json({
     status: 'success',
-    message: 'Password reset successfully. User has been notified via email.'
+    message: 'Password reset successfully.'
   });
 });
 exports.getUserPermissions = catchAsync(async (req, res) => {
