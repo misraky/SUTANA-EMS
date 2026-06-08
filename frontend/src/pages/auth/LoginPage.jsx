@@ -46,6 +46,13 @@ const LoginPage = () => {
       </div>
       <div className={styles.formSection}>
         <div className={styles.formWrapper}>
+          <button
+            type="button"
+            onClick={() => navigate('/')}
+            className={styles.backHome}
+          >
+            ← Back to Home
+          </button>
           <div className={styles.logo}>SUTANA</div>
           <h2>Sign In</h2>
           <p className={styles.subtitle}>Enter your credentials to access your dashboard.</p>

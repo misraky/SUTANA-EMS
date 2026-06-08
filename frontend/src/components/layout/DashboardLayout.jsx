@@ -42,7 +42,7 @@ const DashboardLayout = ({ children, menuItems }) => {
   const location = useLocation();
   const handleLogout = () => {
     logout();
-    navigate('/login');
+    navigate('/');
   };
   const handleNav = (path) => {
     navigate(path);
