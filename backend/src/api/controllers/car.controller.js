@@ -17,7 +17,7 @@ exports.getAllCarsPublic = async (req, res) => {
 
 exports.getAllCarsManager = async (req, res) => {
   try {
-    const cars = await carRepository.findAll({ filters: { deleted_at: null } });
+    const cars = await carRepository.findAll({});
     res.status(200).json({
       status: 'success',
       data: cars.map(car => car.toJSON())
@@ -32,12 +32,11 @@ exports.createCar = async (req, res) => {
   try {
     const carModel = CarModel.fromRequest(req.body);
     
-    // Handle image uploads if any
     if (req.files) {
-      if (req.files.image1) carModel.image1 = `/uploads/${req.files.image1[0].filename}`;
-      if (req.files.image2) carModel.image2 = `/uploads/${req.files.image2[0].filename}`;
-      if (req.files.image3) carModel.image3 = `/uploads/${req.files.image3[0].filename}`;
-      if (req.files.image4) carModel.image4 = `/uploads/${req.files.image4[0].filename}`;
+      if (req.files.image1) carModel.image1 = `/uploads/cars/${req.files.image1[0].filename}`;
+      if (req.files.image2) carModel.image2 = `/uploads/cars/${req.files.image2[0].filename}`;
+      if (req.files.image3) carModel.image3 = `/uploads/cars/${req.files.image3[0].filename}`;
+      if (req.files.image4) carModel.image4 = `/uploads/cars/${req.files.image4[0].filename}`;
     }
 
     const validation = carModel.validate();
@@ -78,12 +77,11 @@ exports.updateCar = async (req, res) => {
 
     const carModel = CarModel.fromRequest({ ...existingCar.toJSON(), ...req.body });
 
-    // Handle image uploads if any
     if (req.files) {
-      if (req.files.image1) carModel.image1 = `/uploads/${req.files.image1[0].filename}`;
-      if (req.files.image2) carModel.image2 = `/uploads/${req.files.image2[0].filename}`;
-      if (req.files.image3) carModel.image3 = `/uploads/${req.files.image3[0].filename}`;
-      if (req.files.image4) carModel.image4 = `/uploads/${req.files.image4[0].filename}`;
+      if (req.files.image1) carModel.image1 = `/uploads/cars/${req.files.image1[0].filename}`;
+      if (req.files.image2) carModel.image2 = `/uploads/cars/${req.files.image2[0].filename}`;
+      if (req.files.image3) carModel.image3 = `/uploads/cars/${req.files.image3[0].filename}`;
+      if (req.files.image4) carModel.image4 = `/uploads/cars/${req.files.image4[0].filename}`;
     }
 
     const validation = carModel.validate();
@@ -127,5 +125,31 @@ exports.deleteCar = async (req, res) => {
   } catch (error) {
     logger.error('Error deleting car:', error);
     res.status(500).json({ status: 'error', message: 'Failed to delete vehicle' });
+  }
+};
+
+exports.restoreCar = async (req, res) => {
+  try {
+    const { id } = req.params;
+    await carRepository.restore(id);
+    res.status(200).json({ status: 'success', message: 'Vehicle restored successfully' });
+  } catch (error) {
+    logger.error('Error restoring car:', error);
+    res.status(500).json({ status: 'error', message: 'Failed to restore vehicle' });
+  }
+};
+
+exports.hardDeleteCar = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const existingCar = await carRepository.findById(id);
+    if (!existingCar) {
+      return res.status(404).json({ status: 'error', message: 'Vehicle not found' });
+    }
+    await carRepository.delete(id);
+    res.status(200).json({ status: 'success', message: 'Vehicle permanently deleted' });
+  } catch (error) {
+    logger.error('Error hard deleting car:', error);
+    res.status(500).json({ status: 'error', message: 'Failed to permanently delete vehicle' });
   }
 };

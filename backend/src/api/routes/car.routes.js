@@ -23,5 +23,7 @@ router.get('/', carController.getAllCarsManager);
 router.post('/', uploadFields, carController.createCar);
 router.put('/:id', uploadFields, carController.updateCar);
 router.delete('/:id', carController.deleteCar);
+router.patch('/:id/restore', carController.restoreCar);
+router.delete('/:id/permanent', carController.hardDeleteCar);
 
 module.exports = router;

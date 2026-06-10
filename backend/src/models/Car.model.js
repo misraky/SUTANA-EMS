@@ -35,8 +35,8 @@ class CarModel {
     if (!['Petrol', 'Diesel', 'Hybrid'].includes(this.fuelType)) {
       errors.push('Fuel type must be Petrol, Diesel, or Hybrid');
     }
-    if (!['4x4', 'Sedan', 'Hatchback', 'Cargo', 'SUV'].includes(this.carType)) {
-      errors.push('Invalid car type');
+    if (!this.carType || this.carType.length < 1) {
+      errors.push('Car type is required');
     }
     if (!['Available', 'Booked', 'Maintenance'].includes(this.availability)) {
       errors.push('Invalid availability status');
@@ -63,7 +63,8 @@ class CarModel {
       image3: this.image3,
       image4: this.image4,
       createdAt: this.createdAt,
-      updatedAt: this.updatedAt
+      updatedAt: this.updatedAt,
+      deleted_at: this.deletedAt
     };
   }
 
