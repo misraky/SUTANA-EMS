@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { Printer, Pill, Car, Wheat, Store, Newspaper, Bell, Video, GalleryHorizontal } from 'lucide-react';
 import './PublicLayout.css';
 import ToggleSection from './ToggleSection';
 
@@ -163,6 +164,7 @@ const ServicesPage = () => {
 export const PublicNav = () => {
   const navigate = useNavigate();
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [newsDropdownOpen, setNewsDropdownOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
   const BrandIcon = () => (
@@ -206,32 +208,33 @@ export const PublicNav = () => {
             {dropdownOpen && (
               <div className="pub-dropdown-grid">
                 <Link to="/services/printing" className="pub-dropdown-item" onClick={() => setDropdownOpen(false)}>
-                  <span className="pub-dropdown-icon">🖨️</span>
+                  <span className="pub-dropdown-icon"><Printer size={18} strokeWidth={2} /></span>
                   <span>Commercial Printing</span>
                 </Link>
                 <Link to="/services/pharmacy" className="pub-dropdown-item" onClick={() => setDropdownOpen(false)}>
-                  <span className="pub-dropdown-icon">💊</span>
+                  <span className="pub-dropdown-icon"><Pill size={18} strokeWidth={2} /></span>
                   <span>Pharmacy &amp; Health</span>
                 </Link>
-                <Link to="/services/car-rental" className="pub-dropdown-item" onClick={() => setDropdownOpen(false)}>
-                  <span className="pub-dropdown-icon">🚗</span>
+                <Link to="/fleet-gallery" className="pub-dropdown-item" onClick={() => setDropdownOpen(false)}>
+                  <span className="pub-dropdown-icon"><Car size={18} strokeWidth={2} /></span>
                   <span>Car Rental</span>
                 </Link>
                 <Link to="/services/farming" className="pub-dropdown-item" onClick={() => setDropdownOpen(false)}>
-                  <span className="pub-dropdown-icon">🌾</span>
+                  <span className="pub-dropdown-icon"><Wheat size={18} strokeWidth={2} /></span>
                   <span>Farming &amp; Agriculture</span>
                 </Link>
                 <Link to="/services/retail" className="pub-dropdown-item" onClick={() => setDropdownOpen(false)}>
-                  <span className="pub-dropdown-icon">🏪</span>
+                  <span className="pub-dropdown-icon"><Store size={18} strokeWidth={2} /></span>
                   <span>Retail Store</span>
                 </Link>
               </div>
             )}
           </div>
-          <Link to="/fleet-gallery"   className="pub-link-modern">Fleet Gallery</Link>
           <Link to="/pharmacy-directory" className="pub-link-modern">Pharmacy Directory</Link>
           <Link to="/about"           className="pub-link-modern">About Us</Link>
-          {/* Search — same gap as other nav links */}
+          {/* Track Order — left of search */}
+          <button className="pub-link-btn" onClick={() => navigate('/track-order')}>Track Order</button>
+          {/* Search bar */}
           <div className="pub-search-bar">
             <svg className="pub-search-bar-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
@@ -244,8 +247,35 @@ export const PublicNav = () => {
               onKeyDown={handleSearchKey}
             />
           </div>
-          {/* Track Order — nav-link style, equidistant */}
-          <button className="pub-link-btn" onClick={() => navigate('/track-order')}>Track Order</button>
+          {/* News dropdown — rightmost nav item */}
+          <div
+            className="pub-dropdown-wrapper"
+            onMouseEnter={() => setNewsDropdownOpen(true)}
+            onMouseLeave={() => setNewsDropdownOpen(false)}
+          >
+            <span className={`pub-link-modern ${newsDropdownOpen ? 'active' : ''}`}>
+              News
+              <svg className="pub-chevron" width="12" height="12" viewBox="0 0 12 12" fill="none">
+                <path d="M2 4L6 8L10 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </span>
+            {newsDropdownOpen && (
+              <div className="pub-dropdown-grid">
+                <Link to="/news/notice" className="pub-dropdown-item" onClick={() => setNewsDropdownOpen(false)}>
+                  <span className="pub-dropdown-icon"><Bell size={18} strokeWidth={2} /></span>
+                  <span>Notice</span>
+                </Link>
+                <Link to="/news/video" className="pub-dropdown-item" onClick={() => setNewsDropdownOpen(false)}>
+                  <span className="pub-dropdown-icon"><Video size={18} strokeWidth={2} /></span>
+                  <span>Video</span>
+                </Link>
+                <Link to="/news/gallery" className="pub-dropdown-item" onClick={() => setNewsDropdownOpen(false)}>
+                  <span className="pub-dropdown-icon"><GalleryHorizontal size={18} strokeWidth={2} /></span>
+                  <span>Gallery</span>
+                </Link>
+              </div>
+            )}
+          </div>
         </nav>
 
         {/* Right: Login only */}

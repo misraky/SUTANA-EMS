@@ -8,6 +8,7 @@ import CustomerReceipts from './CustomerReceipts';
 import CustomerProfile from './CustomerProfile';
 import CustomerInvoices from './CustomerInvoices';
 import SupportTickets from './SupportTickets';
+import CustomerRentals from './CustomerRentals';
 import styles from './CustomerPortal.module.css';
 import customerService from '../../services/customerService';
 import { formatCurrency } from '../../utils/formatters';
@@ -48,6 +49,8 @@ const CustomerPortalHome = () => {
 const CustomerPortal = () => {
   const menuItems = [
     { label: 'Portal Home', path: '/customer/portal', icon: 'home' },
+    { label: 'Browse Cars', path: '/fleet-gallery', icon: 'car', isExternal: true },
+    { label: 'My Rentals', path: '/customer/rentals', icon: 'key' },
     { label: 'My Orders', path: '/customer/orders', icon: 'package' },
     { label: 'Place Order', path: '/customer/new-order', icon: 'plus-circle' },
     { label: 'Receipts', path: '/customer/receipts', icon: 'file-text' },
@@ -60,6 +63,7 @@ const CustomerPortal = () => {
         <Routes>
           <Route path="portal" element={<CustomerPortalHome />} />
           <Route path="orders" element={<CustomerOrders />} />
+          <Route path="rentals" element={<CustomerRentals />} />
           <Route path="orders/:id/track" element={<OrderTracking />} />
           <Route path="new-order" element={<CustomerOrderForm />} />
           <Route path="receipts" element={<CustomerReceipts />} />

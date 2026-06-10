@@ -1,9 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Car, Plus, Edit2, Trash2, Image as ImageIcon, 
-  Settings2, Fuel, Users, Package, Search, X 
+  Settings2, Fuel, Users, Package, Search, X, RotateCcw, EyeOff 
 } from 'lucide-react';
 import carService from '../../services/carService';
+
+const getImageUrl = (path) => {
+  if (!path) return null;
+  if (path.startsWith('http')) return path;
+  const baseUrl = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1').replace('/api/v1', '');
+  return `${baseUrl}${path}`;
+};
 
 const FleetManager = () => {
   const [cars, setCars] = useState([]);
@@ -16,7 +23,7 @@ const FleetManager = () => {
     seats: 4,
     transmission: 'Manual',
     fuelType: 'Petrol',
-    carType: 'Sedan',
+    carType: '',
     description: '',
     availability: 'Available',
   });
@@ -24,7 +31,6 @@ const FleetManager = () => {
     image1: null,
     image2: null,
     image3: null,
-    image4: null
   });
 
   useEffect(() => {
@@ -67,8 +73,10 @@ const FleetManager = () => {
 
       if (editingCar) {
         await carService.updateCar(editingCar.id, data);
+        alert('Vehicle updated successfully!');
       } else {
         await carService.createCar(data);
+        alert('Vehicle saved successfully!');
       }
       setIsFormOpen(false);
       setEditingCar(null);
@@ -80,14 +88,41 @@ const FleetManager = () => {
     }
   };
 
-  const handleDelete = async (id) => {
-    if (window.confirm('Are you sure you want to delete this vehicle?')) {
+  const handleSoftDelete = async (id) => {
+    if (window.confirm('Hide this vehicle from customers? (Soft Delete — can be restored)')) {
       try {
         await carService.deleteCar(id);
+        alert('Vehicle hidden from customers.');
         fetchCars();
       } catch (error) {
-        console.error('Failed to delete car:', error);
+        console.error('Failed to soft delete car:', error);
+        alert('Error hiding car');
+      }
+    }
+  };
+
+  const handleHardDelete = async (id) => {
+    if (window.confirm('⚠️ PERMANENTLY delete this vehicle? This cannot be undone!')) {
+      try {
+        await carService.hardDeleteCar(id);
+        alert('Vehicle permanently deleted.');
+        fetchCars();
+      } catch (error) {
+        console.error('Failed to permanently delete car:', error);
         alert('Error deleting car');
+      }
+    }
+  };
+
+  const handleRestore = async (id) => {
+    if (window.confirm('Restore this vehicle?')) {
+      try {
+        await carService.restoreCar(id);
+        alert('Vehicle restored successfully!');
+        fetchCars();
+      } catch (error) {
+        console.error('Failed to restore car:', error);
+        alert('Error restoring car');
       }
     }
   };
@@ -104,19 +139,20 @@ const FleetManager = () => {
       description: car.description,
       availability: car.availability,
     });
-    setImages({ image1: null, image2: null, image3: null, image4: null });
+    setImages({ image1: null, image2: null, image3: null });
     setIsFormOpen(true);
   };
 
   const resetForm = () => {
     setFormData({
-      name: '', dailyRate: '', seats: 4, transmission: 'Manual', 
-      fuelType: 'Petrol', carType: 'Sedan', description: '', availability: 'Available'
+      name: '', dailyRate: '', seats: 4, transmission: 'Manual',
+      fuelType: 'Petrol', carType: '', description: '', availability: 'Available'
     });
-    setImages({ image1: null, image2: null, image3: null, image4: null });
+    setImages({ image1: null, image2: null, image3: null });
   };
 
-  const getStatusColor = (status) => {
+  const getStatusColor = (status, isDeleted) => {
+    if (isDeleted) return '#6B7280';
     switch(status) {
       case 'Available': return '#10B981';
       case 'Booked': return '#3B82F6';
@@ -165,8 +201,8 @@ const FleetManager = () => {
                 <input required name="name" value={formData.name} onChange={handleInputChange} style={inputStyle} placeholder="e.g. Toyota Camry 2023" />
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', color: '#374151', marginBottom: '8px' }}>Daily Rate ($)</label>
-                <input required type="number" name="dailyRate" value={formData.dailyRate} onChange={handleInputChange} style={inputStyle} />
+                <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', color: '#374151', marginBottom: '8px' }}>Daily Rate (ETB / Birr)</label>
+                <input required type="number" name="dailyRate" value={formData.dailyRate} onChange={handleInputChange} style={inputStyle} placeholder="e.g. 2500" />
               </div>
               <div>
                 <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', color: '#374151', marginBottom: '8px' }}>Seats</label>
@@ -189,13 +225,7 @@ const FleetManager = () => {
               </div>
               <div>
                 <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', color: '#374151', marginBottom: '8px' }}>Vehicle Type</label>
-                <select name="carType" value={formData.carType} onChange={handleInputChange} style={inputStyle}>
-                  <option value="Sedan">Sedan</option>
-                  <option value="SUV">SUV</option>
-                  <option value="Hatchback">Hatchback</option>
-                  <option value="4x4">4x4</option>
-                  <option value="Cargo">Cargo</option>
-                </select>
+                <input required name="carType" value={formData.carType} onChange={handleInputChange} style={inputStyle} placeholder="e.g. Sedan, SUV, 4x4, Minibus..." />
               </div>
               <div>
                 <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', color: '#374151', marginBottom: '8px' }}>Status</label>
@@ -213,9 +243,9 @@ const FleetManager = () => {
             </div>
 
             <div style={{ marginBottom: '2rem' }}>
-              <h3 style={{ fontSize: '16px', fontWeight: '500', marginBottom: '1rem' }}>Vehicle Images (4 required)</h3>
+              <h3 style={{ fontSize: '16px', fontWeight: '500', marginBottom: '1rem' }}>Vehicle Images (up to 3)</h3>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
-                {[1, 2, 3, 4].map(num => (
+                {[1, 2, 3].map(num => (
                   <div key={num} style={{ border: '2px dashed #E5E7EB', borderRadius: '8px', padding: '1rem', textAlign: 'center' }}>
                     <label style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
                       <ImageIcon color="#9CA3AF" size={24} />
@@ -258,15 +288,19 @@ const FleetManager = () => {
                   <td style={{ padding: '1rem' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                       <div style={{ width: '48px', height: '48px', borderRadius: '8px', backgroundColor: '#F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-                        {car.image1 ? <img src={car.image1} alt={car.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <Car color="#9CA3AF" />}
+                        {car.image1 ? <img src={getImageUrl(car.image1)} alt={car.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <Car color="#9CA3AF" />}
                       </div>
                       <div>
-                        <p style={{ margin: 0, fontWeight: '600', color: '#111827' }}>{car.name}</p>
-                        <p style={{ margin: 0, fontSize: '13px', color: '#6B7280' }}>{car.carType}</p>
+                        <p style={{ margin: 0, fontWeight: '600', color: car.deleted_at ? '#9CA3AF' : '#111827', textDecoration: car.deleted_at ? 'line-through' : 'none' }}>
+                          {car.name}
+                        </p>
+                        <p style={{ margin: 0, fontSize: '13px', color: '#6B7280' }}>
+                          {car.carType} {car.deleted_at && <span style={{ color: '#EF4444', fontWeight: 'bold' }}>(Deleted)</span>}
+                        </p>
                       </div>
                     </div>
                   </td>
-                  <td style={{ padding: '1rem', color: '#111827', fontWeight: '500' }}>${car.dailyRate}</td>
+                  <td style={{ padding: '1rem', color: '#111827', fontWeight: '500' }}>ETB {Number(car.dailyRate).toLocaleString()}</td>
                   <td style={{ padding: '1rem' }}>
                     <div style={{ display: 'flex', gap: '12px', color: '#6B7280', fontSize: '13px' }}>
                       <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Settings2 size={14} /> {car.transmission}</span>
@@ -277,15 +311,59 @@ const FleetManager = () => {
                   <td style={{ padding: '1rem' }}>
                     <span style={{ 
                       padding: '4px 10px', borderRadius: '9999px', fontSize: '12px', fontWeight: '500',
-                      backgroundColor: `${getStatusColor(car.availability)}20`,
-                      color: getStatusColor(car.availability)
+                      backgroundColor: `${getStatusColor(car.availability, car.deleted_at)}20`,
+                      color: getStatusColor(car.availability, car.deleted_at)
                     }}>
-                      {car.availability}
+                      {car.deleted_at ? 'Deleted' : car.availability}
                     </span>
                   </td>
                   <td style={{ padding: '1rem', textAlign: 'right' }}>
-                    <button onClick={() => openEdit(car)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#3B82F6', marginRight: '1rem' }}><Edit2 size={18} /></button>
-                    <button onClick={() => handleDelete(car.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#EF4444' }}><Trash2 size={18} /></button>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '6px' }}>
+                      {car.deleted_at ? (
+                        /* Soft-deleted row: show Restore + Permanent Delete */
+                        <>
+                          <button
+                            title="Restore: make visible to customers again"
+                            onClick={() => handleRestore(car.id)}
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: 'none', border: '1px solid #10B981', borderRadius: '6px', padding: '5px 10px', cursor: 'pointer', color: '#10B981', fontSize: '12px', fontWeight: '600' }}
+                          >
+                            <RotateCcw size={13} /> Restore
+                          </button>
+                          <button
+                            title="Permanently delete this vehicle (cannot be undone)"
+                            onClick={() => handleHardDelete(car.id)}
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: 'none', border: '1px solid #EF4444', borderRadius: '6px', padding: '5px 10px', cursor: 'pointer', color: '#EF4444', fontSize: '12px', fontWeight: '600' }}
+                          >
+                            <Trash2 size={13} /> Delete
+                          </button>
+                        </>
+                      ) : (
+                        /* Active row: Edit + Soft Delete + Hard Delete */
+                        <>
+                          <button
+                            title="Edit this vehicle's details"
+                            onClick={() => openEdit(car)}
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#3B82F6', padding: '6px', borderRadius: '6px', display: 'inline-flex', alignItems: 'center' }}
+                          >
+                            <Edit2 size={17} />
+                          </button>
+                          <button
+                            title="Soft Delete: hide from customers (can be restored)"
+                            onClick={() => handleSoftDelete(car.id)}
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#F59E0B', padding: '6px', borderRadius: '6px', display: 'inline-flex', alignItems: 'center' }}
+                          >
+                            <EyeOff size={17} />
+                          </button>
+                          <button
+                            title="Permanently delete this vehicle (cannot be undone)"
+                            onClick={() => handleHardDelete(car.id)}
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#EF4444', padding: '6px', borderRadius: '6px', display: 'inline-flex', alignItems: 'center' }}
+                          >
+                            <Trash2 size={17} />
+                          </button>
+                        </>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))
