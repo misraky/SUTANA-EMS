@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Printer, Pill, Car, Wheat, Store, Newspaper, Bell, Video, GalleryHorizontal } from 'lucide-react';
+import { Printer, Pill, Car, Wheat, Store, Newspaper, Bell, Video, GalleryHorizontal, Users, Folder } from 'lucide-react';
 import './PublicLayout.css';
 import ToggleSection from './ToggleSection';
 
@@ -164,6 +164,7 @@ const ServicesPage = () => {
 export const PublicNav = () => {
   const navigate = useNavigate();
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [galleryDropdownOpen, setGalleryDropdownOpen] = useState(false);
   const [newsDropdownOpen, setNewsDropdownOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -230,7 +231,34 @@ export const PublicNav = () => {
               </div>
             )}
           </div>
-          <Link to="/pharmacy-directory" className="pub-link-modern">Pharmacy Directory</Link>
+          <div
+            className="pub-dropdown-wrapper"
+            onMouseEnter={() => setGalleryDropdownOpen(true)}
+            onMouseLeave={() => setGalleryDropdownOpen(false)}
+          >
+            <span className={`pub-link-modern ${galleryDropdownOpen ? 'active' : ''}`}>
+              Gallery
+              <svg className="pub-chevron" width="12" height="12" viewBox="0 0 12 12" fill="none">
+                <path d="M2 4L6 8L10 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </span>
+            {galleryDropdownOpen && (
+              <div className="pub-dropdown-grid">
+                <Link to="/gallery/workers" className="pub-dropdown-item" onClick={() => setGalleryDropdownOpen(false)}>
+                  <span className="pub-dropdown-icon"><Users size={18} strokeWidth={2} /></span>
+                  <span>Sutana Workers & Workplace</span>
+                </Link>
+                <Link to="/gallery/cars" className="pub-dropdown-item" onClick={() => setGalleryDropdownOpen(false)}>
+                  <span className="pub-dropdown-icon"><Car size={18} strokeWidth={2} /></span>
+                  <span>Cars</span>
+                </Link>
+                <Link to="/gallery/other" className="pub-dropdown-item" onClick={() => setGalleryDropdownOpen(false)}>
+                  <span className="pub-dropdown-icon"><Folder size={18} strokeWidth={2} /></span>
+                  <span>Other</span>
+                </Link>
+              </div>
+            )}
+          </div>
           <Link to="/about"           className="pub-link-modern">About Us</Link>
           {/* Track Order — left of search */}
           <button className="pub-link-btn" onClick={() => navigate('/track-order')}>Track Order</button>
