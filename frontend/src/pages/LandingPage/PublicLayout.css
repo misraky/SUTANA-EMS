@@ -1709,7 +1709,7 @@ body.dark-theme {
   position: sticky;
   top: 0;
   z-index: 50;
-  background-color: rgba(255, 255, 255, 0.8);
+  background-color: #CCE2F5;
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid #f3f4f6; /* border-gray-100 */
