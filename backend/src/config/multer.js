@@ -9,6 +9,7 @@ const uploadDirs = {
   taxDocuments: './uploads/tax-documents',
   expenses: './uploads/expenses',
   products: './uploads/products',
+  cars: './uploads/cars',
   profile: './uploads/profile',
   temp: './uploads/temp'
 };
@@ -81,6 +82,13 @@ const uploads = {
   multipleOrderAttachments: createMultipleUploader('orders', 10),
   multipleProductImages: createMultipleUploader('products', 5),
   multipleExpenseReceipts: createMultipleUploader('expenses', 3),
+  carImages: multer({
+    storage: createStorage('cars'),
+    fileFilter: fileFilter,
+    limits: {
+      fileSize: config.fileUpload.maxFileSizeMB * 1024 * 1024
+    }
+  }),
   generic: multer({
     storage: createStorage('temp'),
     fileFilter: fileFilter,

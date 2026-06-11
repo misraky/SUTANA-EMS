@@ -5,6 +5,7 @@ import PublicRoute from './PublicRoute';
 import RoleBasedRoute from './RoleBasedRoute';
 const LandingPage      = lazy(() => import('../pages/LandingPage/LandingPage'));
 const ServicesPage     = lazy(() => import('../pages/LandingPage/ServicesPage'));
+const FleetGalleryPage = lazy(() => import('../pages/LandingPage/FleetGalleryPage'));
 const AboutPage        = lazy(() => import('../pages/LandingPage/AboutPage'));
 const ContactPage      = lazy(() => import('../pages/LandingPage/ContactPage'));
 const LoginPage          = lazy(() => import('../pages/auth/LoginPage'));
@@ -38,11 +39,12 @@ const AppRoutes = () => {
   return (
     <Suspense fallback={<Loader />}>
       <Routes>
-        {}
-        <Route path="/"         element={<LandingPage />} />
-        <Route path="/services" element={<ServicesPage />} />
-        <Route path="/about"    element={<AboutPage />} />
-        <Route path="/contact"  element={<ContactPage />} />
+        {/* Public / Landing Pages — redirect to dashboard if logged in */}
+        <Route path="/"         element={<PublicRoute><LandingPage /></PublicRoute>} />
+        <Route path="/services" element={<PublicRoute><ServicesPage /></PublicRoute>} />
+        <Route path="/fleet-gallery" element={<FleetGalleryPage />} />
+        <Route path="/about"    element={<PublicRoute><AboutPage /></PublicRoute>} />
+        <Route path="/contact"  element={<PublicRoute><ContactPage /></PublicRoute>} />
         {}
         <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
         <Route path="/auth/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />

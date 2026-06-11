@@ -35,6 +35,13 @@ const financeService = {
   },
   getPaymentMethods: async () => {
     return await apiClient.get('/finance/payment-methods');
+  },
+  // Rental Payments (Car Renting)
+  getPendingRentalPayments: async () => {
+    return await apiClient.get('/rental-orders/pending-payments');
+  },
+  verifyRentalPayment: async (id, data) => {
+    return await apiClient.post(`/rental-orders/${id}/verify-payment`, data);
   }
 };
 export default financeService;

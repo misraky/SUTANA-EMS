@@ -11,6 +11,10 @@ const inventoryRoutes = require('./inventory.routes');
 const posRoutes = require('./pos.routes');
 const purchaseRoutes = require('./purchase.routes');
 const reportRoutes = require('./report.routes');
+const carRoutes = require('./car.routes');
+const rentalOrderRoutes = require('./rentalOrder.routes');
+const notificationRoutes = require('./notification.routes');
+
 router.use('/auth', authRoutes);
 router.use('/users', userRoutes);
 router.use('/printing', printingRoutes);
@@ -22,4 +26,8 @@ router.use('/inventory', inventoryRoutes);
 router.use('/pos', posRoutes);
 router.use('/purchase', purchaseRoutes);
 router.use('/reports', reportRoutes);
+router.use('/cars', carRoutes);
+router.use('/rental-orders', rentalOrderRoutes);
+router.use('/notifications', notificationRoutes);
+
 module.exports = router;

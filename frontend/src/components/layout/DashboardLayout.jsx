@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import {
   Home, Users, ClipboardList, Settings, BarChart2, ShoppingCart, FileText, Wallet,
   CreditCard, TrendingUp, Package, Truck, Printer, Layers, Receipt, AreaChart,
-  List, User, FilePlus, Box, ArrowRight, Bell, Search, LogOut, ChevronDown, Monitor, CheckCircle
+  List, User, FilePlus, Box, ArrowRight, Bell, Search, LogOut, ChevronDown, Monitor, CheckCircle, Car, X
 } from 'lucide-react';
+import notificationService from '../../services/notificationService';
 import './DashboardLayout.css';
 
 const ICONS = {
@@ -33,6 +34,142 @@ const ICONS = {
   'arrow-right': <ArrowRight size={18} strokeWidth={2.5} />,
   default:       <CheckCircle size={18} strokeWidth={2.5} />
 };
+
+/* ── Notification Bell with dropdown ── */
+const NotificationBell = ({ navigate }) => {
+  const [open, setOpen] = useState(false);
+  const [items, setItems] = useState([]);
+  const ref = useRef(null);
+
+  const load = async () => {
+    try {
+      const res = await notificationService.getMyNotifications();
+      if (res.status === 'success') {
+        setItems(res.data);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const markAllRead = async () => {
+    try {
+      await notificationService.markAllAsRead();
+    } catch (e) { console.error(e); }
+  };
+
+  const markRead = async (id) => {
+    try {
+      await notificationService.markAsRead(id);
+      load();
+    } catch (e) { console.error(e); }
+  };
+
+  const handleClick = (item) => {
+    markRead(item.id);
+    setOpen(false);
+  };
+
+  // badge count — only unread items
+  const count = items.filter(i => !i.isRead).length;
+
+  useEffect(() => { load(); }, []);
+
+  // When dropdown opens: load fresh items then mark all as read so badge clears
+  useEffect(() => {
+    if (open) {
+      load();
+      setTimeout(() => { markAllRead(); load(); }, 800); // small delay so user sees count then it clears
+    }
+  }, [open]);
+
+  // Close on outside click
+  useEffect(() => {
+    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  return (
+    <div ref={ref} style={{ position: 'relative' }}>
+      <button
+        className="dash-notif-btn"
+        title="Notifications"
+        onClick={() => setOpen(o => !o)}
+        style={{ position: 'relative' }}
+      >
+        <Bell size={18} />
+        {count > 0 && (
+          <span style={{
+            position: 'absolute', top: '-6px', right: '-6px',
+            backgroundColor: '#EF4444', color: 'white',
+            borderRadius: '9999px', fontSize: '10px', fontWeight: '700',
+            minWidth: '18px', height: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: '0 4px', lineHeight: 1
+          }}>{count > 9 ? '9+' : count}</span>
+        )}
+      </button>
+
+      {open && (
+        <div style={{
+          position: 'absolute', top: 'calc(100% + 10px)', right: 0,
+          width: '360px', backgroundColor: 'white',
+          borderRadius: '12px', boxShadow: '0 20px 60px rgba(0,0,0,0.15)',
+          border: '1px solid #E5E7EB', zIndex: 1000, overflow: 'hidden'
+        }}>
+          <div style={{ padding: '14px 18px', borderBottom: '1px solid #F3F4F6', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontWeight: '700', fontSize: '15px', color: '#111827' }}>Notifications</span>
+            {count > 0 && <span style={{ fontSize: '12px', color: '#6B7280' }}>{count} unread</span>}
+          </div>
+          <div style={{ maxHeight: '380px', overflowY: 'auto' }}>
+            {items.length === 0 ? (
+              <div style={{ padding: '32px', textAlign: 'center', color: '#9CA3AF' }}>
+                <CheckCircle size={32} style={{ marginBottom: '8px', color: '#10B981' }} />
+                <p style={{ margin: 0 }}>All caught up!</p>
+              </div>
+            ) : (
+              items.map(item => (
+                <div
+                  key={item.id}
+                  onClick={() => handleClick(item)}
+                  style={{
+                    padding: '14px 18px', borderBottom: '1px solid #F9FAFB',
+                    cursor: 'pointer', display: 'flex', gap: '12px', alignItems: 'flex-start',
+                    backgroundColor: item._type === 'car_request' ? '#EFF6FF' : '#F0FDF4',
+                    transition: 'background 0.15s'
+                  }}
+                >
+                  <div style={{ width: '36px', height: '36px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, backgroundColor: item._type === 'car_request' ? '#DBEAFE' : '#DCFCE7' }}>
+                    {item._type === 'car_request' ? <Car size={16} color="#2563EB" /> : <Bell size={16} color="#16A34A" />}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ margin: '0 0 2px 0', fontWeight: '600', fontSize: '13px', color: '#111827' }}>
+                      {item.title}
+                    </p>
+                    <p style={{ margin: 0, fontSize: '12px', color: '#6B7280', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {item.message}
+                    </p>
+                    <p style={{ margin: '4px 0 0 0', fontSize: '11px', color: '#9CA3AF' }}>
+                      {new Date(item.createdAt).toLocaleString()}
+                    </p>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+          {count > 0 && (
+            <div style={{ padding: '10px 18px', borderTop: '1px solid #F3F4F6', textAlign: 'center' }}>
+              <button
+                onClick={() => { navigate('/car-renting/overview'); setOpen(false); }}
+                style={{ fontSize: '13px', color: '#2563EB', background: 'none', border: 'none', cursor: 'pointer', fontWeight: '600' }}
+              >View all in Car Rental Dashboard →</button>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
 const DashboardLayout = ({ children, menuItems }) => {
   const { user, logout } = useAuth();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -42,7 +179,7 @@ const DashboardLayout = ({ children, menuItems }) => {
   const location = useLocation();
   const handleLogout = () => {
     logout();
-    navigate('/login');
+    navigate('/');
   };
   const handleNav = (path) => {
     navigate(path);
@@ -104,10 +241,7 @@ const DashboardLayout = ({ children, menuItems }) => {
             </div>
           </div>
           <div className="dash-topbar-right">
-            <button className="dash-notif-btn" title="Notifications">
-              <Bell size={18} />
-              <span className="notif-dot"></span>
-            </button>
+            <NotificationBell navigate={navigate} />
             <div className="dash-profile-dropdown">
               <button 
                 className={`dash-user-chip ${profileOpen ? 'open' : ''}`} 
