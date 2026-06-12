@@ -47,6 +47,17 @@ const ReceivePO = () => {
       console.error('Failed to fetch PO details:', error);
       setMessage({ type: 'error', text: 'Failed to load PO items' });
     }
+    // Initialize receive data
+    setReceiveData(po.items.map(item => ({
+      poItemId: item.id,
+      productName: item.product_name,
+      requiresSerial: item.requires_serial,
+      quantityOrdered: item.quantity_ordered,
+      quantityReceived: item.quantity_ordered - (item.quantity_received || 0),
+      quantityDamaged: 0,
+      qualityPass: true,
+      serialNumbersInput: ''
+    })));
     setMessage(null);
   };
   const handleItemChange = (index, field, value) => {
@@ -65,7 +76,8 @@ const ReceivePO = () => {
           poItemId: item.poItemId,
           quantityReceived: parseInt(item.quantityReceived),
           quantityDamaged: parseInt(item.quantityDamaged),
-          qualityPass: item.qualityPass
+          qualityPass: item.qualityPass,
+          serialNumbers: item.requiresSerial ? item.serialNumbersInput.split('\n').map(s => s.trim()).filter(s => s) : undefined
         })),
         receivingNote
       });
@@ -147,40 +159,62 @@ const ReceivePO = () => {
                 </thead>
                 <tbody>
                   {receiveData.map((item, index) => (
-                    <tr key={item.poItemId}>
-                      <td><strong>{item.productName}</strong></td>
-                      <td>{item.quantityOrdered}</td>
-                      <td>
-                        <input
-                          type="number"
-                          min="0"
-                          max={item.quantityOrdered}
-                          value={item.quantityReceived}
-                          onChange={(e) => handleItemChange(index, 'quantityReceived', e.target.value)}
-                          className={styles.inputSmall}
-                          required
-                        />
-                      </td>
-                      <td>
-                        <input
-                          type="number"
-                          min="0"
-                          value={item.quantityDamaged}
-                          onChange={(e) => handleItemChange(index, 'quantityDamaged', e.target.value)}
-                          className={styles.inputSmall}
-                        />
-                      </td>
-                      <td>
-                        <label className={styles.checkboxLabel}>
+                    <React.Fragment key={item.poItemId}>
+                      <tr>
+                        <td>
+                          <strong>{item.productName}</strong>
+                          {item.requiresSerial && <span className={styles.serialBadge}> (Requires Serial)</span>}
+                        </td>
+                        <td>{item.quantityOrdered}</td>
+                        <td>
                           <input
-                            type="checkbox"
-                            checked={item.qualityPass}
-                            onChange={(e) => handleItemChange(index, 'qualityPass', e.target.checked)}
+                            type="number"
+                            min="0"
+                            max={item.quantityOrdered}
+                            value={item.quantityReceived}
+                            onChange={(e) => handleItemChange(index, 'quantityReceived', e.target.value)}
+                            className={styles.inputSmall}
+                            required
                           />
-                          Pass
-                        </label>
-                      </td>
-                    </tr>
+                        </td>
+                        <td>
+                          <input
+                            type="number"
+                            min="0"
+                            value={item.quantityDamaged}
+                            onChange={(e) => handleItemChange(index, 'quantityDamaged', e.target.value)}
+                            className={styles.inputSmall}
+                          />
+                        </td>
+                        <td>
+                          <label className={styles.checkboxLabel}>
+                            <input
+                              type="checkbox"
+                              checked={item.qualityPass}
+                              onChange={(e) => handleItemChange(index, 'qualityPass', e.target.checked)}
+                            />
+                            Pass
+                          </label>
+                        </td>
+                      </tr>
+                      {item.requiresSerial && parseInt(item.quantityReceived) > 0 && (
+                        <tr>
+                          <td colSpan="5">
+                            <div className={styles.serialWrapper}>
+                              <label>Serial Numbers (1 per line) - Need {item.quantityReceived}:</label>
+                              <textarea
+                                rows={Math.min(10, parseInt(item.quantityReceived))}
+                                className={styles.textarea}
+                                value={item.serialNumbersInput}
+                                onChange={(e) => handleItemChange(index, 'serialNumbersInput', e.target.value)}
+                                placeholder={`Enter ${item.quantityReceived} serial numbers, separated by new lines...`}
+                                required
+                              />
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
                   ))}
                 </tbody>
               </table>

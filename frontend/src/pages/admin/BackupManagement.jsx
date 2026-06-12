@@ -96,11 +96,11 @@ const BackupManagement = () => {
             </thead>
             <tbody>
               {backups.map((backup) => (
-                <tr key={backup.id || backup.file_name}>
+                <tr key={backup.filename || backup.id}>
                   <td>
-                    <strong>{backup.file_name || 'System Backup'}</strong>
+                    <strong>{backup.filename || 'System Backup'}</strong>
                   </td>
-                  <td>{formatDateTime(backup.created_at || backup.createdAt)}</td>
+                  <td>{formatDateTime(backup.created)}</td>
                   <td>{formatSize(backup.size)}</td>
                   <td>
                     <span className={`${styles.badge} ${getStatusBadge(backup.status)}`}>
@@ -112,14 +112,14 @@ const BackupManagement = () => {
                       <button 
                         className={`${styles.btnIcon} ${styles.restore}`} 
                         title="Restore this backup"
-                        onClick={() => handleRestore(backup.id)}
+                        onClick={() => handleRestore(backup.filename)}
                       >
                         <i className="icon-refresh"></i> Restore
                       </button>
                       <button 
                         className={`${styles.btnIcon} ${styles.delete}`} 
                         title="Delete backup"
-                        onClick={() => handleDelete(backup.id)}
+                        onClick={() => handleDelete(backup.filename)}
                       >
                         <i className="icon-trash"></i> Delete
                       </button>

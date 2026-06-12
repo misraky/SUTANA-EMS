@@ -27,6 +27,9 @@ const ceoService = {
   getKPIs: async (period = 'monthly') => {
     return await apiClient.get('/ceo/kpis', { params: { period } });
   },
+  getCashFlow: async (period = 'daily', days = 30) => {
+    return await apiClient.get('/ceo/cash-flow', { params: { period, days } });
+  },
   getCriticalAlerts: async (severity) => {
     const params = severity ? { severity } : {};
     return await apiClient.get('/ceo/alerts', { params });

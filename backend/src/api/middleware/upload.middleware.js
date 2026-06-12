@@ -3,6 +3,12 @@ const path = require('path');
 const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
 const config = require('../../config/env');
+if (!config.upload) {
+  config.upload = {
+    maxFileSizeBytes: (config.fileUpload?.maxFileSizeMB || 50) * 1024 * 1024,
+    allowedFileTypes: config.fileUpload?.allowedFileTypes || ['image/jpeg', 'image/png', 'application/pdf', 'application/msword']
+  };
+}
 const AppError = require('../../utils/AppError');
 const UPLOAD_DIRS = {
   orders: 'uploads/orders',
@@ -99,6 +105,7 @@ const uploads = {
   singleOrderAttachment: createUploader('orders'),
   singleTaxDocument: createUploader('taxDocuments'),
   singleExpenseReceipt: createUploader('expenses'),
+  singlePaymentProof: createUploader('receipts'),
   singleProductImage: createUploader('products'),
   singleProfilePicture: createUploader('profile'),
   multipleOrderAttachments: createMultipleUploader('orders', 10),

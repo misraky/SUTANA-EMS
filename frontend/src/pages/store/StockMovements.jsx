@@ -39,6 +39,7 @@ const StockMovements = () => {
                 <th>Date</th>
                 <th>Product</th>
                 <th>Type</th>
+                <th>Model</th>
                 <th>Change</th>
                 <th>Before</th>
                 <th>After</th>
@@ -55,6 +56,13 @@ const StockMovements = () => {
                     <span className={`${styles.badge} ${styles['type' + (m.transactionType || m.transaction_type || '').replace(/\s+/g, '')]}`}>
                       {m.transactionType || m.transaction_type}
                     </span>
+                  </td>
+                  <td>
+                    {(m.modelNumber || m.model_number) ? (
+                      <span className={styles.modelBadge}>Model {m.modelNumber || m.model_number}</span>
+                    ) : (
+                      <span className={styles.textMuted}>-</span>
+                    )}
                   </td>
                   <td className={(m.quantityChange || m.quantity_change) > 0 ? styles.textGreen : styles.textRed}>
                     {(m.quantityChange || m.quantity_change) > 0 ? '+' : ''}{formatNumber(m.quantityChange || m.quantity_change)}

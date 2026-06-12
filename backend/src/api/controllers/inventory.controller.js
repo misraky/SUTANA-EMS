@@ -210,6 +210,7 @@ exports.getExpiringProducts = catchAsync(async (req, res) => {
       reorder_level: reorderLevel,
       expiry_date: expiryDate || null,
       supplier_id: supplierId || null,
+      requires_serial: req.body.requires_serial ? true : false,
       is_active: true,
       created_at: db.fn.now()
     });
@@ -384,6 +385,33 @@ exports.getExpiringProducts = catchAsync(async (req, res) => {
     if (newQuantity < 0) {
       throw new AppError('Insufficient stock. Cannot reduce below zero.', 400);
     }
+
+    // Check if user has permission to approve immediately (Store Manager or CEO only)
+    const userPermissions = req.user.permissions || [];
+    const canApprove = userPermissions.includes('inventory:manager_approve') || userPermissions.includes('*');
+
+    if (!canApprove) {
+      // Create pending adjustment
+      const [adjustmentId] = await db('inventory_adjustments').insert({
+        product_id: productId,
+        quantity_change: quantityChange,
+        reason,
+        reference_type: referenceType || 'Adjustment',
+        reference_id: referenceId || null,
+        status: 'Pending',
+        requested_by: userId
+      });
+      await audit('STOCK_ADJUSTMENT_REQUESTED', productId, {
+        ip,
+        details: { adjustmentId, quantityChange, reason }
+      });
+      return res.json({
+        status: 'success',
+        message: 'Stock adjustment request submitted for manager approval',
+        data: { adjustmentId, status: 'Pending' }
+      });
+    }
+
     await transaction(async (trx) => {
       await trx('inventory')
         .where('product_id', productId)
@@ -394,6 +422,7 @@ exports.getExpiringProducts = catchAsync(async (req, res) => {
       await trx('inventory_movements').insert({
         product_id: productId,
         transaction_type: referenceType || 'Adjustment',
+        model_number: 22,
         quantity_change: quantityChange,
         quantity_before: currentStock.quantity,
         quantity_after: newQuantity,
@@ -402,6 +431,18 @@ exports.getExpiringProducts = catchAsync(async (req, res) => {
         reason: reason,
         performed_by: userId,
         created_at: db.fn.now()
+      });
+      // also log the adjustment in the adjustments table as approved
+      await trx('inventory_adjustments').insert({
+        product_id: productId,
+        quantity_change: quantityChange,
+        reason,
+        reference_type: referenceType || 'Adjustment',
+        reference_id: referenceId || null,
+        status: 'Approved',
+        requested_by: userId,
+        approved_by: userId,
+        approved_at: db.fn.now()
       });
     });
     await audit('STOCK_ADJUSTED', productId, {
@@ -426,6 +467,99 @@ exports.getExpiringProducts = catchAsync(async (req, res) => {
         newQuantity,
         change: quantityChange
       }
+    });
+  });
+
+  exports.getPendingAdjustments = catchAsync(async (req, res) => {
+    const adjustments = await db('inventory_adjustments as a')
+      .leftJoin('products as p', 'a.product_id', 'p.id')
+      .leftJoin('users as u', 'a.requested_by', 'u.id')
+      .select(
+        'a.*',
+        'p.name as product_name',
+        'p.sku',
+        'u.name as requester_name'
+      )
+      .where('a.status', 'Pending')
+      .orderBy('a.created_at', 'desc');
+
+    res.json({
+      status: 'success',
+      data: { adjustments }
+    });
+  });
+
+  exports.approveAdjustment = catchAsync(async (req, res) => {
+    const { id } = req.params;
+    const userId = req.user.id;
+    const ip = req.ip;
+
+    const adjustment = await db('inventory_adjustments').where('id', id).where('status', 'Pending').first();
+    if (!adjustment) throw new AppError('Pending adjustment not found', 404);
+
+    const currentStock = await db('inventory').where('product_id', adjustment.product_id).first();
+    const newQuantity = currentStock.quantity + adjustment.quantity_change;
+    
+    if (newQuantity < 0) throw new AppError('Insufficient stock to approve this adjustment.', 400);
+
+    await transaction(async (trx) => {
+      await trx('inventory').where('product_id', adjustment.product_id).update({
+        quantity: newQuantity,
+        last_updated: db.fn.now()
+      });
+      await trx('inventory_movements').insert({
+        product_id: adjustment.product_id,
+        transaction_type: adjustment.reference_type || 'Adjustment',
+        model_number: 22,
+        quantity_change: adjustment.quantity_change,
+        quantity_before: currentStock.quantity,
+        quantity_after: newQuantity,
+        reference_type: adjustment.reference_type,
+        reference_id: adjustment.reference_id,
+        reason: adjustment.reason,
+        performed_by: userId,
+        created_at: db.fn.now()
+      });
+      await trx('inventory_adjustments').where('id', id).update({
+        status: 'Approved',
+        approved_by: userId,
+        approved_at: db.fn.now()
+      });
+    });
+
+    await audit('STOCK_ADJUSTMENT_APPROVED', adjustment.product_id, {
+      ip, details: { adjustmentId: id, quantityChange: adjustment.quantity_change, newQuantity }
+    });
+
+    res.json({
+      status: 'success',
+      message: 'Adjustment approved successfully'
+    });
+  });
+
+  exports.rejectAdjustment = catchAsync(async (req, res) => {
+    const { id } = req.params;
+    const { reason } = req.body;
+    const userId = req.user.id;
+    const ip = req.ip;
+
+    const adjustment = await db('inventory_adjustments').where('id', id).where('status', 'Pending').first();
+    if (!adjustment) throw new AppError('Pending adjustment not found', 404);
+
+    await db('inventory_adjustments').where('id', id).update({
+      status: 'Rejected',
+      approved_by: userId,
+      approved_at: db.fn.now(),
+      rejection_reason: reason
+    });
+
+    await audit('STOCK_ADJUSTMENT_REJECTED', adjustment.product_id, {
+      ip, details: { adjustmentId: id, rejection_reason: reason }
+    });
+
+    res.json({
+      status: 'success',
+      message: 'Adjustment rejected'
     });
   });
   exports.markDamaged = catchAsync(async (req, res) => {
@@ -455,6 +589,7 @@ exports.getExpiringProducts = catchAsync(async (req, res) => {
       await trx('inventory_movements').insert({
         product_id: productId,
         transaction_type: 'Damaged',
+        model_number: 22,
         quantity_change: -quantity,
         quantity_before: currentStock.quantity,
         quantity_after: newQuantity,
@@ -504,6 +639,7 @@ exports.getExpiringProducts = catchAsync(async (req, res) => {
       await trx('inventory_movements').insert({
         product_id: productId,
         transaction_type: 'Lost',
+        model_number: 22,
         quantity_change: -quantity,
         quantity_before: currentStock.quantity,
         quantity_after: newQuantity,

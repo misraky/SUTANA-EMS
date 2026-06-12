@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import PurchaseHome from './PurchaseHome';
 import SupplierList from './SupplierList';
+import SupplierProfile from './SupplierProfile';
 import CreateSupplier from './CreateSupplier';
 import PurchaseOrderList from './PurchaseOrderList';
 import CreatePurchaseOrder from './CreatePurchaseOrder';
@@ -22,6 +23,7 @@ const PurchaseDashboard = () => {
         <Routes>
           <Route path="overview" element={<PurchaseHome />} />
           <Route path="suppliers" element={<SupplierList />} />
+          <Route path="suppliers/:id" element={<SupplierProfile />} />
           <Route path="suppliers/create" element={<CreateSupplier />} />
           <Route path="orders" element={<PurchaseOrderList />} />
           <Route path="orders/create" element={<CreatePurchaseOrder />} />
