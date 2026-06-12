@@ -27,6 +27,9 @@ const purchaseService = {
   getPendingReceiving: async () => {
     return await apiClient.get('/purchase/receiving/pending');
   },
+  getPendingReceivingById: async (id) => {
+    return await apiClient.get(`/purchase/receiving/pending/${id}`);
+  },
   registerReceiving: async (data) => {
     return await apiClient.post(`/purchase/receiving/register`, data);
   },

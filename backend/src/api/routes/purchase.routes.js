@@ -305,6 +305,14 @@ router.get(
   authorize(['receiving:read']),
   PurchaseController.getPendingReceiving
 );
+router.get(
+  '/receiving/pending/:id',
+  authenticate,
+  authorize(['receiving:read']),
+  poIdParamValidation,
+  validate,
+  PurchaseController.getPurchaseOrderById
+);
 router.post(
   '/receiving/register',
   authenticate,

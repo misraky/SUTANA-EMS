@@ -213,6 +213,10 @@
   background: #fee2e2;
   color: #991b1b;
 }
+.upcoming {
+  background: #f3f4f6;
+  color: #4b5563;
+}
 .insightsCard {
   background: linear-gradient(145deg, #1e293b, #0f172a);
   color: white;

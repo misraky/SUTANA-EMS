@@ -7,7 +7,33 @@ const { calculatePrintingPrice } = require('../../utils/pricing');
 const { sendEmail } = require('../../services/email.service');
 const { sendSMS } = require('../../services/sms.service');
 const { comparePassword, hashPassword, validatePasswordStrength } = require('../../config/auth');
+
+const getOrCreateCustomer = async (user) => {
+  let customer = await db('customers')
+    .where('user_id', user.id)
+    .orWhere('email', user.email)
+    .first();
+  if (!customer) {
+    const defaultType = await db('customer_types').first();
+    const [newId] = await db('customers').insert({
+      user_id: user.id,
+      name: user.fullName || user.email.split('@')[0],
+      email: user.email,
+      phone: user.phone || '',
+      customer_type_id: defaultType?.id || 1,
+      credit_limit: 0,
+      current_balance: 0,
+      created_at: db.fn.now()
+    });
+    customer = await db('customers').where('id', newId).first();
+  } else if (!customer.user_id) {
+    await db('customers').where('id', customer.id).update({ user_id: user.id });
+    customer.user_id = user.id;
+  }
+  return customer;
+};
 exports.getProfile = catchAsync(async (req, res) => {
+  await getOrCreateCustomer(req.user);
   const customer = await db('customers')
     .leftJoin('customer_types', 'customers.customer_type_id', 'customer_types.id')
     .select(
@@ -37,13 +63,7 @@ exports.updateProfile = catchAsync(async (req, res) => {
   const { name, email, phone, address } = req.body;
   const userId = req.user.id;
   const ip = req.ip;
-  const customer = await db('customers')
-    .where('user_id', userId)
-    .orWhere('email', req.user.email)
-    .first();
-  if (!customer) {
-    throw new AppError('Customer profile not found', 404);
-  }
+  const customer = await getOrCreateCustomer(req.user);
   const updateData = {};
   if (name) updateData.name = name;
   if (email) updateData.email = email.toLowerCase();
@@ -95,13 +115,7 @@ exports.changePassword = catchAsync(async (req, res) => {
 exports.getOrders = catchAsync(async (req, res) => {
   const { page = 1, limit = 25, status } = req.query;
   const offset = (page - 1) * limit;
-  const customer = await db('customers')
-    .where('user_id', req.user.id)
-    .orWhere('email', req.user.email)
-    .first();
-  if (!customer) {
-    throw new AppError('Customer not found', 404);
-  }
+  const customer = await getOrCreateCustomer(req.user);
   let query = db('printing_orders as po')
     .leftJoin('order_statuses as os', 'po.status_id', 'os.id')
     .select(
@@ -145,13 +159,7 @@ exports.getOrders = catchAsync(async (req, res) => {
 });
 exports.getOrderById = catchAsync(async (req, res) => {
   const { id } = req.params;
-  const customer = await db('customers')
-    .where('user_id', req.user.id)
-    .orWhere('email', req.user.email)
-    .first();
-  if (!customer) {
-    throw new AppError('Customer not found', 404);
-  }
+  const customer = await getOrCreateCustomer(req.user);
   const order = await db('printing_orders as po')
     .leftJoin('order_statuses as os', 'po.status_id', 'os.id')
     .select(
@@ -190,13 +198,7 @@ exports.createOrder = catchAsync(async (req, res) => {
   } = req.body;
   const userId = req.user.id;
   const ip = req.ip;
-  const customer = await db('customers')
-    .where('user_id', userId)
-    .orWhere('email', req.user.email)
-    .first();
-  if (!customer) {
-    throw new AppError('Customer profile not found. Please contact support.', 404);
-  }
+  const customer = await getOrCreateCustomer(req.user);
   const orderNumber = await generateOrderNumber('PRT');
   const priceCalculation = calculatePrintingPrice({
     paperType,
@@ -267,13 +269,7 @@ exports.uploadAttachments = catchAsync(async (req, res) => {
   const { id } = req.params;
   const userId = req.user.id;
   const ip = req.ip;
-  const customer = await db('customers')
-    .where('user_id', userId)
-    .orWhere('email', req.user.email)
-    .first();
-  if (!customer) {
-    throw new AppError('Customer profile not found', 404);
-  }
+  const customer = await getOrCreateCustomer(req.user);
   const order = await db('printing_orders')
     .where('id', id)
     .where('customer_id', customer.id)
@@ -329,13 +325,7 @@ exports.uploadAttachments = catchAsync(async (req, res) => {
 });
 exports.trackOrder = catchAsync(async (req, res) => {
   const { id } = req.params;
-  const customer = await db('customers')
-    .where('user_id', req.user.id)
-    .orWhere('email', req.user.email)
-    .first();
-  if (!customer) {
-    throw new AppError('Customer not found', 404);
-  }
+  const customer = await getOrCreateCustomer(req.user);
   const order = await db('printing_orders as po')
     .leftJoin('order_statuses as os', 'po.status_id', 'os.id')
     .select(
@@ -372,13 +362,7 @@ exports.cancelOrder = catchAsync(async (req, res) => {
   const { reason } = req.body;
   const userId = req.user.id;
   const ip = req.ip;
-  const customer = await db('customers')
-    .where('user_id', userId)
-    .orWhere('email', req.user.email)
-    .first();
-  if (!customer) {
-    throw new AppError('Customer not found', 404);
-  }
+  const customer = await getOrCreateCustomer(req.user);
   const order = await db('printing_orders')
     .leftJoin('order_statuses', 'printing_orders.status_id', 'order_statuses.id')
     .select('printing_orders.*', 'order_statuses.status_code')
@@ -429,10 +413,7 @@ exports.requestQuote = catchAsync(async (req, res) => {
     bindingType = 'None'
   } = req.body;
   const userId = req.user.id;
-  const customer = await db('customers')
-    .where('user_id', userId)
-    .orWhere('email', req.user.email)
-    .first();
+  const customer = await getOrCreateCustomer(req.user);
   const priceCalculation = calculatePrintingPrice({
     paperType,
     pagesPerCopy,
@@ -488,16 +469,7 @@ exports.requestQuote = catchAsync(async (req, res) => {
 });
 exports.getQuotes = catchAsync(async (req, res) => {
   const { page = 1, limit = 25 } = req.query;
-  const customer = await db('customers')
-    .where('user_id', req.user.id)
-    .orWhere('email', req.user.email)
-    .first();
-  if (!customer) {
-    return res.json({
-      status: 'success',
-      data: { quotes: [], pagination: { page: 1, limit, total: 0, totalPages: 0 } }
-    });
-  }
+  const customer = await getOrCreateCustomer(req.user);
   const offset = (page - 1) * limit;
   const quotes = await db('customer_quotes')
     .where('customer_id', customer.id)
@@ -537,13 +509,7 @@ exports.acceptQuote = catchAsync(async (req, res) => {
     throw new AppError('Quote not found, expired, or already accepted', 404);
   }
   const breakdown = quote.breakdown_json ? JSON.parse(quote.breakdown_json) : {};
-  const customer = await db('customers')
-    .where('user_id', userId)
-    .orWhere('email', req.user.email)
-    .first();
-  if (!customer) {
-    throw new AppError('Customer profile not found', 404);
-  }
+  const customer = await getOrCreateCustomer(req.user);
   const orderNumber = await generateOrderNumber('PRT');
   const receivedStatus = await db('order_statuses').where('status_code', 'received').first();
   const [orderId] = await db('printing_orders').insert({
@@ -584,13 +550,7 @@ exports.acceptQuote = catchAsync(async (req, res) => {
 exports.getReceipts = catchAsync(async (req, res) => {
   const { page = 1, limit = 25 } = req.query;
   const offset = (page - 1) * limit;
-  const customer = await db('customers')
-    .where('user_id', req.user.id)
-    .orWhere('email', req.user.email)
-    .first();
-  if (!customer) {
-    throw new AppError('Customer not found', 404);
-  }
+  const customer = await getOrCreateCustomer(req.user);
   const receipts = await db('pos_sales as ps')
     .leftJoin('payment_methods as pm', 'ps.payment_method_id', 'pm.id')
     .select(
@@ -626,13 +586,7 @@ exports.getReceipts = catchAsync(async (req, res) => {
 });
 exports.downloadReceipt = catchAsync(async (req, res) => {
   const { id } = req.params;
-  const customer = await db('customers')
-    .where('user_id', req.user.id)
-    .orWhere('email', req.user.email)
-    .first();
-  if (!customer) {
-    throw new AppError('Customer not found', 404);
-  }
+  const customer = await getOrCreateCustomer(req.user);
   const sale = await db('pos_sales')
     .where('id', id)
     .where('customer_id', customer.id)
@@ -671,13 +625,7 @@ exports.downloadReceipt = catchAsync(async (req, res) => {
 });
 exports.getInvoices = catchAsync(async (req, res) => {
   const { status } = req.query;
-  const customer = await db('customers')
-    .where('user_id', req.user.id)
-    .orWhere('email', req.user.email)
-    .first();
-  if (!customer) {
-    throw new AppError('Customer not found', 404);
-  }
+  const customer = await getOrCreateCustomer(req.user);
   let invoices = await db('pos_sales as ps')
     .leftJoin('payment_methods as pm', 'ps.payment_method_id', 'pm.id')
     .select(
@@ -714,13 +662,7 @@ exports.getInvoices = catchAsync(async (req, res) => {
   });
 });
 exports.getBalance = catchAsync(async (req, res) => {
-  const customer = await db('customers')
-    .where('user_id', req.user.id)
-    .orWhere('email', req.user.email)
-    .first();
-  if (!customer) {
-    throw new AppError('Customer not found', 404);
-  }
+  const customer = await getOrCreateCustomer(req.user);
   res.json({
     status: 'success',
     data: {
@@ -734,13 +676,7 @@ exports.makePayment = catchAsync(async (req, res) => {
   const { amount, paymentMethod, referenceNumber } = req.body;
   const userId = req.user.id;
   const ip = req.ip;
-  const customer = await db('customers')
-    .where('user_id', userId)
-    .orWhere('email', req.user.email)
-    .first();
-  if (!customer) {
-    throw new AppError('Customer not found', 404);
-  }
+  const customer = await getOrCreateCustomer(req.user);
   if (amount > customer.current_balance) {
     throw new AppError(`Payment amount (${amount} ETB) exceeds your current balance (${customer.current_balance} ETB)`, 400);
   }
@@ -795,13 +731,7 @@ exports.makePayment = catchAsync(async (req, res) => {
 });
 exports.getNotifications = catchAsync(async (req, res) => {
   const { unreadOnly = false } = req.query;
-  const customer = await db('customers')
-    .where('user_id', req.user.id)
-    .orWhere('email', req.user.email)
-    .first();
-  if (!customer) {
-    throw new AppError('Customer not found', 404);
-  }
+  const customer = await getOrCreateCustomer(req.user);
   let notifications = await db('customer_notifications')
     .where('customer_id', customer.id)
     .orderBy('created_at', 'desc')
@@ -816,13 +746,7 @@ exports.getNotifications = catchAsync(async (req, res) => {
 });
 exports.markNotificationRead = catchAsync(async (req, res) => {
   const { id } = req.params;
-  const customer = await db('customers')
-    .where('user_id', req.user.id)
-    .orWhere('email', req.user.email)
-    .first();
-  if (!customer) {
-    throw new AppError('Customer not found', 404);
-  }
+  const customer = await getOrCreateCustomer(req.user);
   await db('customer_notifications')
     .where('id', id)
     .where('customer_id', customer.id)
@@ -833,13 +757,7 @@ exports.markNotificationRead = catchAsync(async (req, res) => {
   });
 });
 exports.markAllNotificationsRead = catchAsync(async (req, res) => {
-  const customer = await db('customers')
-    .where('user_id', req.user.id)
-    .orWhere('email', req.user.email)
-    .first();
-  if (!customer) {
-    throw new AppError('Customer not found', 404);
-  }
+  const customer = await getOrCreateCustomer(req.user);
   await db('customer_notifications')
     .where('customer_id', customer.id)
     .where('is_read', false)

@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
+import notificationService from '../../services/notificationService';
 import {
   Home, Users, ClipboardList, Settings, BarChart2, ShoppingCart, FileText, Wallet,
   CreditCard, TrendingUp, Package, Truck, Printer, Layers, Receipt, AreaChart,
@@ -38,8 +39,67 @@ const DashboardLayout = ({ children, menuItems }) => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const notifRef = useRef(null);
+  const profileRef = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
+
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      try {
+        const res = await notificationService.getNotifications();
+        setNotifications(res.data?.data?.notifications || []);
+      } catch (err) {
+        console.error('Failed to fetch notifications:', err);
+      }
+    };
+    if (user) {
+      fetchNotifications();
+      const interval = setInterval(fetchNotifications, 30000); // Poll every 30 seconds
+      return () => clearInterval(interval);
+    }
+  }, [user, location.pathname]);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (notifRef.current && !notifRef.current.contains(event.target)) {
+        setNotifOpen(false);
+      }
+      if (profileRef.current && !profileRef.current.contains(event.target)) {
+        setProfileOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleNotifClick = async (notif) => {
+    if (!notif.is_read) {
+      try {
+        await notificationService.markAsRead(notif.id, notif.source);
+        setNotifications(notifications.map(n => n.id === notif.id && n.source === notif.source ? { ...n, is_read: true } : n));
+      } catch (err) {
+        console.error('Failed to mark notification read:', err);
+      }
+    }
+    setNotifOpen(false);
+    if (notif.link_url) {
+      navigate(notif.link_url);
+    }
+  };
+
+  const handleMarkAllRead = async () => {
+    try {
+      await notificationService.markAllAsRead();
+      setNotifications(notifications.map(n => ({ ...n, is_read: true })));
+    } catch (err) {
+      console.error('Failed to mark all read:', err);
+    }
+  };
+
+  const unreadCount = notifications.filter(n => !n.is_read).length;
   const handleLogout = () => {
     logout();
     navigate('/login');
@@ -104,11 +164,49 @@ const DashboardLayout = ({ children, menuItems }) => {
             </div>
           </div>
           <div className="dash-topbar-right">
-            <button className="dash-notif-btn" title="Notifications">
-              <Bell size={18} />
-              <span className="notif-dot"></span>
-            </button>
-            <div className="dash-profile-dropdown">
+            
+            <div className="dash-notif-container" ref={notifRef}>
+              <button 
+                className="dash-notif-btn" 
+                title="Notifications"
+                onClick={() => setNotifOpen(!notifOpen)}
+              >
+                <Bell size={18} />
+                {unreadCount > 0 && <span className="notif-dot">{unreadCount}</span>}
+              </button>
+              
+              {notifOpen && (
+                <div className="dash-notif-dropdown">
+                  <div className="notif-header">
+                    <h4>Notifications</h4>
+                    {unreadCount > 0 && (
+                      <button className="mark-all-btn" onClick={handleMarkAllRead}>
+                        Mark all read
+                      </button>
+                    )}
+                  </div>
+                  <div className="notif-body">
+                    {notifications.length === 0 ? (
+                      <div className="notif-empty">No notifications</div>
+                    ) : (
+                      notifications.map(notif => (
+                        <div 
+                          key={notif.id + '-' + notif.source} 
+                          className={`notif-item ${notif.is_read ? 'read' : 'unread'}`}
+                          onClick={() => handleNotifClick(notif)}
+                        >
+                          <div className="notif-title">{notif.title}</div>
+                          <div className="notif-message">{notif.message}</div>
+                          <div className="notif-time">{new Date(notif.created_at).toLocaleString()}</div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="dash-profile-dropdown" ref={profileRef}>
               <button 
                 className={`dash-user-chip ${profileOpen ? 'open' : ''}`} 
                 onClick={() => setProfileOpen(!profileOpen)}

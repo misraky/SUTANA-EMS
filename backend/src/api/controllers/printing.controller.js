@@ -142,6 +142,31 @@ exports.createOrder = catchAsync(async (req, res) => {
     updated_at: db.fn.now()
   });
   await audit('PRINTING_ORDER_CREATED', userId, { ip: req.ip, resourceId: orderId });
+
+  // NOTIFY PRINTING DEPARTMENT
+  try {
+    const printingStaff = await db('users')
+      .leftJoin('user_roles', 'users.id', 'user_roles.user_id')
+      .leftJoin('roles', 'user_roles.role_id', 'roles.id')
+      .whereIn('roles.name', ['Printing Supervisor', 'Admin'])
+      .select('users.id');
+
+    if (printingStaff && printingStaff.length > 0) {
+      const notificationsToInsert = printingStaff.map(staff => ({
+        user_id: staff.id,
+        title: 'New Printing Order',
+        message: `Order ${orderNumber} has been created.`,
+        type: 'printing_order',
+        link_url: `/printing/orders`,
+        is_read: false,
+        created_at: db.fn.now()
+      }));
+      await db('user_notifications').insert(notificationsToInsert);
+    }
+  } catch (notifErr) {
+    console.error('Failed to notify printing staff:', notifErr.message);
+  }
+
   res.status(201).json({ status: 'success', data: { orderId, orderNumber } });
 });
 exports.updateOrderStatus = catchAsync(async (req, res) => {
@@ -179,6 +204,7 @@ exports.updateOrderStatus = catchAsync(async (req, res) => {
     created_at: db.fn.now()
   }).catch(() => {});
   if (order.customer_id) {
+    // Insert into customer_notifications (for Customer Portal view)
     await db('customer_notifications').insert({
       customer_id: order.customer_id,
       title: 'Order Status Update',
@@ -186,7 +212,21 @@ exports.updateOrderStatus = catchAsync(async (req, res) => {
       type: 'order_update',
       link_url: `/customer/orders/${id}/track`,
       created_at: db.fn.now()
-    }).catch(err => console.error('Notification failed:', err.message));
+    }).catch(err => console.error('Customer notification failed:', err.message));
+
+    // Also insert into user_notifications for the internal user linked to this customer (if any)
+    // This ensures Admins/Employees who placed orders via the ERP dashboard also get navbar alerts
+    const linkedCustomer = await db('customers').where('id', order.customer_id).first();
+    if (linkedCustomer && linkedCustomer.user_id) {
+      await db('user_notifications').insert({
+        user_id: linkedCustomer.user_id,
+        title: 'Order Status Update',
+        message: `Your printing order ${order.order_number} is now ${statusRow.status_name}.`,
+        type: 'order_update',
+        link_url: `/customer/orders/${id}/track`,
+        created_at: db.fn.now()
+      }).catch(err => console.error('User notification failed:', err.message));
+    }
   }
   await audit('PRINTING_ORDER_STATUS_UPDATED', userId, {
     ip: req.ip, resourceId: id,

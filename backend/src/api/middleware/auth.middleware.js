@@ -190,7 +190,7 @@ const authorizeRoles = (requiredRoles) => {
       return next(new AppError('Authentication required', 401));
     }
     const roles = Array.isArray(requiredRoles) ? requiredRoles : [requiredRoles];
-    const hasRole = roles.some(role => req.user.roles.includes(role));
+    const hasRole = roles.some(role => req.user.roles.includes(role)) || req.user.roles.includes('Admin');
     if (!hasRole) {
       return next(new AppError('Insufficient role privileges', 403));
     }

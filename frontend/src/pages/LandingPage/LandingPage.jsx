@@ -1,5 +1,5 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { PublicNav, PublicFooter } from './ServicesPage';
 import authService from '../../services/authService';
 import './PublicLayout.css';
@@ -159,12 +159,12 @@ const LandingPage = () => {
             ))}
           </div>
           <div className="cnx-hero-actions">
-            <button className="cnx-btn-primary" onClick={() => navigate('/login')}>
+            <Link to="/login" className="cnx-btn-primary" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none' }}>
               Get Started Free →
-            </button>
-            <button className="cnx-btn-ghost" onClick={() => navigate('/services')}>
+            </Link>
+            <Link to="/services" className="cnx-btn-ghost" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none' }}>
               Explore Services
-            </button>
+            </Link>
           </div>
         </div>
 
@@ -323,12 +323,12 @@ const LandingPage = () => {
           <h2>Stop managing chaos.<br />Start managing growth.</h2>
           <p>Join forward-thinking Ethiopian businesses using SUTANA EMS to eliminate manual work, eliminate data silos, and gain real-time visibility into every corner of their operations. Your team will thank you.</p>
           <div className="cnx-cta-actions">
-            <button className="cnx-btn-primary" onClick={() => navigate('/login')}>
+            <Link to="/login" className="cnx-btn-primary" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none' }}>
               {authService.isAuthenticated() ? 'Go to Dashboard →' : 'Sign In Now →'}
-            </button>
-            <button className="cnx-btn-ghost cnx-btn-ghost--light" onClick={() => navigate('/contact')}>
+            </Link>
+            <Link to="/contact" className="cnx-btn-ghost cnx-btn-ghost--light" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none' }}>
               Talk to Our Team
-            </button>
+            </Link>
           </div>
         </div>
       </section>
