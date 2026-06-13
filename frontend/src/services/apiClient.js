@@ -2,9 +2,6 @@ import axios from 'axios';
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
 const apiClient = axios.create({
   baseURL: API_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
   withCredentials: true,
 });
 apiClient.interceptors.request.use(
@@ -16,6 +13,13 @@ apiClient.interceptors.request.use(
     const sessionId = localStorage.getItem('sessionId');
     if (sessionId) {
       config.headers['x-session-id'] = sessionId;
+    }
+    // For FormData let the browser set Content-Type with boundary automatically.
+    // For everything else default to JSON.
+    if (config.data instanceof FormData) {
+      delete config.headers['Content-Type'];
+    } else {
+      config.headers['Content-Type'] = 'application/json';
     }
     return config;
   },

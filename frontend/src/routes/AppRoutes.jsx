@@ -8,6 +8,8 @@ const ServicesPage     = lazy(() => import('../pages/LandingPage/ServicesPage'))
 const FleetGalleryPage = lazy(() => import('../pages/LandingPage/FleetGalleryPage'));
 const AboutPage        = lazy(() => import('../pages/LandingPage/AboutPage'));
 const ContactPage      = lazy(() => import('../pages/LandingPage/ContactPage'));
+const PharmacyHealthPage = lazy(() => import('../pages/LandingPage/PharmacyHealthPage'));
+const FarmingServicePage = lazy(() => import('../pages/LandingPage/FarmingServicePage'));
 const LoginPage          = lazy(() => import('../pages/auth/LoginPage'));
 const RegisterPage       = lazy(() => import('../pages/auth/RegisterPage'));
 const ForgotPasswordPage = lazy(() => import('../pages/auth/ForgotPasswordPage'));
@@ -25,6 +27,7 @@ const FarmingDashboard  = lazy(() => import('../pages/farming/FarmingDashboard')
 const PharmacyDashboard = lazy(() => import('../pages/pharmacy/PharmacyDashboard'));
 const CarRentingDashboard = lazy(() => import('../pages/car-renting/CarRentingDashboard'));
 const ReportsIndex    = lazy(() => import('../pages/reports/ReportsIndex'));
+const PrescriptionViewer = lazy(() => import('../pages/shared/PrescriptionViewer'));
 const Loader = () => (
   <div style={{
     display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -42,6 +45,9 @@ const AppRoutes = () => {
         {/* Public / Landing Pages — redirect to dashboard if logged in */}
         <Route path="/"         element={<PublicRoute><LandingPage /></PublicRoute>} />
         <Route path="/services" element={<PublicRoute><ServicesPage /></PublicRoute>} />
+        <Route path="/services/pharmacy" element={<PharmacyHealthPage />} />
+        <Route path="/services/farming" element={<FarmingServicePage />} />
+        <Route path="/prescription-viewer" element={<PrescriptionViewer />} />
         <Route path="/fleet-gallery" element={<FleetGalleryPage />} />
         <Route path="/about"    element={<PublicRoute><AboutPage /></PublicRoute>} />
         <Route path="/contact"  element={<PublicRoute><ContactPage /></PublicRoute>} />

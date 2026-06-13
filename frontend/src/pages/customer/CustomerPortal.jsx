@@ -9,6 +9,8 @@ import CustomerProfile from './CustomerProfile';
 import CustomerInvoices from './CustomerInvoices';
 import SupportTickets from './SupportTickets';
 import CustomerRentals from './CustomerRentals';
+import CustomerPrescriptions from './CustomerPrescriptions';
+import CustomerFarmingOrders from './CustomerFarmingOrders';
 import styles from './CustomerPortal.module.css';
 import customerService from '../../services/customerService';
 import { formatCurrency } from '../../utils/formatters';
@@ -52,6 +54,8 @@ const CustomerPortal = () => {
     { label: 'Browse Cars', path: '/fleet-gallery', icon: 'car', isExternal: true },
     { label: 'My Rentals', path: '/customer/rentals', icon: 'key' },
     { label: 'My Orders', path: '/customer/orders', icon: 'package' },
+    { label: 'Prescriptions', path: '/customer/prescriptions', icon: 'pill' },
+    { label: 'Farming Orders', path: '/customer/farming-orders', icon: 'wheat' },
     { label: 'Place Order', path: '/customer/new-order', icon: 'plus-circle' },
     { label: 'Receipts', path: '/customer/receipts', icon: 'file-text' },
     { label: 'Invoices', path: '/customer/invoices', icon: 'credit-card' },
@@ -68,6 +72,8 @@ const CustomerPortal = () => {
           <Route path="new-order" element={<CustomerOrderForm />} />
           <Route path="receipts" element={<CustomerReceipts />} />
           <Route path="invoices" element={<CustomerInvoices />} />
+          <Route path="prescriptions" element={<CustomerPrescriptions />} />
+          <Route path="farming-orders" element={<CustomerFarmingOrders />} />
           <Route path="support" element={<SupportTickets />} />
           <Route path="profile" element={<CustomerProfile />} />
           <Route path="/" element={<Navigate to="portal" replace />} />

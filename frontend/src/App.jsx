@@ -1,6 +1,7 @@
 import React from 'react';
 import AppRoutes from './routes/AppRoutes';
 import './App.css';
+
 function App() {
   return (
     <div className="app-container">
@@ -8,4 +9,5 @@ function App() {
     </div>
   );
 }
+
 export default App;

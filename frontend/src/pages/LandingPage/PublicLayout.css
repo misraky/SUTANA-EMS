@@ -1950,6 +1950,26 @@ body.dark-theme .pub-dropdown-item::after {
   width: calc(100% - 60px);
 }
 
+/* Active dropdown item — currently visited page */
+.pub-dropdown-item--active {
+  background: #e0f2fe;
+  color: #0369a1 !important;
+}
+
+body.dark-theme .pub-dropdown-item--active {
+  background: #0c4a6e;
+  color: #7dd3fc !important;
+}
+
+.pub-dropdown-item--active .pub-dropdown-icon {
+  color: #0369a1;
+}
+
+.pub-dropdown-item--active::after {
+  width: calc(100% - 60px) !important;
+  background: #0369a1;
+}
+
 .pub-dropdown-icon {
   font-size: 1.05rem;
   flex-shrink: 0;

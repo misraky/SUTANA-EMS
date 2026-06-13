@@ -47,6 +47,25 @@ const startServer = async () => {
       console.log(`  Started: ${new Date().toISOString()}`);
       console.log('='.repeat(60) + '\n');
     });
+
+    // Initialize Socket.io
+    const io = require('socket.io')(server, {
+      cors: {
+        origin: config.cors ? config.cors.allowedOrigins : '*',
+        methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+        credentials: true
+      }
+    });
+    
+    // Attach io to app so routes/controllers can access it
+    app.set('io', io);
+
+    io.on('connection', (socket) => {
+      logger.info(`🔌 Socket client connected: ${socket.id}`);
+      socket.on('disconnect', () => {
+        logger.info(`🔌 Socket client disconnected: ${socket.id}`);
+      });
+    });
     
     // Handle server errors
     server.on('error', (error) => {

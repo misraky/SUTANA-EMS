@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import authService from '../../services/authService';
 import styles from './LoginPage.module.css';
 const LoginPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [formData, setFormData] = useState({ username: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
@@ -18,6 +19,13 @@ const LoginPage = () => {
     setError('');
     try {
       const user = await authService.login(formData);
+      
+      const from = location.state?.from?.pathname || location.state?.from;
+      if (from) {
+        navigate(from, { state: location.state });
+        return;
+      }
+
       // Determine dashboard based on role — no forced password change redirect
       if (user.roles?.includes('Admin')) navigate('/admin');
       else if (user.roles?.includes('CEO')) navigate('/ceo');

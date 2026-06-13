@@ -1,0 +1,539 @@
+.container {
+  padding: 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+  font-family: 'Inter', sans-serif;
+  color: #0f172a;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.header h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0 0 4px 0;
+  color: #1e293b;
+}
+
+.header p {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #64748b;
+}
+
+/* Stats */
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.statCard {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  border: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.statIcon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.statInfo {
+  display: flex;
+  flex-direction: column;
+}
+
+.statLabel {
+  font-size: 0.8rem;
+  color: #64748b;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.statValue {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.statSub {
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+/* Section Cards */
+.sectionCard {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+
+.sectionHeader {
+  padding: 16px 20px;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: #1e293b;
+}
+
+.badge {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  margin-left: auto;
+}
+
+.badgeWarning {
+  background: #fef9c3;
+  color: #854d0e;
+}
+
+.badgeDanger {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.sectionBody {
+  padding: 20px;
+}
+
+/* Verification Cards */
+.verifyCard {
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 18px;
+  margin-bottom: 16px;
+  background: #fafafa;
+}
+
+.verifyCard:last-child {
+  margin-bottom: 0;
+}
+
+.verifyCardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 14px;
+}
+
+.verifyCardTitle {
+  font-weight: 700;
+  font-size: 1rem;
+  color: #1e293b;
+  margin: 0 0 2px 0;
+}
+
+.verifyCardSub {
+  font-size: 0.8rem;
+  color: #64748b;
+  margin: 0;
+}
+
+.amountBig {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: #0f172a;
+  text-align: right;
+}
+
+.methodTag {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 6px;
+  text-align: right;
+  margin-top: 4px;
+  display: inline-block;
+}
+
+.methodBank { background: #dbeafe; color: #1d4ed8; }
+.methodTelebirr { background: #fce7f3; color: #9d174d; }
+.methodCash { background: #d1fae5; color: #065f46; }
+
+.verifyMeta {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 12px;
+  font-size: 0.875rem;
+}
+
+.metaItem strong {
+  display: block;
+  color: #94a3b8;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+
+.metaItem span {
+  color: #1e293b;
+  font-weight: 600;
+}
+
+.proofRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+  font-size: 0.875rem;
+  background: #f1f5f9;
+  padding: 10px 14px;
+  border-radius: 8px;
+}
+
+.viewProofBtn {
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 4px 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.verifyActions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.btnApprove {
+  background: #10b981;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 9px 18px;
+  font-weight: 700;
+  font-size: 0.875rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: background 0.2s;
+}
+.btnApprove:hover { background: #059669; }
+
+.btnReject {
+  background: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 9px 18px;
+  font-weight: 700;
+  font-size: 0.875rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: background 0.2s;
+}
+.btnReject:hover { background: #dc2626; }
+
+.btnSecondary {
+  background: white;
+  color: #475569;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 9px 18px;
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.btnSecondary:hover { background: #f1f5f9; }
+
+/* Refund Cards */
+.refundCard {
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 18px;
+  margin-bottom: 16px;
+  background: #fafafa;
+}
+
+.refundCard:last-child { margin-bottom: 0; }
+
+.refundCardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.statusBadge {
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+.statusPending { background: #fef9c3; color: #854d0e; }
+.statusApproved { background: #d1fae5; color: #065f46; }
+.statusRejected { background: #fee2e2; color: #991b1b; }
+
+.refundDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.875rem;
+  color: #475569;
+  margin-bottom: 14px;
+  padding: 12px;
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.refundDetails span { display: flex; justify-content: space-between; }
+.refundDetails strong { color: #1e293b; }
+
+.refundAmountRow {
+  display: flex;
+  justify-content: space-between;
+  padding-top: 10px;
+  border-top: 1px dashed #cbd5e1;
+  font-weight: 700;
+  font-size: 1rem;
+  color: #ef4444;
+}
+
+/* Approve refund form inline */
+.refundForm {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 16px;
+  margin-top: 12px;
+}
+
+.refundForm h4 {
+  margin: 0 0 12px 0;
+  font-size: 0.9rem;
+  color: #1e293b;
+}
+
+.methodSelector {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.methodOption {
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 2px solid #e2e8f0;
+  background: white;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: #475569;
+}
+
+.methodOption.selected {
+  border-color: #3b82f6;
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.bankFields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.bankFields input {
+  padding: 8px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  outline: none;
+}
+
+.bankFields input:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59,130,246,0.1);
+}
+
+.refundFormActions {
+  display: flex;
+  gap: 10px;
+}
+
+/* Transaction Ledger */
+.ledgerHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.ledgerFilters {
+  display: flex;
+  gap: 8px;
+}
+
+.filterBtn {
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+  background: white;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  color: #475569;
+  transition: all 0.15s;
+}
+
+.filterBtn:hover, .filterBtn.active {
+  background: #0f172a;
+  color: white;
+  border-color: #0f172a;
+}
+
+.ledgerTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.ledgerTable thead tr {
+  background: #f8fafc;
+}
+
+.ledgerTable th {
+  padding: 12px 16px;
+  text-align: left;
+  color: #64748b;
+  font-weight: 700;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.ledgerTable td {
+  padding: 14px 16px;
+  border-bottom: 1px solid #f1f5f9;
+  color: #1e293b;
+}
+
+.ledgerTable tbody tr:hover {
+  background: #f8fafc;
+}
+
+.moduleBadge {
+  padding: 3px 10px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+.modulePharmacy { background: #d1fae5; color: #065f46; }
+.moduleRental { background: #dbeafe; color: #1d4ed8; }
+.modulePrinting { background: #fce7f3; color: #9d174d; }
+
+.txTypeBadge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 4px;
+}
+.txPayment { background: #d1fae5; color: #065f46; }
+.txRefund { background: #fee2e2; color: #991b1b; }
+.txFee { background: #fef3c7; color: #92400e; }
+
+.amountPos {
+  font-weight: 700;
+  color: #10b981;
+}
+
+.amountNeg {
+  font-weight: 700;
+  color: #ef4444;
+}
+
+.verifiedBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+.verifiedBadge.ok { background: #d1fae5; color: #065f46; }
+.verifiedBadge.pending { background: #fef9c3; color: #854d0e; }
+
+.emptyState {
+  padding: 40px;
+  text-align: center;
+  color: #94a3b8;
+}
+
+/* Reject modal inline */
+.rejectForm {
+  background: #fff5f5;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  padding: 14px;
+  margin-top: 10px;
+}
+
+.rejectForm textarea {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #fca5a5;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  resize: vertical;
+  min-height: 60px;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.successAlert {
+  background: #d1fae5;
+  border: 1px solid #6ee7b7;
+  color: #065f46;
+  padding: 12px 18px;
+  border-radius: 8px;
+  font-weight: 600;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}

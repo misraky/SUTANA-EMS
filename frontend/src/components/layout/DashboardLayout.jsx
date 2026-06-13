@@ -170,7 +170,7 @@ const NotificationBell = ({ navigate }) => {
     </div>
   );
 };
-const DashboardLayout = ({ children, menuItems }) => {
+const DashboardLayout = ({ children, menuItems, title }) => {
   const { user, logout } = useAuth();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -235,11 +235,25 @@ const DashboardLayout = ({ children, menuItems }) => {
             >
               ☰
             </button>
+            {title && (
+              <h2 className="dash-topbar-title">
+                {title.split('\n').map((line, i) => (
+                  <React.Fragment key={i}>
+                    {line}
+                    {i !== title.split('\n').length - 1 && <br/>}
+                  </React.Fragment>
+                ))}
+              </h2>
+            )}
+          </div>
+          
+          <div className="dash-topbar-center">
             <div className="dash-search">
               <span className="dash-search-icon">🔍</span>
-              <input type="text" placeholder="Search across ERP..." />
+              <input type="text" placeholder="Search medicines, orders, or customers..." />
             </div>
           </div>
+
           <div className="dash-topbar-right">
             <NotificationBell navigate={navigate} />
             <div className="dash-profile-dropdown">

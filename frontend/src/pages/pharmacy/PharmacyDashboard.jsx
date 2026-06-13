@@ -2,24 +2,31 @@ import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 
-const PharmacyHome = () => (
-  <div style={{ padding: '2rem' }}>
-    <h2>Pharmacy Overview</h2>
-    <p>Welcome to the Pharmacy Management Dashboard.</p>
-  </div>
-);
+import PharmacyOverview from './PharmacyOverview';
+import PharmacyProducts from './PharmacyProducts';
+import PharmacyCategories from './PharmacyCategories';
+import PharmacyBranches from './PharmacyBranches';
+import PharmacyRequests from './PharmacyRequests';
 
 const PharmacyDashboard = () => {
   const menuItems = [
-    { label: 'Overview', path: '/pharmacy/overview', icon: 'dashboard' },
+    { label: 'POS & Overview', path: '/pharmacy/overview', icon: 'dashboard' },
+    { label: 'Requests', path: '/pharmacy/requests', icon: 'clipboard' },
+    { label: 'Products', path: '/pharmacy/products', icon: 'inventory' },
+    { label: 'Categories', path: '/pharmacy/categories', icon: 'category' },
+    { label: 'Branches', path: '/pharmacy/branches', icon: 'store' },
   ];
 
   return (
     <div>
-      <DashboardLayout menuItems={menuItems}>
+      <DashboardLayout menuItems={menuItems} title={"Pharmacy\nManagement\nDashboard"}>
         <div>
           <Routes>
-            <Route path="overview" element={<PharmacyHome />} />
+            <Route path="overview" element={<PharmacyOverview />} />
+            <Route path="requests" element={<PharmacyRequests />} />
+            <Route path="products" element={<PharmacyProducts />} />
+            <Route path="categories" element={<PharmacyCategories />} />
+            <Route path="branches" element={<PharmacyBranches />} />
             <Route path="/" element={<Navigate to="overview" replace />} />
           </Routes>
         </div>

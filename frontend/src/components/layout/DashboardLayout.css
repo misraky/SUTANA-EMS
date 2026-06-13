@@ -265,7 +265,22 @@ body {
 .dash-topbar-left {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 16px;
+  flex: 1; /* Take up left space */
+}
+
+.dash-topbar-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #1d4ed8;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.dash-topbar-center {
+  flex: 1; /* Center the middle element */
+  display: flex;
+  justify-content: center;
 }
 
 .dash-sidebar-toggle {
@@ -319,6 +334,8 @@ body {
   display: flex;
   align-items: center;
   gap: 10px;
+  flex: 1;
+  justify-content: flex-end;
 }
 
 .dash-notif-btn {

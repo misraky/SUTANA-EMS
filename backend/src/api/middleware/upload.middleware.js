@@ -17,7 +17,11 @@ const UPLOAD_DIRS = {
   expenses: 'uploads/expenses',
   products: 'uploads/products',
   profile: 'uploads/profile',
-  temp: 'uploads/temp'
+  temp: 'uploads/temp',
+  pharmacyDrugs: 'uploads/pharmacy/drugs',
+  pharmacyCovers: 'uploads/pharmacy/covers',
+  pharmacyCategories: 'uploads/pharmacy/categories',
+  pharmacyBranches: 'uploads/pharmacy/branches'
 };
 Object.values(UPLOAD_DIRS).forEach(dir => {
   const fullPath = path.join(process.cwd(), dir);
@@ -40,6 +44,12 @@ const generateFilename = (originalname, prefix = '') => {
  */
 const fileFilter = (req, file, cb) => {
   const allowedTypes = config.upload.allowedFileTypes;
+  
+  // Skip empty files sent by frontend (prevents stream abortion and allows body parsing)
+  if (!file.originalname || file.originalname.trim() === '' || file.mimetype === 'application/octet-stream') {
+    return cb(null, false);
+  }
+
   if (allowedTypes.includes(file.mimetype)) {
     cb(null, true);
   } else {
@@ -108,6 +118,10 @@ const uploads = {
   singlePaymentProof: createUploader('receipts'),
   singleProductImage: createUploader('products'),
   singleProfilePicture: createUploader('profile'),
+  pharmacyDrugImage: createUploader('pharmacyDrugs'),
+  pharmacyCoverImage: createUploader('pharmacyCovers'),
+  pharmacyCategoryImage: createUploader('pharmacyCategories'),
+  pharmacyBranchImage: createUploader('pharmacyBranches'),
   multipleOrderAttachments: createMultipleUploader('orders', 10),
   multipleProductImages: createMultipleUploader('products', 5),
   multipleExpenseReceipts: createMultipleUploader('expenses', 3),
@@ -159,6 +173,11 @@ const handleUploadError = (err, req, res, next) => {
 };
 const getFileInfo = (file) => {
   if (!file) return null;
+  // Derive the URL from the actual file path so sub-directories are preserved
+  // e.g. uploads/pharmacy/categories/1234-abc.jpg  →  /uploads/pharmacy/categories/1234-abc.jpg
+  const relativePath = file.path
+    .replace(/\\/g, '/')           // normalise Windows back-slashes
+    .replace(/^.*?(uploads\/)/, '$1'); // strip everything before "uploads/"
   return {
     id: uuidv4(),
     filename: file.filename,
@@ -166,7 +185,7 @@ const getFileInfo = (file) => {
     size: file.size,
     mimeType: file.mimetype,
     path: file.path,
-    url: `/uploads/${file.filename}`,
+    url: `/${relativePath}`,
     uploadedAt: new Date().toISOString()
   };
 };
