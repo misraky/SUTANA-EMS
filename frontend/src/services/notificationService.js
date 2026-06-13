@@ -11,6 +11,7 @@ const notificationService = {
 
   markAllAsRead: async () => {
     return await apiClient.put('/notifications/read-all');
+  },
   getMyNotifications: async () => {
     const res = await apiClient.get('/notifications');
     return res.data;
