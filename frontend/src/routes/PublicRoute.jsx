@@ -10,6 +10,7 @@ const PublicRoute = ({ children }) => {
       'CEO': '/ceo',
       'Finance': '/finance',
       'Purchase': '/purchase',
+      'Store Manager': '/store',
       'Store Worker': '/store',
       'Sales/Cashier': '/sales',
       'Printing Supervisor': '/printing',
@@ -19,7 +20,7 @@ const PublicRoute = ({ children }) => {
       'Customer': '/customer'
     };
     const rolePriority = [
-      'Admin', 'CEO', 'Finance', 'Purchase', 'Store Worker', 'Sales/Cashier', 
+      'Admin', 'CEO', 'Finance', 'Purchase', 'Store Manager', 'Store Worker', 'Sales/Cashier', 
       'Printing Supervisor', 'Farming Manager', 'Pharmacist', 'Car Renting Manager', 'Customer'
     ];
     let targetPath = '/customer';

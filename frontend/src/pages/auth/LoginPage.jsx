@@ -23,7 +23,7 @@ const LoginPage = () => {
       else if (user.roles?.includes('CEO')) navigate('/ceo');
       else if (user.roles?.includes('Finance')) navigate('/finance');
       else if (user.roles?.includes('Purchase')) navigate('/purchase');
-      else if (user.roles?.includes('Store Worker')) navigate('/store');
+      else if (user.roles?.includes('Store Worker') || user.roles?.includes('Store Manager')) navigate('/store');
       else if (user.roles?.includes('Sales/Cashier')) navigate('/sales');
       else if (user.roles?.includes('Printing Supervisor')) navigate('/printing');
       else if (user.roles?.includes('Farming Manager')) navigate('/farming');
