@@ -235,3 +235,36 @@
   font-size: 1.125rem;
   color: #6b7280;
 }
+
+/* Pre-fill banner (shown when navigated from reorder suggestions) */
+.prefillBanner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+  border: 1px solid #86efac;
+  border-left: 4px solid #16a34a;
+  border-radius: 10px;
+  padding: 0.875rem 1.25rem;
+  margin-bottom: 1.5rem;
+  font-size: 0.875rem;
+  color: #14532d;
+  animation: slideDown 0.3s ease;
+}
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.prefillDismiss {
+  background: none;
+  border: none;
+  color: #166534;
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+.prefillDismiss:hover { background: #bbf7d0; }

@@ -282,7 +282,8 @@ exports.checkout = catchAsync(async (req, res) => {
     paymentMethod,
     amountPaid,
     paymentReference,
-    notes
+    notes,
+    serials // Expected format: { [productId]: ['serial1', 'serial2'] }
   } = req.body;
   const userId = req.user.id;
   const ip = req.ip;
@@ -372,6 +373,36 @@ exports.checkout = catchAsync(async (req, res) => {
         subtotal: item.quantity * item.unitPrice,
         total: item.quantity * item.unitPrice
       });
+      
+      const product = await trx('products').where('id', item.productId).first();
+      if (product.requires_serial) {
+        const itemSerials = (serials && serials[item.productId]) || [];
+        if (itemSerials.length !== item.quantity) {
+          throw new AppError(`Product ${product.name} requires exactly ${item.quantity} serial numbers.`, 400);
+        }
+        
+        // Verify they are in stock and mark as sold
+        for (const serial of itemSerials) {
+          const serialRecord = await trx('inventory_serials')
+            .where('product_id', item.productId)
+            .where('serial_number', serial)
+            .where('status', 'In Stock')
+            .first();
+            
+          if (!serialRecord) {
+            throw new AppError(`Serial number ${serial} for ${product.name} is not in stock or invalid.`, 400);
+          }
+          
+          await trx('inventory_serials')
+            .where('id', serialRecord.id)
+            .update({
+              status: 'Sold',
+              reference_type: 'Sale',
+              reference_id: saleId
+            });
+        }
+      }
+
       const currentStock = await trx('inventory')
         .where('product_id', item.productId)
         .first();
@@ -386,6 +417,7 @@ exports.checkout = catchAsync(async (req, res) => {
         await trx('inventory_movements').insert({
           product_id: item.productId,
           transaction_type: 'Sale',
+          model_number: 20,
           quantity_change: -item.quantity,
           quantity_before: currentStock.quantity,
           quantity_after: newQuantity,

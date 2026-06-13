@@ -38,6 +38,9 @@ const purchaseService = {
   },
   getPurchaseStatistics: async () => {
     return await apiClient.get('/purchase/statistics');
-  }
+  },
+  getReorderSuggestions: async () => {
+    return await apiClient.get('/purchase/reorder-suggestions');
+  },
 };
 export default purchaseService;

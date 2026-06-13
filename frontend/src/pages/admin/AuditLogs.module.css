@@ -3,6 +3,7 @@
   flex-direction: column;
   gap: 1.5rem;
 }
+
 .sectionHeader {
   display: flex;
   justify-content: space-between;
@@ -12,70 +13,214 @@
   border-radius: 8px;
   box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
+
 .sectionHeader h2 {
   font-size: 1.5rem;
   font-weight: 600;
   color: #1e293b;
   margin: 0 0 0.25rem 0;
 }
+
 .sectionHeader p {
   color: #64748b;
   margin: 0;
   font-size: 0.875rem;
 }
-.filters select {
-  padding: 0.5rem 1rem;
+
+.totalBadge {
+  background: #e0e7ff;
+  color: #3730a3;
+  padding: 0.35rem 0.85rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+/* Filter Bar */
+.filterBar {
+  background: white;
+  padding: 1rem 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.searchRow {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.filterRow {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.filterInput {
+  padding: 0.45rem 0.75rem;
   border: 1px solid #e2e8f0;
   border-radius: 6px;
-  background-color: #f8fafc;
+  background: #f8fafc;
   color: #1e293b;
   font-size: 0.875rem;
   outline: none;
+  flex-grow: 1;
+  min-width: 120px;
 }
-.filters select:focus {
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 1px #3b82f6;
+
+.filterInput:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 2px rgba(99,102,241,0.15);
 }
+
+.btnSecondary {
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #cbd5e1;
+  padding: 0.45rem 1rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s;
+}
+
+.btnSecondary:hover:not(:disabled) { background: #e2e8f0; }
+.btnSecondary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Table */
 .tableContainer {
   background: white;
   border-radius: 8px;
   box-shadow: 0 1px 3px rgba(0,0,0,0.1);
   overflow-x: auto;
 }
+
 .dataTable {
   width: 100%;
   border-collapse: collapse;
   text-align: left;
 }
+
 .dataTable th, .dataTable td {
-  padding: 1rem 1.5rem;
+  padding: 0.875rem 1.25rem;
   border-bottom: 1px solid #e2e8f0;
 }
+
 .dataTable th {
   background-color: #f8fafc;
   color: #475569;
   font-weight: 600;
-  font-size: 0.875rem;
+  font-size: 0.8rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
-.textMuted {
-  color: #64748b;
-}
-.textXs {
-  font-size: 0.75rem;
-}
-.textSm {
-  font-size: 0.875rem;
-}
+
+.row:hover { background: #f8fafc; }
+.rowExpanded { background: #eef2ff; }
+
+/* Badges */
 .badge {
-  padding: 0.25rem 0.5rem;
+  padding: 0.2rem 0.6rem;
   border-radius: 4px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  background-color: #f1f5f9;
-  color: #475569;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  display: inline-block;
 }
+
+.badgeDefault { background: #f1f5f9; color: #475569; }
+.badgeSuccess { background: #dcfce7; color: #166534; }
+.badgeDanger  { background: #fee2e2; color: #991b1b; }
+.badgeWarning { background: #fef9c3; color: #92400e; }
+
+/* Text helpers */
+.textMuted   { color: #64748b; }
+.textXs      { font-size: 0.75rem; }
+.textSm      { font-size: 0.875rem; }
+.textDanger  { color: #dc2626; font-size: 0.875rem; }
+.textSuccess { color: #16a34a; font-size: 0.875rem; }
+
+/* Expand button */
+.btnExpand {
+  background: none;
+  border: 1px solid #c7d2fe;
+  color: #4f46e5;
+  padding: 0.2rem 0.65rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btnExpand:hover { background: #e0e7ff; }
+
+/* Diff Viewer */
+.expandedContent td {
+  background: #f8fafc;
+  padding: 1rem 1.5rem;
+}
+
+.diffViewer {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.diffBefore, .diffAfter {
+  flex: 1;
+  min-width: 240px;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+}
+
+.diffBefore { border-top: 3px solid #f87171; }
+.diffAfter  { border-top: 3px solid #4ade80; }
+
+.diffLabel {
+  display: block;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.diffBefore .diffLabel { background: #fef2f2; color: #b91c1c; }
+.diffAfter  .diffLabel { background: #f0fdf4; color: #15803d; }
+
+.diffCode {
+  margin: 0;
+  padding: 0.75rem;
+  font-size: 0.78rem;
+  font-family: 'Courier New', monospace;
+  background: white;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+/* Empty state */
+.emptyState {
+  text-align: center;
+  padding: 3rem;
+  color: #94a3b8;
+}
+
+/* Pagination */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+}
+
 .loading {
   display: flex;
   justify-content: center;

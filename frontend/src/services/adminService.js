@@ -3,6 +3,13 @@ const adminService = {
   getUsers: async (params) => {
     return await apiClient.get('/users', { params });
   },
+  exportUsers: async (params) => {
+    // Export returns a blob, so we must handle that differently
+    return await apiClient.get('/users/export', { 
+      params: { ...params, format: 'excel' },
+      responseType: 'blob' 
+    });
+  },
   getUserById: async (id) => {
     return await apiClient.get(`/users/${id}`);
   },

@@ -5,11 +5,13 @@ import FinanceHome from './FinanceHome';
 import PaymentTracking from './PaymentTracking';
 import ExpenseManagement from './ExpenseManagement';
 import FinancialReports from './FinancialReports';
+import RentalPaymentVerification from './RentalPaymentVerification';
 import styles from './FinanceDashboard.module.css';
 const FinanceDashboard = () => {
   const menuItems = [
     { label: 'Financial Summary', path: '/finance/overview', icon: 'wallet' },
     { label: 'Payment Tracking',  path: '/finance/payments', icon: 'credit-card' },
+    { label: 'Rental Payments',  path: '/finance/rental-payments', icon: 'car' },
     { label: 'Expense Management',path: '/finance/expenses', icon: 'shopping-cart' },
     { label: 'Financial Reports', path: '/finance/reports', icon: 'bar-chart' },
   ];
@@ -20,6 +22,7 @@ const FinanceDashboard = () => {
           <Routes>
             <Route path="overview" element={<FinanceHome />} />
             <Route path="payments" element={<PaymentTracking />} />
+            <Route path="rental-payments" element={<RentalPaymentVerification />} />
             <Route path="expenses" element={<ExpenseManagement />} />
             <Route path="reports"  element={<FinancialReports />} />
             <Route path="/" element={<Navigate to="overview" replace />} />

@@ -10,6 +10,7 @@ const { rateLimitMiddleware, authLimiter } = require('./api/middleware/rateLimit
 const { errorHandler } = require('./api/middleware/errorHandler.middleware');
 const { securityHeaders } = require('./api/middleware/security.middleware');
 const routes = require('./api/routes');
+const cronService = require('./services/cronService');
 const app = express();
 app.use(helmet({
   contentSecurityPolicy: {
@@ -25,6 +26,7 @@ app.use(helmet({
       frameSrc: ["'none'"]
     }
   },
+  crossOriginResourcePolicy: { policy: "cross-origin" },
   hsts: {
     maxAge: 31536000,
     includeSubDomains: true,
@@ -138,6 +140,10 @@ const initializeApp = async () => {
     if (!dbConnected && config.isProduction) {
       throw new Error('Database connection failed in production');
     }
+
+    // Start background services
+    cronService.start();
+
     logger.info('✅ Application initialized successfully');
     logger.info(`   Environment: ${config.env}`);
     logger.info(`   Port: ${config.port}`);

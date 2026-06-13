@@ -5,6 +5,7 @@ const UserController = require('../controllers/user.controller');
 const { validate } = require('../middleware/validate.middleware');
 const { authenticate, authorize } = require('../middleware/auth.middleware');
 const { limiters } = require('../../config/rateLimit');
+
 const createUserValidation = [
   body('fullName')
     .notEmpty().withMessage('Full name is required')
@@ -22,57 +23,64 @@ const createUserValidation = [
     .isArray().withMessage('Role IDs must be an array')
     .notEmpty().withMessage('At least one role is required'),
   body('statusId')
-    .optional()
+    .optional({ checkFalsy: true })
     .isInt().withMessage('Valid status ID is required')
 ];
+
 const updateUserValidation = [
   body('fullName')
-    .optional()
+    .optional({ checkFalsy: true })
     .isLength({ min: 2, max: 100 }).withMessage('Full name must be between 2 and 100 characters'),
   body('email')
-    .optional()
+    .optional({ checkFalsy: true })
     .isEmail().withMessage('Please provide a valid email')
     .normalizeEmail(),
   body('phone')
-    .optional()
+    .optional({ checkFalsy: true })
     .matches(/^09[0-9]{8}$/).withMessage('Phone number must be Ethiopian format (09xxxxxxxx)'),
   body('departmentId')
-    .optional()
+    .optional({ checkFalsy: true })
     .isInt().withMessage('Valid department ID is required'),
   body('roleIds')
-    .optional()
+    .optional({ checkFalsy: true })
     .isArray().withMessage('Role IDs must be an array'),
   body('statusId')
-    .optional()
+    .optional({ checkFalsy: true })
     .isInt().withMessage('Valid status ID is required')
 ];
+
 const listUsersValidation = [
   query('page')
-    .optional()
+    .optional({ checkFalsy: true })
     .isInt({ min: 1 }).withMessage('Page must be a positive integer')
     .toInt(),
   query('limit')
-    .optional()
+    .optional({ checkFalsy: true })
     .isInt({ min: 1, max: 100 }).withMessage('Limit must be between 1 and 100')
     .toInt(),
   query('search')
-    .optional()
+    .optional({ checkFalsy: true })
     .isString().trim(),
   query('departmentId')
-    .optional()
+    .optional({ checkFalsy: true })
     .isInt().withMessage('Valid department ID is required'),
   query('roleId')
-    .optional()
+    .optional({ checkFalsy: true })
     .isInt().withMessage('Valid role ID is required'),
   query('statusId')
-    .optional()
-    .isInt().withMessage('Valid status ID is required')
+    .optional({ checkFalsy: true })
+    .isInt().withMessage('Valid status ID is required'),
+  query('includeDeleted')
+    .optional({ checkFalsy: true })
+    .isBoolean().toBoolean()
 ];
+
 const userIdParamValidation = [
   param('id')
     .isInt().withMessage('User ID must be a valid integer')
     .toInt()
 ];
+
 router.get(
   '/export',
   authenticate,
@@ -101,6 +109,29 @@ router.get(
   validate,
   UserController.getAllUsers
 );
+
+router.get(
+  '/export',
+  authenticate,
+  authorize(['users:read', 'reports:export']),
+  query('format').isIn(['csv', 'excel']).withMessage('Format must be csv or excel'),
+  validate,
+  UserController.exportUsers
+);
+
+router.get(
+  '/departments',
+  authenticate,
+  UserController.getDepartments
+);
+
+router.get(
+  '/roles',
+  authenticate,
+  authorize(['users:read']),
+  UserController.getRoles
+);
+
 router.get(
   '/:id',
   authenticate,
@@ -109,6 +140,7 @@ router.get(
   validate,
   UserController.getUserById
 );
+
 router.post(
   '/',
   authenticate,
@@ -117,6 +149,7 @@ router.post(
   validate,
   UserController.createUser
 );
+
 router.put(
   '/:id',
   authenticate,
@@ -126,6 +159,7 @@ router.put(
   validate,
   UserController.updateUser
 );
+
 router.delete(
   '/:id',
   authenticate,
@@ -134,6 +168,7 @@ router.delete(
   validate,
   UserController.deleteUser
 );
+
 router.post(
   '/:id/restore',
   authenticate,
@@ -142,6 +177,7 @@ router.post(
   validate,
   UserController.restoreUser
 );
+
 router.post(
   '/:id/force-reset',
   authenticate,
@@ -150,6 +186,7 @@ router.post(
   validate,
   UserController.forcePasswordReset
 );
+
 router.get(
   '/:id/permissions',
   authenticate,
@@ -158,6 +195,7 @@ router.get(
   validate,
   UserController.getUserPermissions
 );
+
 router.post(
   '/:id/roles',
   authenticate,
@@ -167,6 +205,7 @@ router.post(
   validate,
   UserController.assignRoles
 );
+
 router.delete(
   '/:id/roles/:roleId',
   authenticate,

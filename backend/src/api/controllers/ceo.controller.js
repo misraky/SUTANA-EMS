@@ -10,7 +10,7 @@ exports.getDashboardOverview = catchAsync(async (req, res) => {
     getProfitMetrics('month'),
     getCashFlowSummary('weekly', 30),
     getPerformanceKPIs(),
-    getCriticalAlerts()
+    getCriticalAlerts(req.user.id)
   ]);
 
   // Fetch previous month metrics to calculate growth for profit and orders
@@ -549,7 +549,7 @@ exports.resetTargets = catchAsync(async (req, res) => {
 });
 exports.getCriticalAlerts = catchAsync(async (req, res) => {
   const { severity } = req.query;
-  let alerts = await getCriticalAlerts();
+  let alerts = await getCriticalAlerts(req.user.id);
   if (severity) {
     alerts = alerts.filter(a => a.severity === severity);
   }
@@ -568,6 +568,43 @@ exports.getCriticalAlerts = catchAsync(async (req, res) => {
 });
 exports.dismissAlert = catchAsync(async (req, res) => {
   const { alertId } = req.params;
+  const userId = req.user.id;
+  
+  const settingKey = `dismissed_alerts_${userId}`;
+  const setting = await db('settings').where('setting_key', settingKey).first();
+  
+  let dismissed = [];
+  if (setting && setting.setting_value) {
+    try {
+      dismissed = JSON.parse(setting.setting_value);
+    } catch(e) {}
+  }
+  
+  // Remove older alerts (e.g. > 24 hours)
+  const twentyFourHoursAgo = new Date();
+  twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
+  dismissed = dismissed.filter(d => new Date(d.dismissedAt) > twentyFourHoursAgo);
+  
+  // Add new dismissed alert
+  dismissed.push({
+    alertId,
+    dismissedAt: new Date().toISOString()
+  });
+  
+  const newValue = JSON.stringify(dismissed);
+  if (setting) {
+    await db('settings').where('setting_key', settingKey).update({ setting_value: newValue });
+  } else {
+    await db('settings').insert({
+      setting_key: settingKey,
+      setting_value: newValue,
+      setting_type: 'json',
+      setting_group: 'user_preferences',
+      is_system: 0,
+      description: `Dismissed alerts for user ${userId}`
+    });
+  }
+
   await audit('CEO_ALERT_DISMISSED', req.user.id, {
     ip: req.ip,
     details: { alertId }
@@ -1018,8 +1055,8 @@ async function getPerformanceKPIs() {
     }
   };
 }
-async function getCriticalAlerts() {
-  const alerts = [];
+async function getCriticalAlerts(userId) {
+  let alerts = [];
   const lowStockCount = await db('products as p')
     .leftJoin('inventory as i', 'p.id', 'i.product_id')
     .whereRaw('COALESCE(i.quantity, 0) <= p.reorder_level * 0.05')
@@ -1083,6 +1120,26 @@ async function getCriticalAlerts() {
       createdAt: new Date().toISOString()
     });
   }
+
+  if (userId) {
+    const settingKey = `dismissed_alerts_${userId}`;
+    const setting = await db('settings').where('setting_key', settingKey).first();
+    if (setting && setting.setting_value) {
+      try {
+        const dismissed = JSON.parse(setting.setting_value);
+        const twentyFourHoursAgo = new Date();
+        twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
+        
+        const recentlyDismissed = dismissed.filter(d => new Date(d.dismissedAt) > twentyFourHoursAgo);
+        const dismissedAlertIds = recentlyDismissed.map(d => d.alertId);
+        
+        alerts = alerts.filter(a => !dismissedAlertIds.includes(a.id));
+      } catch(e) {
+        // ignore parse errors
+      }
+    }
+  }
+
   return alerts;
 }
 async function getTargetSetting(key, defaultValue) {
