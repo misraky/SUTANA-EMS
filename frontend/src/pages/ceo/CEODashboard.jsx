@@ -5,6 +5,7 @@ import CEOHome from './CEOHome';
 import Analytics from './Analytics';
 import ExecutiveReports from './ExecutiveReports';
 import TargetSettings from './TargetSettings';
+import CEOPurchases from './CEOPurchases';
 import styles from './CEODashboard.module.css';
 const CEODashboard = () => {
   const menuItems = [
@@ -12,7 +13,7 @@ const CEODashboard = () => {
     { label: 'Analytics',          path: '/ceo/analytics', icon: 'bar-chart' },
     { label: 'Executive Reports',  path: '/ceo/reports',   icon: 'file-text' },
     { label: 'Target Settings',    path: '/ceo/targets',   icon: 'target' },
-    { label: 'Approve Purchases',  path: '/purchase/orders', icon: 'clipboard' },
+    { label: 'Purchase Approvals', path: '/ceo/purchases', icon: 'clipboard' },
   ];
   return (
     <div className={styles.dashboardWrapper}>
@@ -23,6 +24,7 @@ const CEODashboard = () => {
             <Route path="analytics" element={<Analytics />} />
             <Route path="reports"   element={<ExecutiveReports />} />
             <Route path="targets"   element={<TargetSettings />} />
+            <Route path="purchases" element={<CEOPurchases />} />
             <Route path="/"         element={<Navigate to="overview" replace />} />
           </Routes>
         </div>

@@ -146,12 +146,12 @@ const ServicesPage = () => {
             Your dashboard is waiting.
           </p>
           <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap', marginTop: '8px' }}>
-            <button className="pub-btn-primary" onClick={() => navigate('/login')}>
+            <Link to="/login" className="pub-btn-primary" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none' }}>
               Sign In to Your Dashboard →
-            </button>
-            <button className="pub-btn-outline" onClick={() => navigate('/contact')}>
+            </Link>
+            <Link to="/contact" className="pub-btn-outline" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none' }}>
               Request a Demo
-            </button>
+            </Link>
           </div>
         </div>
       </section>
@@ -200,6 +200,7 @@ export const PublicNav = () => {
             onMouseEnter={() => setDropdownOpen(true)}
             onMouseLeave={() => setDropdownOpen(false)}
           >
+
             <span className={`pub-link-modern ${dropdownOpen ? 'active' : ''}`}>
               Services
               <svg className="pub-chevron" width="12" height="12" viewBox="0 0 12 12" fill="none">
@@ -236,6 +237,11 @@ export const PublicNav = () => {
             onMouseEnter={() => setGalleryDropdownOpen(true)}
             onMouseLeave={() => setGalleryDropdownOpen(false)}
           >
+            {theme === 'dark' ? '☀️' : '🌙'}
+          </button>
+          <Link to="/login" className="pub-btn-signin" onClick={() => setOpen(false)} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none' }}>
+            Sign In
+          </Link>
             <span className={`pub-link-modern ${galleryDropdownOpen ? 'active' : ''}`}>
               Gallery
               <svg className="pub-chevron" width="12" height="12" viewBox="0 0 12 12" fill="none">

@@ -20,14 +20,15 @@ const TargetSettings = () => {
     try {
       setLoading(true);
       const response = await ceoService.getTargets();
-      if (response.data) {
+      const data = response.data?.data?.targets || response.data?.targets;
+      if (data) {
         setTargets({
-          dailySalesTarget: response.data.dailySalesTarget || '',
-          monthlySalesTarget: response.data.monthlySalesTarget || '',
-          fulfillmentHoursTarget: response.data.fulfillmentHoursTarget || '',
-          inventoryTurnoverTarget: response.data.inventoryTurnoverTarget || '',
-          customerSatisfactionTarget: response.data.customerSatisfactionTarget || '',
-          profitMarginTarget: response.data.profitMarginTarget || ''
+          dailySalesTarget: data.dailySalesTarget || '',
+          monthlySalesTarget: data.monthlySalesTarget || '',
+          fulfillmentHoursTarget: data.fulfillmentHoursTarget || '',
+          inventoryTurnoverTarget: data.inventoryTurnoverTarget || '',
+          customerSatisfactionTarget: data.customerSatisfactionTarget || '',
+          profitMarginTarget: data.profitMarginTarget || ''
         });
       }
     } catch (error) {

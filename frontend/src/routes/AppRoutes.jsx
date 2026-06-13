@@ -71,7 +71,7 @@ const AppRoutes = () => {
         } />
         {}
         <Route path="/purchase/*" element={
-          <RoleBasedRoute role={['Purchase', 'CEO', 'Admin']}>
+          <RoleBasedRoute role={['Purchase', 'Admin']}>
             <PurchaseDashboard />
           </RoleBasedRoute>
         } />

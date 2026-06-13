@@ -1,5 +1,5 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { PublicNav, PublicFooter } from './ServicesPage';
 import './PublicLayout.css';
 import ToggleSection from './ToggleSection';
@@ -196,12 +196,12 @@ const AboutPage = () => {
             and we are ready to grow with you. Sign in today and start transforming your operations.
           </p>
           <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap', marginTop: '8px' }}>
-            <button className="pub-btn-primary" onClick={() => navigate('/login')}>
-              Get Started →
-            </button>
-            <button className="pub-btn-outline" onClick={() => navigate('/contact')}>
-              Talk to Our Team
-            </button>
+            <Link to="/login" className="pub-btn-primary" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none' }}>
+              Sign In to Your Dashboard →
+            </Link>
+            <Link to="/contact" className="pub-btn-outline" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none' }}>
+              Contact Our Team
+            </Link>
           </div>
         </div>
       </section>

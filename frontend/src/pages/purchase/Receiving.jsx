@@ -31,7 +31,7 @@ const Receiving = () => {
   };
   const fetchPODetails = async (id) => {
     try {
-      const response = await purchaseService.getPOById(id);
+      const response = await purchaseService.getPendingReceivingById(id);
       const fullPo = response.data?.purchaseOrder || response.data?.order;
       if (fullPo && fullPo.items) {
         setReceiveData(fullPo.items.map(item => ({

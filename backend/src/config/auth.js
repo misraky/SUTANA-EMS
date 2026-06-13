@@ -127,7 +127,7 @@ const hashToken = (token) => {
 };
 const rolePermissions = {
   Admin: ['*'],
-  CEO: ['reports:read', 'reports:export', 'dashboard:read', 'approvals:discount', 'approvals:po'],
+  CEO: ['reports:read', 'reports:export', 'dashboard:read', 'approvals:discount', 'approvals:po', 'purchase_orders:read', 'purchase_orders:approve'],
   Finance: ['payments:create', 'payments:read', 'expenses:create', 'expenses:read', 'expenses:update', 'reports:read', 'reports:export'],
   'Printing Supervisor': ['orders:create', 'orders:read', 'orders:update', 'orders:approve', 'inventory:read', 'tax_receipts:create', 'tax_receipts:read'],
   Purchase: ['suppliers:create', 'suppliers:read', 'suppliers:update', 'purchase_orders:create', 'purchase_orders:read', 'purchase_orders:update', 'purchase_orders:approve'],

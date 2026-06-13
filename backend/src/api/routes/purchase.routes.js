@@ -92,6 +92,162 @@ const listPOsValidation = [
   query('startDate').optional().isISO8601(),
   query('endDate').optional().isISO8601()
 ];
+router.get(
+  '/suppliers',
+  authenticate,
+  authorize(['suppliers:read']),
+  listSuppliersValidation,
+  validate,
+  PurchaseController.getSuppliers
+);
+router.get(
+  '/suppliers/:id',
+  authenticate,
+  authorize(['suppliers:read']),
+  supplierIdParamValidation,
+  validate,
+  PurchaseController.getSupplierById
+);
+router.post(
+  '/suppliers',
+  authenticate,
+  authorize(['suppliers:create']),
+  createSupplierValidation,
+  validate,
+  PurchaseController.createSupplier
+);
+router.put(
+  '/suppliers/:id',
+  authenticate,
+  authorize(['suppliers:update']),
+  supplierIdParamValidation,
+  updateSupplierValidation,
+  validate,
+  PurchaseController.updateSupplier
+);
+router.delete(
+  '/suppliers/:id',
+  authenticate,
+  authorize(['suppliers:delete']),
+  supplierIdParamValidation,
+  validate,
+  PurchaseController.deleteSupplier
+);
+router.post(
+  '/suppliers/:id/restore',
+  authenticate,
+  authorize(['suppliers:update']),
+  supplierIdParamValidation,
+  validate,
+  PurchaseController.restoreSupplier
+);
+router.get(
+  '/orders',
+  authenticate,
+  authorize(['purchase_orders:read']),
+  listPOsValidation,
+  validate,
+  PurchaseController.getPurchaseOrders
+);
+router.get(
+  '/orders/:id',
+  authenticate,
+  authorize(['purchase_orders:read']),
+  poIdParamValidation,
+  validate,
+  PurchaseController.getPurchaseOrderById
+);
+router.post(
+  '/orders',
+  authenticate,
+  authorize(['purchase_orders:create']),
+  createPOValidation,
+  validate,
+  limiters.checkout,
+  PurchaseController.createPurchaseOrder
+);
+router.put(
+  '/orders/:id',
+  authenticate,
+  authorize(['purchase_orders:update']),
+  poIdParamValidation,
+  updatePOValidation,
+  validate,
+  PurchaseController.updatePurchaseOrder
+);
+router.post(
+  '/orders/:id/submit',
+  authenticate,
+  authorize(['purchase_orders:update']),
+  poIdParamValidation,
+  validate,
+  PurchaseController.submitForApproval
+);
+router.post(
+  '/orders/:id/approve',
+  authenticate,
+  authorize(['purchase_orders:approve']),
+  poIdParamValidation,
+  approvePOValidation,
+  validate,
+  PurchaseController.approvePurchaseOrder
+);
+router.post(
+  '/orders/:id/cancel',
+  authenticate,
+  authorize(['purchase_orders:update']),
+  poIdParamValidation,
+  body('reason').notEmpty().isString(),
+  validate,
+  PurchaseController.cancelPurchaseOrder
+);
+router.post(
+  '/orders/:id/attachment',
+  authenticate,
+  authorize(['purchase_orders:update']),
+  poIdParamValidation,
+  uploads.singleOrderAttachment.single('attachment'),
+  handleUploadError,
+  PurchaseController.uploadAttachment
+);
+router.get(
+  '/receiving/pending',
+  authenticate,
+  authorize(['receiving:read']),
+  PurchaseController.getPendingReceiving
+);
+router.get(
+  '/receiving/pending/:id',
+  authenticate,
+  authorize(['receiving:read']),
+  poIdParamValidation,
+  validate,
+  PurchaseController.getPurchaseOrderById
+);
+router.post(
+  '/receiving/register',
+  authenticate,
+  authorize(['receiving:create']),
+  receiveItemsValidation,
+  validate,
+  PurchaseController.registerReceiving
+);
+router.get(
+  '/statistics',
+  authenticate,
+  authorize(['purchase_orders:read']),
+  PurchaseController.getPurchaseStatistics
+);
+router.get(
+  '/sectors',
+  authenticate,
+  PurchaseController.getSectors
+);
+router.get(
+  '/payment-terms',
+  authenticate,
+  PurchaseController.getPaymentTerms
+);
 
 // Supplier routes
 router.get('/suppliers', authenticate, authorize(['suppliers:read']), listSuppliersValidation, validate, PurchaseController.getSuppliers);

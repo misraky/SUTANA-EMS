@@ -25,6 +25,28 @@ const ReceivePO = () => {
   };
   const handleSelectPO = (po) => {
     setSelectedPO(po);
+    // Since pending POs from the list might not have items populated, we need to fetch the full PO
+    fetchPODetails(po.po_id || po.id);
+  };
+
+  const fetchPODetails = async (id) => {
+    try {
+      const response = await purchaseService.getPendingReceivingById(id);
+      const fullPo = response.data?.purchaseOrder || response.data?.order;
+      if (fullPo && fullPo.items) {
+        setReceiveData(fullPo.items.map(item => ({
+          poItemId: item.id,
+          productName: item.product_name,
+          quantityOrdered: item.quantity_ordered,
+          quantityReceived: item.quantity_ordered - (item.quantity_received || 0),
+          quantityDamaged: 0,
+          qualityPass: true
+        })));
+      }
+    } catch (error) {
+      console.error('Failed to fetch PO details:', error);
+      setMessage({ type: 'error', text: 'Failed to load PO items' });
+    }
     // Initialize receive data
     setReceiveData(po.items.map(item => ({
       poItemId: item.id,
@@ -49,7 +71,7 @@ const ReceivePO = () => {
     setMessage(null);
     try {
       await purchaseService.registerReceiving({
-        poId: selectedPO.id,
+        poId: selectedPO.po_id || selectedPO.id,
         items: receiveData.map(item => ({
           poItemId: item.poItemId,
           quantityReceived: parseInt(item.quantityReceived),
@@ -97,7 +119,7 @@ const ReceivePO = () => {
               </thead>
               <tbody>
                 {pendingReceiving.map(po => (
-                  <tr key={po.id}>
+                  <tr key={po.po_id || po.id}>
                     <td className={styles.poNumber}>#{po.po_number}</td>
                     <td>{po.supplier_name}</td>
                     <td>{new Date(po.expected_delivery_date).toLocaleDateString()}</td>

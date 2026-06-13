@@ -5,6 +5,9 @@ const { sendSMS } = require('../../services/sms.service');
 const AppError = require('../../utils/AppError');
 const { catchAsync } = require('../../utils/catchAsync');
 const { generatePONumber } = require('../../utils/orderNumber');
+let formatCurrency;
+try { formatCurrency = require('../../utils/formatters').formatCurrency; } catch (_) {}
+if (!formatCurrency) formatCurrency = (v) => `ETB ${parseFloat(v || 0).toLocaleString()}`;
 exports.getSuppliers = catchAsync(async (req, res) => {
   const { page = 1, limit = 25, search, isActive } = req.query;
   const offset = (page - 1) * limit;
@@ -591,23 +594,36 @@ exports.submitForApproval = catchAsync(async (req, res) => {
       updated_at: db.fn.now()
     });
   const config = require('../../config/env');
+  const threshold = config.business?.highValuePoThreshold ?? 200000;
   const approvers = [];
-  if (purchaseOrder.total_amount > config.businessRules.highValuePoThreshold) {
+  if (purchaseOrder.total_amount > threshold) {
     const ceoUsers = await db('users')
       .leftJoin('user_roles', 'users.id', 'user_roles.user_id')
       .leftJoin('roles', 'user_roles.role_id', 'roles.id')
       .where('roles.name', 'CEO')
-      .select('users.email', 'users.full_name');
+      .select('users.id', 'users.email', 'users.full_name');
     approvers.push(...ceoUsers);
   } else {
     const managers = await db('users')
       .leftJoin('user_roles', 'users.id', 'user_roles.user_id')
       .leftJoin('roles', 'user_roles.role_id', 'roles.id')
       .where('roles.name', 'Finance')
-      .select('users.email', 'users.full_name');
+      .select('users.id', 'users.email', 'users.full_name');
     approvers.push(...managers);
   }
   for (const approver of approvers) {
+    // 1. In-app Notification
+    await db('user_notifications').insert({
+      user_id: approver.id,
+      title: 'Purchase Order Approval Required',
+      message: `PO ${purchaseOrder.po_number} for ${formatCurrency(purchaseOrder.total_amount)} requires your approval.`,
+      type: 'purchase_order',
+      link_url: `/ceo/purchases`,
+      is_read: false,
+      created_at: db.fn.now()
+    }).catch(err => console.error('Failed to create in-app notification:', err.message));
+
+    // 2. Email Notification
     await sendEmail({
       to: approver.email,
       subject: `Purchase Order Approval Required: ${purchaseOrder.po_number}`,
@@ -618,7 +634,7 @@ exports.submitForApproval = catchAsync(async (req, res) => {
         totalAmount: purchaseOrder.total_amount,
         supplierName: purchaseOrder.supplier_name,
         requesterName: req.user.full_name,
-        approvalUrl: `${process.env.FRONTEND_URL}/purchase/orders/${id}/approve`
+        approvalUrl: `${process.env.FRONTEND_URL}/ceo/purchases`
       }
     }).catch(err => console.error('Failed to send approval email:', err.message));
   }
@@ -680,26 +696,40 @@ exports.approvePurchaseOrder = catchAsync(async (req, res) => {
       rejection_reason: approved ? null : rejectionReason || null,
       updated_at: db.fn.now()
     });
-  // Send email notification — wrapped so it never crashes the approval
+  // Send email and in-app notification — wrapped so it never crashes the approval
   try {
     const requester = await db('users').where('id', purchaseOrder.created_by).first();
-    if (requester && requester.email) {
-      await sendEmail({
-        to: requester.email,
-        subject: `Purchase Order ${purchaseOrder.po_number} - ${approved ? 'Approved' : 'Rejected'}`,
-        template: 'po-approval-result',
-        data: {
-          requesterName: requester.full_name,
-          poNumber: purchaseOrder.po_number,
-          status: approved ? 'Approved' : 'Rejected',
-          reason: rejectionReason,
-          totalAmount: purchaseOrder.total_amount,
-          supplierName: purchaseOrder.supplier_name
-        }
-      });
+    if (requester) {
+      // 1. In-app Notification
+      await db('user_notifications').insert({
+        user_id: requester.id,
+        title: `Purchase Order ${approved ? 'Approved' : 'Rejected'}`,
+        message: `Your PO ${purchaseOrder.po_number} has been ${approved ? 'approved' : 'rejected'}.`,
+        type: 'purchase_order',
+        link_url: `/purchase/orders`,
+        is_read: false,
+        created_at: db.fn.now()
+      }).catch(err => console.error('Failed to create in-app notification:', err.message));
+
+      // 2. Email Notification
+      if (requester.email) {
+        await sendEmail({
+          to: requester.email,
+          subject: `Purchase Order ${purchaseOrder.po_number} - ${approved ? 'Approved' : 'Rejected'}`,
+          template: 'po-approval-result',
+          data: {
+            requesterName: requester.full_name,
+            poNumber: purchaseOrder.po_number,
+            status: approved ? 'Approved' : 'Rejected',
+            reason: rejectionReason,
+            totalAmount: purchaseOrder.total_amount,
+            supplierName: purchaseOrder.supplier_name
+          }
+        });
+      }
     }
   } catch (emailErr) {
-    console.error('Failed to send approval notification email:', emailErr.message);
+    console.error('Failed to send approval notification:', emailErr.message);
   }
   await audit('PURCHASE_ORDER_APPROVED', id, {
     ip,
