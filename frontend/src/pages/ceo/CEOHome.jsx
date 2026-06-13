@@ -31,6 +31,7 @@ const CEOHome = () => {
   const [cashFlow, setCashFlow] = useState(null);
   const [alerts, setAlerts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [chartData, setChartData] = useState({ revenueVsExpenses: [], sectorPerformance: [] });
 
   const fetchData = async (currentPeriod) => {
     try {
@@ -62,6 +63,11 @@ const CEOHome = () => {
       if (bdData.breakdown) {
         setBreakdown(bdData.breakdown.filter(s => s.hasData && s.revenue > 0));
       }
+
+      setChartData({
+        revenueVsExpenses: data.revenueVsExpenses || [],
+        sectorPerformance: data.sectorPerformance || []
+      });
 
       if (cfRes.data) {
         setCashFlow(cfRes.data);
