@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip as ChartTooltip, Legend, ArcElement
+  Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip as ChartTooltip, Legend as ChartJsLegend, ArcElement
 } from 'chart.js';
-import { Bar, Pie } from 'react-chartjs-2';
+import { Bar as ChartJsBar, Pie as ChartJsPie } from 'react-chartjs-2';
 import { Link } from 'react-router-dom';
 import ceoService from '../../services/ceoService';
 import { formatCurrency, formatNumber, formatPercentage } from '../../utils/formatters';
@@ -13,7 +13,7 @@ import {
 import { formatDistanceToNow } from 'date-fns';
 import styles from './CEOHome.module.css';
 
-ChartJS.register(CategoryScale, LinearScale, BarElement, Title, ChartTooltip, Legend, ArcElement);
+ChartJS.register(CategoryScale, LinearScale, BarElement, Title, ChartTooltip, ChartJsLegend, ArcElement);
 
 const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EF4444', '#6B7280'];
 const PERIODS = [
@@ -27,46 +27,6 @@ const PERIODS = [
 const CEOHome = () => {
   const [period, setPeriod] = useState('month');
   const [stats, setStats] = useState(null);
-  const [chartData, setChartData] = useState({ revenueVsExpenses: [], sectorPerformance: [] });
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const response = await ceoService.getDashboardOverview();
-        const data = response.data || {};
-        setStats({
-          revenue: data.totalRevenue || 0,
-          revenueGrowth: data.revenueGrowth || 0,
-          profit: data.netProfit || 0,
-          profitGrowth: data.profitGrowth || 0,
-          activeProjects: data.activeOrders || 0,
-          activeProjectsGrowth: data.ordersGrowth || 0,
-          customerRetention: data.customerSatisfaction || 0,
-          retentionGrowth: data.satisfactionGrowth || 0
-        });
-        
-        setChartData({
-          revenueVsExpenses: data.revenueVsExpenses || [],
-          sectorPerformance: data.sectorPerformance || []
-        });
-      } catch (error) {
-        console.error('CEO: Failed to fetch executive stats:', error);
-        setStats({
-          revenue: 0, revenueGrowth: 0,
-          profit: 0, profitGrowth: 0,
-          activeProjects: 0, activeProjectsGrowth: 0,
-          customerRetention: 0, retentionGrowth: 0
-        });
-        setChartData({ revenueVsExpenses: [], sectorPerformance: [] });
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchStats();
-  }, []);
-
-  if (loading) {
   const [breakdown, setBreakdown] = useState([]);
   const [cashFlow, setCashFlow] = useState(null);
   const [alerts, setAlerts] = useState([]);
@@ -310,7 +270,10 @@ const CEOHome = () => {
         <div className={styles.chartCard}>
           <h2 className={styles.chartTitle}>Revenue vs Expenses</h2>
           <div className={styles.chartContainer} style={{ height: '300px', width: '100%', marginTop: '20px' }}>
-            <Bar data={barData} options={barOptions} />
+            <ChartJsBar data={barData} options={barOptions} />
+          </div>
+        </div>
+      </div>
       <div className={styles.mainGrid}>
         <div className={styles.chartsGrid}>
           
@@ -356,7 +319,9 @@ const CEOHome = () => {
         <div className={styles.chartCard}>
           <h2 className={styles.chartTitle}>Business Sector Performance</h2>
           <div className={styles.chartContainer} style={{ height: '300px', width: '100%', marginTop: '20px' }}>
-            <Pie data={pieDataObj} options={pieOptions} />
+            <ChartJsPie data={pieDataObj} options={pieOptions} />
+          </div>
+        </div>
 
         <div className={styles.sidePanel}>
           

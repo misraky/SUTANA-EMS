@@ -237,11 +237,6 @@ export const PublicNav = () => {
             onMouseEnter={() => setGalleryDropdownOpen(true)}
             onMouseLeave={() => setGalleryDropdownOpen(false)}
           >
-            {theme === 'dark' ? '☀️' : '🌙'}
-          </button>
-          <Link to="/login" className="pub-btn-signin" onClick={() => setOpen(false)} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none' }}>
-            Sign In
-          </Link>
             <span className={`pub-link-modern ${galleryDropdownOpen ? 'active' : ''}`}>
               Gallery
               <svg className="pub-chevron" width="12" height="12" viewBox="0 0 12 12" fill="none">

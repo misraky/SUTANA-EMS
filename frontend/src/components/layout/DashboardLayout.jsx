@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
-import notificationService from '../../services/notificationService';
 import {
   Home, Users, ClipboardList, Settings, BarChart2, ShoppingCart, FileText, Wallet,
   CreditCard, TrendingUp, Package, Truck, Printer, Layers, Receipt, AreaChart,
@@ -343,9 +342,8 @@ const DashboardLayout = ({ children, menuItems }) => {
               )}
             </div>
 
-            <div className="dash-profile-dropdown" ref={profileRef}>
             <NotificationBell navigate={navigate} />
-            <div className="dash-profile-dropdown">
+            <div className="dash-profile-dropdown" ref={profileRef}>
               <button 
                 className={`dash-user-chip ${profileOpen ? 'open' : ''}`} 
                 onClick={() => setProfileOpen(!profileOpen)}
