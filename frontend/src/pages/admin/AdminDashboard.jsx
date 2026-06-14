@@ -6,6 +6,7 @@ import UserManagement from './UserManagement';
 import SystemSettings from './SystemSettings';
 import AuditLogs from './AuditLogs';
 import BackupManagement from './BackupManagement';
+import GalleryManager from './GalleryManager';
 import styles from './AdminDashboard.module.css';
 const AdminDashboard = () => {
   const menuItems = [
@@ -13,6 +14,7 @@ const AdminDashboard = () => {
     { label: 'Users', path: '/admin/users', icon: 'users' },
     { label: 'Customers', path: '/customer', icon: 'users' },
     { label: 'Purchase Orders', path: '/purchase/orders', icon: 'clipboard' },
+    { label: 'Gallery', path: '/admin/gallery', icon: 'file-text' },
     { label: 'Audit Logs', path: '/admin/audit', icon: 'clipboard' },
     { label: 'Backups', path: '/admin/backups', icon: 'database' },
     { label: 'Settings', path: '/admin/settings', icon: 'settings' },
@@ -25,6 +27,7 @@ const AdminDashboard = () => {
             <Route path="overview" element={<AdminHome />} />
             <Route path="users" element={<UserManagement />} />
             <Route path="audit" element={<AuditLogs />} />
+            <Route path="gallery" element={<GalleryManager />} />
             <Route path="backups" element={<BackupManagement />} />
             <Route path="settings" element={<SystemSettings />} />
             <Route path="/" element={<Navigate to="overview" replace />} />

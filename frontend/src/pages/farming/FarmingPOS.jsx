@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from '../../services/apiClient';
-import { Search, ShoppingCart, Plus, Minus, Trash2, CheckCircle, Printer } from 'lucide-react';
+import { Search, ShoppingCart, Plus, Minus, Trash2, CheckCircle, Clock, X, DollarSign, Send, FileText } from 'lucide-react';
 import styles from './FarmingPOS.module.css';
 
 const PAYMENT_LABELS = { cash: 'Cash', telebirr: 'Telebirr', bank_transfer: 'Bank Transfer' };
@@ -16,11 +16,39 @@ const FarmingPOS = () => {
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [lastReceipt, setLastReceipt] = useState(null);
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  // Shift state
+  const [shift, setShift] = useState(null);
+  const [shiftLoading, setShiftLoading] = useState(true);
+  const [showOpenShift, setShowOpenShift] = useState(false);
+  const [openingFloat, setOpeningFloat] = useState('2000');
+  const [shiftType, setShiftType] = useState('morning');
+  const [showCloseShift, setShowCloseShift] = useState(false);
+  const [physicalCash, setPhysicalCash] = useState('');
+  const [diffReason, setDiffReason] = useState('');
+  const [refundsGiven, setRefundsGiven] = useState('0');
+  const [expensesTransport, setExpensesTransport] = useState('0');
+  const [expensesLoading, setExpensesLoading] = useState('0');
+  const [notes, setNotes] = useState('');
+  const [isClosing, setIsClosing] = useState(false);
+  const [closeResult, setCloseResult] = useState(null);
+  const [fetchKey, setFetchKey] = useState(0);
 
-  const fetchData = async () => {
+  useEffect(() => {
+    fetchShift();
+    fetchProducts();
+  }, [fetchKey]);
+
+  const fetchShift = async () => {
+    try {
+      setShiftLoading(true);
+      const res = await axios.get('/farming/shifts/current');
+      if (res.status === 'success') setShift(res.data);
+      else setShift(null);
+    } catch { setShift(null); }
+    finally { setShiftLoading(false); }
+  };
+
+  const fetchProducts = async () => {
     try {
       setLoading(true);
       const [prodRes, catRes] = await Promise.all([
@@ -36,6 +64,23 @@ const FarmingPOS = () => {
     }
   };
 
+  // ── OPEN SHIFT ──
+  const handleOpenShift = async () => {
+    try {
+      const res = await axios.post('/farming/shifts/open', {
+        opening_float: parseFloat(openingFloat),
+        shift_type: shiftType
+      });
+      if (res.status === 'success') {
+        setShift(res.data);
+        setShowOpenShift(false);
+      }
+    } catch (err) {
+      alert(err.response?.data?.message || err.message || 'Failed to open shift');
+    }
+  };
+
+  // ── CART / CHECKOUT ──
   const filteredProducts = products.filter(p => {
     const matchSearch = !search || p.name.toLowerCase().includes(search.toLowerCase()) || p.category_name?.toLowerCase().includes(search.toLowerCase());
     const matchCat = !filterCategory || String(p.category_id) === filterCategory;
@@ -77,11 +122,10 @@ const FarmingPOS = () => {
     if (cart.length === 0) return;
     setIsCheckingOut(true);
     try {
-      const payload = {
+      const res = await axios.post('/farming/pos/checkout', {
         items: cart.map(c => ({ product_id: c.product_id, quantity: c.quantity })),
         payment_method: paymentMethod
-      };
-      const res = await axios.post('/farming/pos/checkout', payload);
+      });
       if (res.status === 'success') {
         setLastReceipt({
           invoice_number: res.data.invoice_number,
@@ -91,151 +135,42 @@ const FarmingPOS = () => {
           date: new Date().toLocaleString()
         });
         setCart([]);
-        fetchData();
+        fetchProducts();
       }
     } catch (err) {
-      alert(err.message || 'Checkout failed. Please try again.');
+      alert(err.response?.data?.message || err.message || 'Checkout failed.');
     } finally {
       setIsCheckingOut(false);
     }
   };
 
-  const handlePrintManualForm = () => {
-    const win = window.open('', '_blank');
-    const today = new Date();
-    const dateStr = today.toLocaleDateString('en-GB');
-    const timeStr = today.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-    const rows = [1,2,3,4,5,6,7,8].map(i =>
-      `<tr><td>${i}</td><td></td><td></td><td></td><td></td><td></td></tr>`
-    ).join('');
-    win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8">
-<title>SUTANA Farming Manual Sale Form</title>
-<style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:Arial,sans-serif;font-size:12px;color:#000;background:#fff}
-.toolbar{display:flex;gap:10px;justify-content:center;padding:14px;background:#1e293b;position:sticky;top:0;z-index:99}
-.toolbar button{padding:10px 28px;border:none;border-radius:6px;font-size:14px;font-weight:bold;cursor:pointer}
-.btn-dl{background:#10b981;color:#fff}
-.btn-cl{background:#ef4444;color:#fff}
-@media print{.toolbar{display:none!important}@page{size:A4 portrait;margin:12mm}}
-.page{width:210mm;min-height:297mm;padding:12mm 16mm;margin:0 auto}
-/* header */
-.hdr{border:1.5px solid #000;padding:10px 14px;margin-bottom:8px;text-align:center}
-.hdr h1{font-size:14px;text-transform:uppercase;letter-spacing:1px}
-.hdr p{font-size:9px;color:#444;margin-top:3px}
-/* info grid */
-.info{display:grid;grid-template-columns:1fr 1fr;border:1px solid #000;margin-bottom:8px}
-.ic{padding:5px 8px;border-right:1px solid #000;border-bottom:1px solid #000}
-.ic:nth-child(even){border-right:none}
-.ic:nth-last-child(-n+2){border-bottom:none}
-.il{font-size:9px;color:#555;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px}
-.iv{font-size:12px;font-weight:bold;border-bottom:1px solid #000;min-height:18px;padding-bottom:2px}
-/* section box */
-.sb{border:1px solid #000;margin-bottom:8px}
-.st{background:#222;color:#fff;padding:4px 10px;font-size:10px;font-weight:bold;text-transform:uppercase;letter-spacing:.5px}
-.sbody{padding:8px 10px}
-/* products table */
-table{width:100%;border-collapse:collapse}
-th,td{border:1px solid #000;padding:6px 8px;font-size:11px}
-th{background:#f0f0f0;font-size:10px;text-transform:uppercase;text-align:center;font-weight:bold}
-td:first-child{text-align:center;width:26px}
-td:nth-child(3),td:nth-child(4){text-align:center;width:48px}
-td:nth-child(5),td:nth-child(6){text-align:right;width:90px}
-.trow td{font-weight:bold;background:#f8f8f8}
-/* payment */
-.pgrid{display:flex;border:1px solid #ddd}
-.pc{flex:1;padding:5px 8px;border-right:1px solid #ddd;font-size:11px}
-.pc:last-child{border-right:none}
-.pl{font-size:9px;color:#555;margin-bottom:3px}
-.pv{border-bottom:1px solid #000;min-height:17px}
-/* checkboxes */
-.cbrow{display:flex;gap:20px;margin:6px 0 10px;flex-wrap:wrap}
-.cbi{display:flex;align-items:center;gap:5px;font-size:11px}
-.cb{display:inline-block;width:13px;height:13px;border:1.5px solid #000;vertical-align:middle;flex-shrink:0}
-/* signatures */
-.srow{display:flex}
-.sc{flex:1;padding:7px 10px;border-right:1px solid #000}
-.sc:last-child{border-right:none}
-.slbl{font-size:9px;color:#555;margin-bottom:22px}
-.sline{border-bottom:1px solid #000;min-height:1px}
-/* footer */
-.ft{margin-top:10px;text-align:center;font-size:9px;color:#666;border-top:1px dashed #aaa;padding-top:6px}
-</style></head><body>
-<div class="toolbar">
-  <button class="btn-dl" onclick="window.print()">⬇ Download / Print PDF</button>
-  <button class="btn-cl" onclick="window.close()">✕ Close</button>
-</div>
-<div class="page">
-  <div class="hdr">
-    <h1>&#127807; SUTANA Enterprise &mdash; Farming Division</h1>
-    <p>MANUAL CASHIER SALE FORM &nbsp;|&nbsp; Copy 1: Cashier &nbsp;&bull;&nbsp; Copy 2: Customer &nbsp;&bull;&nbsp; Original: Finance Officer (end of shift)</p>
-  </div>
-  <div class="info">
-    <div class="ic"><div class="il">Date</div><div class="iv">${dateStr}</div></div>
-    <div class="ic"><div class="il">Time</div><div class="iv">${timeStr}</div></div>
-    <div class="ic"><div class="il">Cashier Name</div><div class="iv">&nbsp;</div></div>
-    <div class="ic">
-      <div class="il">Shift</div>
-      <div class="iv" style="display:flex;gap:16px">
-        <span><span class="cb"></span> Morning</span>
-        <span><span class="cb"></span> Afternoon</span>
-        <span><span class="cb"></span> Evening</span>
-      </div>
-    </div>
-  </div>
-  <div class="sb">
-    <div class="st">Products Sold</div>
-    <table>
-      <thead><tr><th>#</th><th>Product Name</th><th>Unit</th><th>Qty</th><th>Unit Price (ETB)</th><th>Total (ETB)</th></tr></thead>
-      <tbody>
-        ${rows}
-        <tr class="trow"><td colspan="5" style="text-align:right;padding-right:10px">SUBTOTAL</td><td></td></tr>
-        <tr class="trow"><td colspan="5" style="text-align:right;padding-right:10px;font-style:italic;font-size:10px">VAT (0% &mdash; Agriculture Exempt)</td><td style="text-align:center;font-size:10px">0.00</td></tr>
-        <tr class="trow"><td colspan="5" style="text-align:right;padding-right:10px;font-size:13px">TOTAL SALE</td><td style="font-size:13px;border-top:2px solid #000"></td></tr>
-      </tbody>
-    </table>
-  </div>
-  <div class="sb">
-    <div class="st">Payment Details</div>
-    <div class="sbody">
-      <div style="font-size:11px;font-weight:bold;margin-bottom:5px">Payment Method:</div>
-      <div class="cbrow">
-        <div class="cbi"><span class="cb"></span> Cash</div>
-        <div class="cbi"><span class="cb"></span> Telebirr</div>
-        <div class="cbi"><span class="cb"></span> Bank Transfer</div>
-        <div class="cbi"><span class="cb"></span> Credit (Manager Approval Required)</div>
-      </div>
-      <div class="pgrid">
-        <div class="pc"><div class="pl">Amount Received (ETB)</div><div class="pv"></div></div>
-        <div class="pc"><div class="pl">Change Given (ETB)</div><div class="pv"></div></div>
-        <div class="pc"><div class="pl">Transaction Ref # (Telebirr / Transfer)</div><div class="pv"></div></div>
-      </div>
-    </div>
-  </div>
-  <div class="sb">
-    <div class="st">Customer Information (Optional for Walk-in)</div>
-    <div class="sbody">
-      <div class="pgrid" style="border:none">
-        <div class="pc" style="border-right:1px solid #ddd"><div class="pl">Customer Name</div><div class="pv"></div></div>
-        <div class="pc" style="border-right:1px solid #ddd"><div class="pl">Phone Number</div><div class="pv"></div></div>
-        <div class="pc"><div class="pl">Delivery Address (if applicable)</div><div class="pv"></div></div>
-      </div>
-    </div>
-  </div>
-  <div class="sb">
-    <div class="st">Authorization &amp; Handover Signatures</div>
-    <div class="srow">
-      <div class="sc"><div class="slbl">Cashier Signature</div><div class="sline"></div></div>
-      <div class="sc"><div class="slbl">Farming Manager Signature (Verified)</div><div class="sline"></div></div>
-      <div class="sc"><div class="slbl">Finance Officer Signature (Received)</div><div class="sline"></div></div>
-    </div>
-  </div>
-  <div class="ft">&#9888; All manual sales must be entered into the POS system and physical cash handed over to the Finance Officer by END OF SHIFT &nbsp;|&nbsp; Form No: _____________  &nbsp;|&nbsp; SUTANA Enterprise &mdash; Farming Division</div>
-</div>
-</body></html>`);
-    win.document.close();
+  // ── CLOSE SHIFT ──
+  const handleCloseShift = async () => {
+    setIsClosing(true);
+    try {
+      const res = await axios.post('/farming/shifts/close', {
+        physical_cash_counted: parseFloat(physicalCash),
+        difference_reason: diffReason || null,
+        refunds_given: parseFloat(refundsGiven),
+        expenses_transport: parseFloat(expensesTransport),
+        expenses_loading: parseFloat(expensesLoading),
+        notes: notes || null
+      });
+      if (res.status === 'success') {
+        setCloseResult(res.data);
+        setShift(null);
+      }
+    } catch (err) {
+      alert(err.response?.data?.message || err.message || 'Failed to close shift');
+    } finally {
+      setIsClosing(false);
+    }
   };
 
+  const expectedCash = shift ? parseFloat(shift.opening_float) + (closeResult?.cash_collected || 0) : 0;
+  const diffAmount = physicalCash !== '' ? (parseFloat(physicalCash || 0) - expectedCash).toFixed(2) : null;
+
+  // ── RECEIPT VIEW ──
   if (lastReceipt) {
     return (
       <div style={{ maxWidth: 500, margin: '3rem auto', background: 'white', borderRadius: 12, padding: '2rem', boxShadow: '0 4px 20px rgba(0,0,0,0.1)', textAlign: 'center' }}>
@@ -253,7 +188,7 @@ td:nth-child(5),td:nth-child(6){text-align:right;width:90px}
           </div>
           {lastReceipt.items.map(i => (
             <div key={i.product_id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#475569', padding: '4px 0', borderTop: '1px solid #e2e8f0' }}>
-              <span>{i.name} × {i.quantity}</span>
+              <span>{i.name} &times; {i.quantity}</span>
               <span>{i.subtotal.toFixed(2)} ETB</span>
             </div>
           ))}
@@ -269,8 +204,235 @@ td:nth-child(5),td:nth-child(6){text-align:right;width:90px}
     );
   }
 
+  // ── SHIFT CLOSED RESULT ──
+  if (closeResult) {
+    const cashToFinance = closeResult.cash_to_handover;
+    return (
+      <div style={{ maxWidth: 600, margin: '2rem auto', padding: '0 1rem' }}>
+        <div style={{ background: 'white', borderRadius: 12, padding: '2rem', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', textAlign: 'center' }}>
+          <CheckCircle size={56} color="#10b981" style={{ marginBottom: '1rem' }} />
+          <h2 style={{ margin: '0 0 0.25rem', color: '#065f46' }}>Shift Closed!</h2>
+          <p style={{ color: '#64748b', marginBottom: '1.5rem' }}>Report submitted to Finance. Hand over cash and completed form to the Farming Manager.</p>
+
+          <div style={{ background: '#f0fdf4', borderRadius: 8, padding: '1rem', marginBottom: '1rem', textAlign: 'left' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}><span style={{ color: '#64748b' }}>Total Sales (System)</span><strong>{closeResult.total_sales.toFixed(2)} ETB</strong></div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}><span style={{ color: '#64748b' }}>Transactions</span><strong>{closeResult.transaction_count}</strong></div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}><span style={{ color: '#64748b' }}>Cash Sales</span><strong>{closeResult.cash_collected.toFixed(2)} ETB</strong></div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}><span style={{ color: '#64748b' }}>Telebirr</span><strong>{closeResult.telebirr_collected.toFixed(2)} ETB</strong></div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}><span style={{ color: '#64748b' }}>Bank Transfer</span><strong>{closeResult.transfer_collected.toFixed(2)} ETB</strong></div>
+            <hr style={{ border: 'none', borderTop: '1px solid #e2e8f0', margin: '8px 0' }} />
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}><span style={{ color: '#64748b' }}>Opening Float</span><strong>{closeResult.opening_float.toFixed(2)} ETB</strong></div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}><span style={{ color: '#64748b' }}>Expected Cash in Drawer</span><strong>{closeResult.expected_cash.toFixed(2)} ETB</strong></div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}><span style={{ color: '#64748b' }}>Physical Cash Counted</span><strong>{closeResult.physical_cash_counted.toFixed(2)} ETB</strong></div>
+            {closeResult.difference !== 0 && <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, color: '#ef4444' }}><span>Difference</span><strong>{closeResult.difference > 0 ? '+' : ''}{closeResult.difference.toFixed(2)} ETB</strong></div>}
+            <hr style={{ border: 'none', borderTop: '2px solid #10b981', margin: '8px 0' }} />
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 16 }}><span style={{ fontWeight: 700 }}>Cash to Handover (to Manager)</span><strong style={{ color: '#059669' }}>{cashToFinance.toFixed(2)} ETB</strong></div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#64748b' }}><span>Float kept for next shift</span><strong>{closeResult.opening_float.toFixed(2)} ETB</strong></div>
+          </div>
+
+          <div style={{ background: '#fffbeb', borderRadius: 8, padding: '0.75rem 1rem', marginBottom: '1rem', fontSize: 12, color: '#92400e', textAlign: 'left' }}>
+            <strong>Next step:</strong> Report to Farming Manager with the physical cash ({closeResult.physical_cash_counted.toFixed(2)} ETB). The Manager will verify, keep the float, and handover {cashToFinance.toFixed(2)} ETB to Finance.
+          </div>
+
+          <div style={{ display: 'flex', gap: 10 }}>
+            <button onClick={() => { setCloseResult(null); setFetchKey(k => k + 1); }}
+              style={{ flex: 1, background: '#f1f5f9', color: '#475569', border: 'none', padding: '10px', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}>
+              Open New Shift
+            </button>
+            <button onClick={() => window.location.href = '/farming/finance-report'}
+              style={{ flex: 1, background: '#10b981', color: 'white', border: 'none', padding: '10px', borderRadius: 8, cursor: 'pointer', fontWeight: 600 }}>
+              <FileText size={16} style={{ verticalAlign: 'middle', marginRight: 4 }} /> Go to Finance Form
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── OPEN SHIFT MODAL ──
+  if (!shift && !shiftLoading && showOpenShift) {
+    return (
+      <div style={{ maxWidth: 460, margin: '4rem auto', padding: '0 1rem' }}>
+        <div style={{ background: 'white', borderRadius: 16, padding: '2.5rem 2rem', boxShadow: '0 4px 24px rgba(0,0,0,0.08)', textAlign: 'center' }}>
+          <Clock size={48} color="#10b981" style={{ marginBottom: '1rem' }} />
+          <h2 style={{ margin: '0 0 0.25rem', color: '#1e293b' }}>Open New Shift</h2>
+          <p style={{ color: '#64748b', fontSize: 13, marginBottom: '1.5rem' }}>Record your opening cash float and start accepting sales.</p>
+
+          <div style={{ textAlign: 'left', marginBottom: '1rem' }}>
+            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 4 }}>Shift</label>
+            <div style={{ display: 'flex', gap: 8 }}>
+              {['morning', 'afternoon'].map(s => (
+                <label key={s} style={{
+                  flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                  padding: '10px', borderRadius: 8, border: `2px solid ${shiftType === s ? '#10b981' : '#e2e8f0'}`,
+                  background: shiftType === s ? '#f0fdf4' : 'white', cursor: 'pointer', fontWeight: 600, fontSize: 13,
+                  color: shiftType === s ? '#059669' : '#64748b'
+                }}>
+                  <input type="radio" checked={shiftType === s} onChange={() => setShiftType(s)} style={{ display: 'none' }} />
+                  {s === 'morning' ? '\u2617' : '\u2600'} {s.charAt(0).toUpperCase() + s.slice(1)}
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div style={{ textAlign: 'left', marginBottom: '1.5rem' }}>
+            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#475569', marginBottom: 4 }}>Opening Cash Float (ETB)</label>
+            <input type="number" value={openingFloat} onChange={e => setOpeningFloat(e.target.value)}
+              style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1.5px solid #e2e8f0', fontSize: 15, fontWeight: 700, boxSizing: 'border-box' }} />
+          </div>
+
+          <button onClick={handleOpenShift}
+            style={{ width: '100%', background: '#10b981', color: 'white', border: 'none', padding: '12px', borderRadius: 8, fontWeight: 700, fontSize: 15, cursor: 'pointer' }}>
+            <DollarSign size={18} style={{ verticalAlign: 'middle', marginRight: 6 }} /> Open Shift &mdash; Start Selling
+          </button>
+          <button onClick={() => setShowOpenShift(false)}
+            style={{ width: '100%', background: 'none', border: 'none', padding: '10px', marginTop: 8, color: '#94a3b8', cursor: 'pointer', fontSize: 12 }}>
+            Cancel
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── NO SHIFT + NOT OPENING ──
+  if (!shift && !shiftLoading) {
+    return (
+      <div style={{ maxWidth: 460, margin: '4rem auto', padding: '0 1rem' }}>
+        <div style={{ background: 'white', borderRadius: 16, padding: '3rem 2rem', boxShadow: '0 4px 24px rgba(0,0,0,0.08)', textAlign: 'center' }}>
+          <ShoppingCart size={48} color="#94a3b8" style={{ marginBottom: '1rem' }} />
+          <h2 style={{ margin: '0 0 0.25rem', color: '#1e293b' }}>No Open Shift</h2>
+          <p style={{ color: '#64748b', fontSize: 13, marginBottom: '1.5rem' }}>You need to open a shift before you can sell products.</p>
+          <button onClick={() => setShowOpenShift(true)}
+            style={{ background: '#10b981', color: 'white', border: 'none', padding: '12px 32px', borderRadius: 8, fontWeight: 700, fontSize: 15, cursor: 'pointer' }}>
+            Open Shift
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── MAIN POS ──
   return (
     <div className={styles.posContainer}>
+      {/* Shift Status Bar */}
+      {shift && (
+        <div style={{
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          padding: '10px 16px', background: '#f0fdf4', borderRadius: 10,
+          border: '1px solid #bbf7d0', marginBottom: 12, fontSize: 13
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#059669', fontWeight: 600 }}>
+              <Clock size={16} /> Shift: {shift.shift_type?.charAt(0).toUpperCase() + shift.shift_type?.slice(1) || 'Morning'}
+            </span>
+            <span style={{ color: '#64748b' }}>Float: <strong>{parseFloat(shift.opening_float).toFixed(2)} ETB</strong></span>
+          </div>
+          <button onClick={() => setShowCloseShift(true)}
+            style={{ background: '#ef4444', color: 'white', border: 'none', padding: '8px 18px', borderRadius: 6, cursor: 'pointer', fontWeight: 600, fontSize: 12 }}>
+            <X size={14} style={{ verticalAlign: 'middle', marginRight: 4 }} /> Close Shift
+          </button>
+        </div>
+      )}
+
+      {/* CLOSE SHIFT MODAL */}
+      {showCloseShift && (
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '1rem'
+        }}>
+          <div style={{
+            background: 'white', borderRadius: 16, padding: '2rem', width: '100%', maxWidth: 560,
+            maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 25px 50px rgba(0,0,0,0.2)'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <h2 style={{ margin: 0, fontSize: 18, color: '#1e293b' }}>Close Shift</h2>
+              <button onClick={() => setShowCloseShift(false)} style={{ background: '#f1f5f9', border: 'none', width: 32, height: 32, borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b' }}><X size={18} /></button>
+            </div>
+
+            {/* Sales Summary */}
+            <div style={{ background: '#f0fdf4', borderRadius: 10, padding: '12px 16px', marginBottom: '1rem' }}>
+              <h3 style={{ margin: '0 0 8px', fontSize: 13, color: '#065f46' }}>Daily Sales Summary</h3>
+              <p style={{ margin: 0, color: '#059669', fontWeight: 800, fontSize: 20 }}>{closeResult?.total_sales?.toFixed(2) || '---'} ETB</p>
+              <p style={{ margin: '4px 0 0', fontSize: 12, color: '#94a3b8' }}>Sales data will be auto-calculated when you close.</p>
+            </div>
+
+            {/* Cash Handover */}
+            <div style={{ marginBottom: '1rem' }}>
+              <h3 style={{ fontSize: 13, color: '#1e293b', margin: '0 0 8px' }}>Cash Handover</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: 11, color: '#64748b', marginBottom: 3 }}>Opening Float</label>
+                  <input type="text" value={parseFloat(shift.opening_float).toFixed(2)} readOnly
+                    style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1.5px solid #e2e8f0', fontSize: 12, background: '#f8fafc', boxSizing: 'border-box' }} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: 11, color: '#64748b', marginBottom: 3 }}>Physical Cash Counted *</label>
+                  <input type="number" step="0.01" value={physicalCash} onChange={e => setPhysicalCash(e.target.value)}
+                    placeholder="Count cash in drawer"
+                    style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1.5px solid #f59e0b', fontSize: 12, boxSizing: 'border-box' }} />
+                </div>
+              </div>
+              {diffAmount !== null && (
+                <div style={{ marginTop: 8, padding: '8px 12px', borderRadius: 6, background: diffAmount === '0.00' ? '#f0fdf4' : '#fef2f2', fontSize: 12 }}>
+                  <span style={{ fontWeight: 600 }}>Expected: {expectedCash.toFixed(2)} ETB</span>
+                  {' | '}
+                  <span style={{ fontWeight: 600, color: diffAmount === '0.00' ? '#10b981' : '#ef4444' }}>
+                    Difference: {parseFloat(diffAmount) > 0 ? '+' : ''}{diffAmount} ETB
+                    {diffAmount !== '0.00' && (parseFloat(diffAmount) > 0 ? ' (surplus)' : ' (shortage)')}
+                  </span>
+                  {diffAmount !== '0.00' && (
+                    <input type="text" value={diffReason} onChange={e => setDiffReason(e.target.value)}
+                      placeholder="Explain the difference..."
+                      style={{ width: '100%', marginTop: 6, padding: '6px 8px', borderRadius: 4, border: '1px solid #fca5a5', fontSize: 11, boxSizing: 'border-box' }} />
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Expenses & Notes */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: '1rem' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: 11, color: '#64748b', marginBottom: 3 }}>Refunds</label>
+                <input type="number" value={refundsGiven} onChange={e => setRefundsGiven(e.target.value)} style={{ width: '100%', padding: '6px 8px', borderRadius: 6, border: '1.5px solid #e2e8f0', fontSize: 12, boxSizing: 'border-box' }} />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: 11, color: '#64748b', marginBottom: 3 }}>Transport</label>
+                <input type="number" value={expensesTransport} onChange={e => setExpensesTransport(e.target.value)} style={{ width: '100%', padding: '6px 8px', borderRadius: 6, border: '1.5px solid #e2e8f0', fontSize: 12, boxSizing: 'border-box' }} />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: 11, color: '#64748b', marginBottom: 3 }}>Loading</label>
+                <input type="number" value={expensesLoading} onChange={e => setExpensesLoading(e.target.value)} style={{ width: '100%', padding: '6px 8px', borderRadius: 6, border: '1.5px solid #e2e8f0', fontSize: 12, boxSizing: 'border-box' }} />
+              </div>
+            </div>
+
+            <div style={{ marginBottom: '1.25rem' }}>
+              <label style={{ display: 'block', fontSize: 11, color: '#64748b', marginBottom: 3 }}>Notes for Manager / Finance</label>
+              <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2}
+                style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1.5px solid #e2e8f0', fontSize: 12, resize: 'vertical', boxSizing: 'border-box' }}
+                placeholder="Any issues, observations..." />
+            </div>
+
+            <div style={{ background: '#fffbeb', borderRadius: 8, padding: '10px 12px', marginBottom: '1rem', fontSize: 12, color: '#92400e' }}>
+              After closing, you cannot make further sales. The shift report will be sent to Finance automatically. Hand over physical cash to the Farming Manager.
+            </div>
+
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button onClick={() => setShowCloseShift(false)}
+                style={{ flex: 1, background: '#f1f5f9', border: 'none', padding: '10px', borderRadius: 8, fontWeight: 600, cursor: 'pointer', color: '#475569' }}>
+                Cancel
+              </button>
+              <button onClick={handleCloseShift} disabled={isClosing || !physicalCash}
+                style={{
+                  flex: 1, background: !physicalCash ? '#e2e8f0' : '#ef4444', color: !physicalCash ? '#94a3b8' : 'white',
+                  border: 'none', padding: '10px', borderRadius: 8, fontWeight: 700, cursor: !physicalCash ? 'not-allowed' : 'pointer'
+                }}>
+                {isClosing ? 'Closing...' : <><Send size={16} style={{ verticalAlign: 'middle', marginRight: 4 }} /> Confirm &amp; Close Shift</>}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Left: Products */}
       <div className={styles.productsSection}>
         <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
@@ -302,7 +464,7 @@ td:nth-child(5),td:nth-child(6){text-align:right;width:90px}
                 <p className={styles.price}>{parseFloat(p.price).toFixed(2)} ETB</p>
                 <p className={styles.stock} style={{ color: p.stock_quantity <= p.reorder_level ? '#ef4444' : '#10b981' }}>
                   Stock: {p.stock_quantity}
-                  {p.stock_quantity <= 0 && <span style={{ fontWeight: 700 }}> — OUT OF STOCK</span>}
+                  {p.stock_quantity <= 0 && <span style={{ fontWeight: 700 }}> &mdash; OUT OF STOCK</span>}
                 </p>
               </div>
             ))}
@@ -312,17 +474,9 @@ td:nth-child(5),td:nth-child(6){text-align:right;width:90px}
 
       {/* Right: Cart */}
       <div className={styles.cartSection}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-          <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
-            <ShoppingCart size={20} /> Current Sale
-          </h3>
-          <button
-            onClick={handlePrintManualForm}
-            style={{ display: 'flex', alignItems: 'center', gap: 5, background: '#f1f5f9', border: 'none', padding: '6px 12px', borderRadius: 6, cursor: 'pointer', fontSize: 12, color: '#475569' }}
-          >
-            <Printer size={14} /> Manual Form
-          </button>
-        </div>
+        <h3 style={{ margin: '0 0 16px', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <ShoppingCart size={20} /> Current Sale
+        </h3>
 
         <div className={styles.cartItems}>
           {cart.length === 0 ? (
@@ -366,7 +520,7 @@ td:nth-child(5),td:nth-child(6){text-align:right;width:90px}
             disabled={cart.length === 0 || isCheckingOut}
             onClick={handleCheckout}
           >
-            {isCheckingOut ? 'Processing...' : '✓ Complete Sale'}
+            {isCheckingOut ? 'Processing...' : '\u2713 Complete Sale'}
           </button>
         </div>
       </div>

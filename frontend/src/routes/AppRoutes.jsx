@@ -10,6 +10,9 @@ const AboutPage        = lazy(() => import('../pages/LandingPage/AboutPage'));
 const ContactPage      = lazy(() => import('../pages/LandingPage/ContactPage'));
 const PharmacyHealthPage = lazy(() => import('../pages/LandingPage/PharmacyHealthPage'));
 const FarmingServicePage = lazy(() => import('../pages/LandingPage/FarmingServicePage'));
+const PrintingServicePage = lazy(() => import('../pages/LandingPage/PrintingServicePage'));
+const RetailStorePage = lazy(() => import('../pages/LandingPage/RetailStorePage'));
+const GalleryPage        = lazy(() => import('../pages/LandingPage/GalleryPage'));
 const LoginPage          = lazy(() => import('../pages/auth/LoginPage'));
 const RegisterPage       = lazy(() => import('../pages/auth/RegisterPage'));
 const ForgotPasswordPage = lazy(() => import('../pages/auth/ForgotPasswordPage'));
@@ -25,6 +28,7 @@ const PrintingDashboard = lazy(() => import('../pages/printing/PrintingDashboard
 const CustomerDashboard = lazy(() => import('../pages/customer/CustomerPortal'));
 const FarmingDashboard  = lazy(() => import('../pages/farming/FarmingDashboard'));
 const PharmacyDashboard = lazy(() => import('../pages/pharmacy/PharmacyDashboard'));
+const RetailDashboard = lazy(() => import('../pages/retail/RetailDashboard'));
 const CarRentingDashboard = lazy(() => import('../pages/car-renting/CarRentingDashboard'));
 const ReportsIndex    = lazy(() => import('../pages/reports/ReportsIndex'));
 const PrescriptionViewer = lazy(() => import('../pages/shared/PrescriptionViewer'));
@@ -47,6 +51,9 @@ const AppRoutes = () => {
         <Route path="/services" element={<PublicRoute><ServicesPage /></PublicRoute>} />
         <Route path="/services/pharmacy" element={<PharmacyHealthPage />} />
         <Route path="/services/farming" element={<FarmingServicePage />} />
+        <Route path="/services/printing" element={<PrintingServicePage />} />
+        <Route path="/services/retail" element={<RetailStorePage />} />
+        <Route path="/gallery" element={<GalleryPage />} />
         <Route path="/prescription-viewer" element={<PrescriptionViewer />} />
         <Route path="/fleet-gallery" element={<FleetGalleryPage />} />
         <Route path="/about"    element={<PublicRoute><AboutPage /></PublicRoute>} />
@@ -95,7 +102,7 @@ const AppRoutes = () => {
         } />
         {}
         <Route path="/printing/*" element={
-          <RoleBasedRoute role="Printing Supervisor">
+          <RoleBasedRoute role={['Printing Supervisor', 'Printing Worker', 'Printing Manager', 'Admin', 'CEO']}>
             <PrintingDashboard />
           </RoleBasedRoute>
         } />
@@ -121,6 +128,12 @@ const AppRoutes = () => {
         <Route path="/car-renting/*" element={
           <RoleBasedRoute role="Car Renting Manager">
             <CarRentingDashboard />
+          </RoleBasedRoute>
+        } />
+        {}
+        <Route path="/retail/*" element={
+          <RoleBasedRoute role={['Store Keeper', 'Admin', 'CEO']}>
+            <RetailDashboard />
           </RoleBasedRoute>
         } />
         {}

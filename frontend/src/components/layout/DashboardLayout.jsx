@@ -4,7 +4,8 @@ import { useAuth } from '../../hooks/useAuth';
 import {
   Home, Users, ClipboardList, Settings, BarChart2, ShoppingCart, FileText, Wallet,
   CreditCard, TrendingUp, Package, Truck, Printer, Layers, Receipt, AreaChart,
-  List, User, FilePlus, Box, ArrowRight, Bell, Search, LogOut, ChevronDown, Monitor, CheckCircle, Car, X
+  List, User, FilePlus, Box, ArrowRight, Bell, Search, LogOut, ChevronDown, Monitor, CheckCircle, Car, X,
+  Key, Sprout, Pill, CirclePlus, MessageCircle
 } from 'lucide-react';
 import notificationService from '../../services/notificationService';
 import './DashboardLayout.css';
@@ -32,6 +33,12 @@ const ICONS = {
   'file-plus':   <FilePlus size={18} strokeWidth={2.5} />,
   box:           <Box size={18} strokeWidth={2.5} />,
   'arrow-right': <ArrowRight size={18} strokeWidth={2.5} />,
+  car:           <Car size={18} strokeWidth={2.5} />,
+  key:           <Key size={18} strokeWidth={2.5} />,
+  sprout:        <Sprout size={18} strokeWidth={2.5} />,
+  pill:          <Pill size={18} strokeWidth={2.5} />,
+  'plus-circle': <CirclePlus size={18} strokeWidth={2.5} />,
+  'message-circle': <MessageCircle size={18} strokeWidth={2.5} />,
   default:       <CheckCircle size={18} strokeWidth={2.5} />
 };
 

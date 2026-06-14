@@ -3,24 +3,36 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { PublicNav, PublicFooter } from './PublicNavFooter';
 import authService from '../../services/authService';
 import axios from '../../services/apiClient';
-import { Search, Sprout, Leaf, MapPin, Package, UploadCloud, X, ChevronRight, Calendar, Info } from 'lucide-react';
+import { Search, Sprout, Leaf, MapPin, Package, X, ChevronDown, ChevronUp, Calendar, Info, ShoppingCart, Star, Shield, Truck, Droplets, Wrench } from 'lucide-react';
 import PrescriptionViewer from '../shared/PrescriptionViewer';
 import styles from './FarmingServicePage.module.css';
+
+const TYPE_CONFIG = {
+  seeds: { icon: <Sprout size={16} />, label: 'Seeds', color: '#d97706', bg: '#fffbeb' },
+  fertilizers: { icon: <Droplets size={16} />, label: 'Fertilizers', color: '#059669', bg: '#ecfdf5' },
+  tools: { icon: <Wrench size={16} />, label: 'Tools', color: '#2563eb', bg: '#eff6ff' },
+  pesticides: { icon: <Shield size={16} />, label: 'Pesticides', color: '#dc2626', bg: '#fef2f2' },
+  animal_feed: { icon: <Leaf size={16} />, label: 'Feed', color: '#7c3aed', bg: '#f5f3ff' },
+  general: { icon: <Package size={16} />, label: 'General', color: '#64748b', bg: '#f1f5f9' },
+};
+
+function resolveImg(url) {
+  if (!url) return null;
+  if (url.startsWith('http')) return url;
+  return `${axios.defaults.baseURL.replace('/api/v1', '')}${url}`;
+}
 
 const FarmingServicePage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchQuery, setSearchQuery] = useState('');
-  
-  // Dynamic State
   const [categories, setCategories] = useState([]);
   const [allProducts, setAllProducts] = useState([]);
   const [searchResults, setSearchResults] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [expandedCategories, setExpandedCategories] = useState({});
+  const [expandedDesc, setExpandedDesc] = useState({});
+  const [expandedUsage, setExpandedUsage] = useState({});
   const [selectedCategory, setSelectedCategory] = useState(null);
-  
-  // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [orderQuantity, setOrderQuantity] = useState(1);
@@ -29,8 +41,6 @@ const FarmingServicePage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [submitError, setSubmitError] = useState('');
-
-  // Image Viewer State
   const [viewImage, setViewImage] = useState(null);
 
   useEffect(() => {
@@ -41,10 +51,9 @@ const FarmingServicePage = () => {
           axios.get('/farming/categories'),
           axios.get('/farming/products')
         ]);
-        
-        if (catRes.data.status === 'success') setCategories(catRes.data.data.filter(c => c.is_active));
-        if (prodRes.data.status === 'success') {
-          const activeProds = prodRes.data.data.filter(p => p.is_active);
+        if (catRes.status === 'success') setCategories(catRes.data.filter(c => c.is_active));
+        if (prodRes.status === 'success') {
+          const activeProds = prodRes.data.filter(p => p.is_active);
           setAllProducts(activeProds);
           setSearchResults(activeProds);
         }
@@ -69,43 +78,23 @@ const FarmingServicePage = () => {
     let filtered = allProducts;
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(prod => 
-        prod.name.toLowerCase().includes(query) || 
+      filtered = filtered.filter(prod =>
+        prod.name.toLowerCase().includes(query) ||
         (prod.description && prod.description.toLowerCase().includes(query)) ||
         prod.category_name?.toLowerCase().includes(query)
       );
     }
-    if (selectedCategory) {
-      filtered = filtered.filter(prod => prod.category_id === selectedCategory);
-    }
+    if (selectedCategory) filtered = filtered.filter(prod => prod.category_id === selectedCategory);
     setSearchResults(filtered);
   };
 
-  const handleSearchKeyDown = (e) => {
-    if (e.key === 'Enter') handleSearch();
-  };
+  useEffect(() => { handleSearch(); }, [searchQuery, selectedCategory]);
 
-  useEffect(() => {
-    handleSearch();
-  }, [searchQuery, selectedCategory]);
-
-  const handleCategoryClick = (categoryId) => {
-    setSelectedCategory(selectedCategory === categoryId ? null : categoryId);
-  };
-
-  const toggleCategoryExpand = (e, id) => {
-    e.stopPropagation();
-    setExpandedCategories(prev => ({ ...prev, [id]: !prev[id] }));
-  };
+  const handleCategoryClick = (categoryId) => setSelectedCategory(selectedCategory === categoryId ? null : categoryId);
 
   const handleRequestOrder = (product) => {
     if (!authService.isAuthenticated()) {
-      navigate('/login', { 
-        state: { 
-          from: '/services/farming', 
-          orderProduct: product 
-        } 
-      });
+      navigate('/login', { state: { from: '/services/farming', orderProduct: product } });
     } else {
       setSelectedProduct(product);
       setIsModalOpen(true);
@@ -117,25 +106,19 @@ const FarmingServicePage = () => {
     setIsSubmitting(true);
     setSubmitError('');
     try {
-      const orderData = {
+      await axios.post('/farming/orders', {
         items: [{ product_id: selectedProduct.id, quantity: orderQuantity }],
         delivery_type: deliveryOption,
         delivery_address: deliveryOption === 'delivery' ? deliveryAddress : '',
         delivery_fee: deliveryOption === 'delivery' ? 50 : 0
-      };
-
-      await axios.post('/farming/orders', orderData);
-
+      });
       setSubmitSuccess(true);
       setTimeout(() => {
-        setIsModalOpen(false);
-        setSubmitSuccess(false);
-        setOrderQuantity(1);
-        setDeliveryOption('pickup');
-        setDeliveryAddress('');
+        setIsModalOpen(false); setSubmitSuccess(false); setOrderQuantity(1);
+        setDeliveryOption('pickup'); setDeliveryAddress('');
       }, 2500);
     } catch (err) {
-      setSubmitError(err.response?.data?.message || 'Failed to submit order. Please try again.');
+      setSubmitError(err.response?.data?.message || 'Failed to submit order.');
     } finally {
       setIsSubmitting(false);
     }
@@ -143,16 +126,14 @@ const FarmingServicePage = () => {
 
   const handleImageClick = (imageUrl, name) => {
     const url = new URL(window.location);
-    url.searchParams.set('viewImage', imageUrl);
-    url.searchParams.set('imageName', name);
+    url.searchParams.set('viewImage', imageUrl); url.searchParams.set('imageName', name);
     window.history.pushState({}, '', url);
     setViewImage({ url: imageUrl, name });
   };
 
   const handleCloseViewer = () => {
     const url = new URL(window.location);
-    url.searchParams.delete('viewImage');
-    url.searchParams.delete('imageName');
+    url.searchParams.delete('viewImage'); url.searchParams.delete('imageName');
     window.history.pushState({}, '', url);
     setViewImage(null);
   };
@@ -160,175 +141,214 @@ const FarmingServicePage = () => {
   return (
     <div className={styles.pageWrapper}>
       <PublicNav />
-      
+
       {/* Hero Section */}
       <section className={styles.heroSection}>
+        <div className={styles.heroBgPattern} />
         <div className={styles.heroContent}>
-          <div className={styles.heroBadge}>
-            <Sprout size={18} /> SUTANA Farming
-          </div>
-          <h1>Premium Agricultural Supplies</h1>
+          <div className={styles.heroBadge}><Sprout size={18} /> SUTANA Farming</div>
+          <h1>Premium Agricultural <span className={styles.greenText}>Supplies</span></h1>
           <p>Seeds, Fertilizers, and Tools for Modern Farming</p>
-          
           <div className={styles.searchContainer}>
             <div className={styles.searchWrapper}>
               <Search className={styles.searchIcon} size={20} />
-              <input
-                type="text"
-                placeholder="Search products by name or category..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={handleSearchKeyDown}
-                className={styles.searchInput}
-              />
-              <button className={styles.searchBtn} onClick={handleSearch}>
-                Search
-              </button>
+              <input type="text" placeholder="Search products by name or category..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSearch()} className={styles.searchInput} />
+              <button className={styles.searchBtn} onClick={handleSearch}>Search</button>
             </div>
+          </div>
+          <div className={styles.heroStats}>
+            <div className={styles.heroStat}><span className={styles.heroStatNum}>{categories.length}</span><span className={styles.heroStatLabel}>Categories</span></div>
+            <div className={styles.heroStat}><span className={styles.heroStatNum}>{allProducts.length}</span><span className={styles.heroStatLabel}>Products</span></div>
+            <div className={styles.heroStat}><span className={styles.heroStatNum}>100%</span><span className={styles.heroStatLabel}>Quality</span></div>
           </div>
         </div>
       </section>
 
-      {/* Main Content Area */}
+      {/* Main Content */}
       <section className={styles.mainContent}>
-        
-        {/* Categories Sidebar/Top */}
+        {/* Categories */}
         <div className={styles.categoriesSection}>
-          <h2 className={styles.sectionTitle}>Browse Categories</h2>
+          <div className={styles.sectionHeader}>
+            <h2 className={styles.sectionTitle}>Browse by Category</h2>
+            {selectedCategory && <button className={styles.clearFilterBtn} onClick={() => setSelectedCategory(null)}>Clear Filter</button>}
+          </div>
           {loading ? (
-            <div className={styles.loadingPulse}>Loading categories...</div>
+            <div className={styles.loadingGrid}>
+              {[1,2,3,4,5,6].map(i => <div key={i} className={styles.skeleton} />)}
+            </div>
           ) : (
             <div className={styles.categoryGrid}>
-              {categories.map((cat) => (
-                <div 
-                  key={cat.id} 
-                  className={`${styles.categoryCard} ${selectedCategory === cat.id ? styles.categoryCardActive : ''}`}
-                  onClick={() => handleCategoryClick(cat.id)}
-                >
-                  {cat.cover_image && (
-                    <div className={styles.catImageWrapper}>
-                      <img src={cat.cover_image.startsWith('http') ? cat.cover_image : `${axios.defaults.baseURL.replace('/api/v1', '')}/${cat.cover_image}`} alt={cat.name} className={styles.catImage} />
-                    </div>
-                  )}
-                  <div className={styles.catContent}>
-                    <h3>{cat.name}</h3>
-                    <p className={`${styles.catDescription} ${expandedCategories[cat.id] ? styles.expanded : ''}`}>
-                      {cat.description}
-                    </p>
-                    {cat.description && cat.description.length > 50 && (
-                      <button className={styles.readMoreBtn} onClick={(e) => toggleCategoryExpand(e, cat.id)}>
-                        {expandedCategories[cat.id] ? 'Read Less' : 'Read More'}
-                      </button>
+              {categories.map((cat) => {
+                const tc = TYPE_CONFIG[cat.type] || TYPE_CONFIG.general;
+                const isActive = selectedCategory === cat.id;
+                return (
+                  <div key={cat.id} className={`${styles.categoryCard} ${isActive ? styles.categoryCardActive : ''}`} onClick={() => handleCategoryClick(cat.id)} style={{ '--cat-bg': tc.bg, '--cat-color': tc.color }}>
+                    {cat.cover_image && (
+                      <div className={styles.catImageWrapper}>
+                        <img src={resolveImg(cat.cover_image)} alt={cat.name} className={styles.catImage} />
+                        <div className={styles.catImageOverlay} />
+                      </div>
                     )}
+                    <div className={styles.catContent}>
+                      <div className={styles.catTypeBadge} style={{ background: tc.bg, color: tc.color }}>{tc.icon} {tc.label}</div>
+                      <h3 className={styles.catName}>{cat.name}</h3>
+                      <p className={`${styles.catDesc} ${expandedDesc[cat.id] ? styles.expanded : ''}`}>{cat.description}</p>
+                      {cat.description?.length > 60 && (
+                        <button className={styles.readMoreBtn} onClick={(e) => { e.stopPropagation(); setExpandedDesc(p => ({ ...p, [cat.id]: !p[cat.id] })); }}>
+                          {expandedDesc[cat.id] ? 'Read Less' : 'Read More'}
+                        </button>
+                      )}
+                      <div className={styles.catProductCount}>{allProducts.filter(p => p.category_id === cat.id).length} Products</div>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
 
-        {/* Products Grid */}
+        {/* Products */}
         <div className={styles.productsSection}>
-          <div className={styles.productHeader}>
+          <div className={styles.sectionHeader}>
             <h2 className={styles.sectionTitle}>
-              {selectedCategory ? categories.find(c => c.id === selectedCategory)?.name : 'All Products'}
+              {selectedCategory ? categories.find(c => c.id === selectedCategory)?.name || 'Products' : 'All Products'}
             </h2>
-            <span className={styles.productCount}>{searchResults.length} Products Found</span>
+            <span className={styles.productCount}>{searchResults.length} product{searchResults.length !== 1 ? 's' : ''}</span>
           </div>
 
           {loading ? (
-            <div className={styles.loadingPulse}>Loading products...</div>
+            <div className={styles.loadingGrid}>
+              {[1,2,3,4,5,6].map(i => <div key={i} className={styles.skeleton} />)}
+            </div>
           ) : searchResults.length === 0 ? (
             <div className={styles.noResults}>
-              <Sprout size={48} className={styles.noResultsIcon} />
+              <Sprout size={56} />
               <h3>No products found</h3>
-              <p>Try adjusting your search terms or selecting a different category.</p>
+              <p>Try adjusting your search or selecting a different category.</p>
             </div>
           ) : (
             <div className={styles.productsGrid}>
-              {searchResults.map((product) => (
-                <div key={product.id} className={styles.productCard}>
-                  
-                  {/* Two Images at top 50 50 percent */}
-                  <div className={styles.dualImageContainer}>
-                    <div 
-                      className={styles.productImageHalf} 
-                      onClick={() => handleImageClick(product.product_image, product.name)}
-                    >
+              {searchResults.map((product) => {
+                const cat = categories.find(c => c.id === product.category_id);
+                const tc = cat ? TYPE_CONFIG[cat.type] || TYPE_CONFIG.general : TYPE_CONFIG.general;
+                const pct = product.stock_quantity > 0 ? Math.min(100, (product.stock_quantity / (product.reorder_level * 3)) * 100) : 0;
+                return (
+                  <div key={product.id} className={styles.productCard}>
+                    {/* Image Section */}
+                    <div className={styles.productImageWrapper}>
                       {product.product_image ? (
-                        <img src={product.product_image.startsWith('http') ? product.product_image : `${axios.defaults.baseURL.replace('/api/v1', '')}/${product.product_image}`} alt={product.name} />
+                        <img src={resolveImg(product.product_image)} alt={product.name} className={styles.productImage} onClick={() => handleImageClick(product.product_image, product.name)} />
                       ) : (
-                        <div className={styles.placeholderImg}><Leaf size={24}/></div>
+                        <div className={styles.productPlaceholder}><Leaf size={40} /></div>
                       )}
+                      <div className={styles.productImageBadges}>
+                        <span className={styles.typeBadge} style={{ background: tc.bg, color: tc.color }}>{tc.icon} {tc.label}</span>
+                        {product.stock_quantity <= product.reorder_level && product.stock_quantity > 0 && (
+                          <span className={styles.lowStockBadge}>Low Stock</span>
+                        )}
+                        {product.stock_quantity <= 0 && <span className={styles.outOfStockBadge}>Out of Stock</span>}
+                      </div>
+                      <div className={styles.priceTag}>
+                        <span className={styles.priceCurrency}>ETB</span>
+                        <span className={styles.priceValue}>{parseFloat(product.price).toFixed(2)}</span>
+                      </div>
                     </div>
-                    <div 
-                      className={styles.productImageHalf}
-                      onClick={() => {
-                        const cat = categories.find(c => c.id === product.category_id);
-                        if(cat?.cover_image) handleImageClick(cat.cover_image, cat.name);
-                      }}
-                    >
-                      {categories.find(c => c.id === product.category_id)?.cover_image ? (
-                        <img src={categories.find(c => c.id === product.category_id)?.cover_image} alt="Category" />
-                      ) : (
-                        <div className={styles.placeholderImg}><Sprout size={24}/></div>
-                      )}
-                    </div>
-                  </div>
 
-                  <div className={styles.productInfo}>
-                    <div className={styles.productHeaderRow}>
+                    {/* Info Section */}
+                    <div className={styles.productInfo}>
                       <h3 className={styles.productName}>{product.name}</h3>
-                      <span className={styles.priceTag}>{product.price} ETB</span>
-                    </div>
-                    <span className={styles.productCategory}>{product.category_name}</span>
-                    
-                    <p className={styles.productDesc}>{product.description}</p>
-                    
-                    <div className={styles.stockStatus}>
-                      {product.stock_quantity > 0 ? (
-                        <span className={styles.inStock}><Package size={14}/> In Stock ({product.stock_quantity})</span>
-                      ) : (
-                        <span className={styles.outOfStock}>Out of Stock</span>
-                      )}
-                    </div>
+                      {cat && <span className={styles.productCategory}>{tc.icon} {cat.name}</span>}
 
-                    <button 
-                      className={styles.requestBtn}
-                      onClick={() => handleRequestOrder(product)}
-                      disabled={product.stock_quantity <= 0}
-                    >
-                      Order Now
-                    </button>
+                      {/* Description */}
+                      {product.description && (
+                        <p className={styles.productDesc}>{product.description.length > 100 ? product.description.substring(0, 100) + '...' : product.description}</p>
+                      )}
+
+                      {/* Usage Instructions (expandable) */}
+                      {product.usage_instructions && (
+                        <div className={styles.usageSection}>
+                          <button className={styles.usageToggle} onClick={() => setExpandedUsage(p => ({ ...p, [product.id]: !p[product.id] }))}>
+                            <Info size={14} /> How to Use {expandedUsage[product.id] ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                          </button>
+                          {expandedUsage[product.id] && (
+                            <div className={styles.usageContent}>{product.usage_instructions}</div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Stock Indicator */}
+                      <div className={styles.stockSection}>
+                        <div className={styles.stockBarTrack}>
+                          <div className={styles.stockBarFill} style={{ width: `${pct}%`, background: product.stock_quantity <= 0 ? '#ef4444' : pct < 25 ? '#f59e0b' : '#10b981' }} />
+                        </div>
+                        <span className={styles.stockLabel} style={{ color: product.stock_quantity <= 0 ? '#ef4444' : product.stock_quantity <= product.reorder_level ? '#f59e0b' : '#16a34a' }}>
+                          {product.stock_quantity > 0 ? `${product.stock_quantity} in stock` : 'Out of stock'}
+                        </span>
+                      </div>
+
+                      <button className={styles.orderBtn} onClick={() => handleRequestOrder(product)} disabled={product.stock_quantity <= 0}>
+                        <ShoppingCart size={16} /> {product.stock_quantity > 0 ? 'Order Now' : 'Unavailable'}
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
-        
-        {/* Additional Sections (Seasonal Calendar, Tips) */}
-        <div className={styles.infoSections}>
-          <div className={styles.infoCard}>
-            <Calendar size={32} className={styles.infoIcon} />
-            <h3>Seasonal Calendar</h3>
-            <p>Check the best times for planting and harvesting in your region.</p>
-            <button className={styles.infoBtn}>View Calendar</button>
+
+        {/* Info Sections */}
+        <div className={styles.infoGrid}>
+          <div className={styles.infoCardLarge}>
+            <div className={styles.infoCardHeader}>
+              <Calendar size={24} /> <h3>Seasonal Calendar — Meher</h3>
+            </div>
+            <div className={styles.calendarTable}>
+              <table>
+                <thead><tr><th>Crop</th><th>Planting</th><th>Harvest</th><th>Status</th><th>Best Seed</th></tr></thead>
+                <tbody>
+                  {[
+                    { crop: 'Teff', plant: 'Jul–Aug', harvest: 'Nov–Dec', status: 'Planting', seed: 'Dukem, Magna', sClass: styles.statusPlanting },
+                    { crop: 'Wheat', plant: 'Jun–Jul', harvest: 'Oct–Nov', status: 'Growing', seed: 'Hidase, Kakaba', sClass: styles.statusGrowing },
+                    { crop: 'Maize', plant: 'Mar–Apr', harvest: 'Aug–Sep', status: 'Harvesting', seed: 'BH-540, BH-660', sClass: styles.statusHarvesting },
+                    { crop: 'Barley', plant: 'May–Jun', harvest: 'Oct–Nov', status: 'Planting', seed: 'EH-1493, HB-42', sClass: styles.statusPlanting },
+                  ].map((r, i) => (
+                    <tr key={i}><td className={styles.cropName}>{r.crop}</td><td>{r.plant}</td><td>{r.harvest}</td><td><span className={`${styles.statusBadge} ${r.sClass}`}>{r.status}</span></td><td className={styles.seedText}>{r.seed}</td></tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
-          <div className={styles.infoCard}>
-            <MapPin size={32} className={styles.infoIcon} />
-            <h3>Delivery Areas</h3>
-            <p>We deliver agricultural supplies to various regions. Check our map.</p>
-            <button className={styles.infoBtn}>Check Coverage</button>
+
+          <div className={styles.infoCardLarge}>
+            <div className={styles.infoCardHeader}>
+              <Truck size={24} /> <h3>Delivery Areas</h3>
+            </div>
+            <div className={styles.deliveryGrid}>
+              <div className={styles.deliveryCard} style={{ '--d-bg': '#f0fdf4', '--d-color': '#166534' }}><div className={styles.delivTitle}>Addis Ababa</div><div className={styles.delivSub}>All sub-cities</div><div className={styles.delivFee}>Free above 5,000 ETB</div></div>
+              <div className={styles.deliveryCard} style={{ '--d-bg': '#eff6ff', '--d-color': '#1e40af' }}><div className={styles.delivTitle}>Oromia Zone</div><div className={styles.delivSub}>Surrounding districts</div><div className={styles.delivFee}>500 ETB fee</div></div>
+              <div className={styles.deliveryCard} style={{ '--d-bg': '#f5f3ff', '--d-color': '#6d28d9' }}><div className={styles.delivTitle}>100 km Radius</div><div className={styles.delivSub}>Up to 100 km</div><div className={styles.delivFee}>1,000 ETB fee</div></div>
+              <div className={styles.deliveryCard} style={{ '--d-bg': '#fef2f2', '--d-color': '#991b1b' }}><div className={styles.delivTitle}>Delivery Time</div><div className={styles.delivSub}>After confirmation</div><div className={styles.delivFee}>2–5 business days</div></div>
+            </div>
           </div>
-          <div className={styles.infoCard}>
-            <Info size={32} className={styles.infoIcon} />
-            <h3>Farming Tips</h3>
-            <p>Get the latest guides and tutorials for maximum yield.</p>
-            <button className={styles.infoBtn}>Read Tips</button>
+
+          <div className={styles.infoCardLarge}>
+            <div className={styles.infoCardHeader}>
+              <Star size={24} /> <h3>Farming Tips</h3>
+            </div>
+            <div className={styles.tipsList}>
+              {[
+                { tip: 'Best time to plant Teff', detail: 'Plant when rain is consistent — July to August. Use Dukem or Magna varieties for best yield.' },
+                { tip: 'Urea fertilizer application', detail: 'Apply 100–150 kg per hectare during early growth stage for maximum nitrogen absorption.' },
+                { tip: 'Seed storage', detail: 'Store in a cool, dry place away from sunlight. Use airtight containers to prevent moisture damage.' },
+                { tip: 'Wheat planting depth', detail: 'Plant seeds 2–4 cm deep. Shallower in heavy soils, deeper in sandy soils.' },
+                { tip: 'Pest control', detail: 'Inspect crops weekly during growing season. Early detection reduces crop loss by up to 40%.' },
+              ].map((item, i) => (
+                <div key={i} className={styles.tipCard}><div className={styles.tipIcon}>{i + 1}</div><div><div className={styles.tipTitle}>{item.tip}</div><div className={styles.tipDetail}>{item.detail}</div></div></div>
+              ))}
+            </div>
           </div>
         </div>
-
       </section>
 
       <PublicFooter />
@@ -337,93 +357,53 @@ const FarmingServicePage = () => {
       {isModalOpen && selectedProduct && (
         <div className={styles.modalOverlay}>
           <div className={styles.modalContent}>
-            <button className={styles.closeModalBtn} onClick={() => setIsModalOpen(false)}>
-              <X size={24} />
-            </button>
-            
+            <button className={styles.closeModalBtn} onClick={() => setIsModalOpen(false)}><X size={24} /></button>
             {submitSuccess ? (
               <div className={styles.successState}>
-                <div className={styles.successIcon}><Sprout size={48} /></div>
+                <div className={styles.successIconCircle}><Sprout size={40} /></div>
                 <h2>Order Placed!</h2>
-                <p>Your order has been submitted successfully.</p>
-                <p>Track it in your Customer Dashboard.</p>
-                <button className={styles.successBtn} onClick={() => navigate('/customer/orders')}>
-                  View My Orders
-                </button>
+                <p>Your order has been submitted successfully. Track it in your dashboard.</p>
+                <button className={styles.successBtn} onClick={() => navigate('/customer/orders')}>View My Orders</button>
               </div>
             ) : (
               <>
                 <h2 className={styles.modalTitle}>Place Order</h2>
-                <div className={styles.selectedMedInfo}>
-                  <h3>{selectedProduct.name}</h3>
-                  <p>{selectedProduct.price} ETB per unit</p>
+                <div className={styles.orderProductInfo}>
+                  {selectedProduct.product_image && <img src={resolveImg(selectedProduct.product_image)} alt="" className={styles.orderProductImg} />}
+                  <div>
+                    <h3>{selectedProduct.name}</h3>
+                    <span className={styles.orderPrice}>{parseFloat(selectedProduct.price).toFixed(2)} ETB / unit</span>
+                  </div>
                 </div>
-
-                <form onSubmit={handleOrderSubmit} className={styles.refillForm}>
-                  {submitError && <div className={styles.errorMessage}>{submitError}</div>}
-                  
+                <form onSubmit={handleOrderSubmit}>
+                  {submitError && <div className={styles.errorMsg}>{submitError}</div>}
                   <div className={styles.formGroup}>
                     <label>Quantity</label>
-                    <input 
-                      type="number" 
-                      min="1" 
-                      max={selectedProduct.stock_quantity}
-                      value={orderQuantity}
-                      onChange={(e) => setOrderQuantity(Number(e.target.value))}
-                      required
-                    />
+                    <input type="number" min="1" max={selectedProduct.stock_quantity} value={orderQuantity} onChange={e => setOrderQuantity(Number(e.target.value))} required />
                   </div>
-
+                  <div className={styles.totalRow}>Total: <strong>{(selectedProduct.price * orderQuantity).toFixed(2)} ETB</strong></div>
                   <div className={styles.formGroup}>
-                    <label>Total Amount: <strong>{(selectedProduct.price * orderQuantity).toFixed(2)} ETB</strong></label>
-                  </div>
-
-                  <div className={styles.formGroup}>
-                    <label>Delivery Option</label>
+                    <label>Delivery</label>
                     <div className={styles.radioGroup}>
                       <label className={`${styles.radioCard} ${deliveryOption === 'pickup' ? styles.activeRadio : ''}`}>
-                        <input 
-                          type="radio" 
-                          value="pickup" 
-                          checked={deliveryOption === 'pickup'}
-                          onChange={(e) => setDeliveryOption(e.target.value)}
-                        />
-                        <Package size={20} />
-                        <span>Pickup at Store</span>
+                        <input type="radio" value="pickup" checked={deliveryOption === 'pickup'} onChange={e => setDeliveryOption(e.target.value)} />
+                        <Package size={18} /> <span>Pickup</span>
                       </label>
                       <label className={`${styles.radioCard} ${deliveryOption === 'delivery' ? styles.activeRadio : ''}`}>
-                        <input 
-                          type="radio" 
-                          value="delivery" 
-                          checked={deliveryOption === 'delivery'}
-                          onChange={(e) => setDeliveryOption(e.target.value)}
-                        />
-                        <MapPin size={20} />
-                        <span>Delivery</span>
+                        <input type="radio" value="delivery" checked={deliveryOption === 'delivery'} onChange={e => setDeliveryOption(e.target.value)} />
+                        <Truck size={18} /> <span>Delivery</span>
                       </label>
                     </div>
                   </div>
-
                   {deliveryOption === 'delivery' && (
                     <div className={styles.formGroup}>
-                      <label>Delivery Address</label>
-                      <textarea 
-                        value={deliveryAddress}
-                        onChange={(e) => setDeliveryAddress(e.target.value)}
-                        placeholder="Enter full address and landmarks..."
-                        required
-                        rows="3"
-                      ></textarea>
+                      <label>Address</label>
+                      <textarea value={deliveryAddress} onChange={e => setDeliveryAddress(e.target.value)} placeholder="Full address and landmarks..." required rows={3} />
                     </div>
                   )}
-
                   <div className={styles.modalActions}>
-                    <button type="button" className={styles.cancelBtn} onClick={() => setIsModalOpen(false)}>
-                      Cancel
-                    </button>
-                    <button type="submit" className={styles.submitBtn} disabled={isSubmitting}>
-                      {isSubmitting ? 'Processing...' : 'Confirm Order'}
-                    </button>
+                    <button type="button" className={styles.cancelBtn} onClick={() => setIsModalOpen(false)}>Cancel</button>
+                    <button type="submit" className={styles.submitBtn} disabled={isSubmitting}>{isSubmitting ? 'Processing...' : 'Confirm Order'}</button>
                   </div>
                 </form>
               </>
@@ -432,13 +412,7 @@ const FarmingServicePage = () => {
         </div>
       )}
 
-      {/* Image Viewer popup */}
-      {viewImage && (
-        <PrescriptionViewer 
-          imageUrl={viewImage.url} 
-          onClose={handleCloseViewer} 
-        />
-      )}
+      {viewImage && <PrescriptionViewer imageUrl={viewImage.url} onClose={handleCloseViewer} />}
     </div>
   );
 };

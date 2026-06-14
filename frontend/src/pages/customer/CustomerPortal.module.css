@@ -40,3 +40,75 @@
 }
 .textRed { color: #ef4444 !important; }
 .textGreen { color: #10b981 !important; }
+
+.recentSection {
+  margin-top: 2.5rem;
+}
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+.sectionHeader h2 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+}
+.viewAllBtn {
+  background: none;
+  border: 1px solid #10b981;
+  color: #10b981;
+  padding: 0.4rem 1rem;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.viewAllBtn:hover { background: #10b981; color: white; }
+.ordersGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 1rem;
+}
+.dashOrderCard {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  cursor: pointer;
+  transition: all 0.25s;
+}
+.dashOrderCard:hover {
+  border-color: #10b981;
+  box-shadow: 0 4px 12px rgba(16,185,129,0.12);
+  transform: translateY(-2px);
+}
+.dashOrderTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+.dashOrderInvoice {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #059669;
+}
+.dashOrderStatus { font-size: 1.1rem; }
+.dashOrderBottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.dashOrderAmount {
+  font-weight: 700;
+  color: #111827;
+  font-size: 0.9rem;
+}
+.dashOrderDate {
+  font-size: 0.75rem;
+  color: #9ca3af;
+}

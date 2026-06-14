@@ -18,8 +18,8 @@ const CustomerFarmingOrders = () => {
     try {
       setLoading(true);
       const res = await axios.get('/farming/orders/my-orders');
-      if (res.data.status === 'success') {
-        setOrders(res.data.data);
+      if (res.status === 'success') {
+        setOrders(res.data);
       }
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to load farming orders');
@@ -112,7 +112,7 @@ const CustomerFarmingOrders = () => {
                       <div className={styles.itemInfo}>
                         {item.product_image && (
                           <img 
-                            src={item.product_image.startsWith('http') ? item.product_image : `${axios.defaults.baseURL.replace('/api/v1', '')}/${item.product_image}`} 
+                            src={item.product_image.startsWith('http') ? item.product_image : `${axios.defaults.baseURL.replace('/api/v1', '')}${item.product_image}`} 
                             alt={item.product_name} 
                             className={styles.itemThumbnail}
                             onClick={() => handleImageClick(item.product_image, item.product_name)}

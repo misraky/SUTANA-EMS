@@ -1859,7 +1859,7 @@ body.dark-theme .pub-link-modern::after {
   position: absolute;
   top: calc(100% + 2px);
   left: -16px;
-  background: #ffffff;
+  background: #CCE2F5;
   border: 1px solid #f1f5f9;
   border-radius: 14px;
   box-shadow: 0 20px 40px -8px rgba(0, 0, 0, 0.12), 0 4px 16px -4px rgba(0, 0, 0, 0.06);
@@ -1883,7 +1883,7 @@ body.dark-theme .pub-dropdown-grid {
   left: 24px;
   width: 12px;
   height: 12px;
-  background: #ffffff;
+  background: #CCE2F5;
   border: 1px solid #f1f5f9;
   border-bottom: none;
   border-right: none;
@@ -2154,6 +2154,30 @@ body.dark-theme .pub-btn-ghost-modern {
 
 body.dark-theme .pub-btn-ghost-modern:hover {
   background: #1e293b;
+}
+
+.pub-icon-btn {
+  min-width: 44px;
+  min-height: 44px;
+  background: none;
+  border: none;
+  color: var(--pub-text, #334155);
+  cursor: pointer;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+.pub-icon-btn:hover {
+  background: rgba(0,0,0,0.05);
+}
+body.dark-theme .pub-icon-btn {
+  color: var(--pub-text-dark, #e2e8f0);
+}
+body.dark-theme .pub-icon-btn:hover {
+  background: rgba(255,255,255,0.08);
 }
 
 .pub-btn-solid-modern {

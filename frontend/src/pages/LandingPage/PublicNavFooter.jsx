@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
-import { Printer, Pill, Car, Wheat, Store, Bell, Video, GalleryHorizontal, Users, Folder } from 'lucide-react';
+import { Printer, Pill, Car, Wheat, Store, Bell, Video, Users, PartyPopper, Package, X, CheckCircle } from 'lucide-react';
 import './PublicLayout.css';
 
 export const PublicNav = () => {
@@ -10,6 +10,20 @@ export const PublicNav = () => {
   const [galleryDropdownOpen, setGalleryDropdownOpen] = useState(false);
   const [newsDropdownOpen, setNewsDropdownOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [notifOpen, setNotifOpen] = useState(false);
+  const notifRef = useRef(null);
+
+  useEffect(() => {
+    const handler = (e) => { if (notifRef.current && !notifRef.current.contains(e.target)) setNotifOpen(false); };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const guestNotifications = [
+    { id: 1, title: 'Welcome to SUTANA!', message: 'Explore our full range of services — Printing, Pharmacy, Farming, Car Rental, and Retail.', time: 'Just now' },
+    { id: 2, title: 'New Service Added', message: 'Visit our Retail Store for stationery, electronics, office supplies, and more.', time: '2 hours ago' },
+    { id: 3, title: 'Holiday Schedule', message: 'Our campus store will be open 8 AM - 4 PM during the upcoming holiday.', time: '1 day ago' },
+  ];
 
   const isActive = (path) => location.pathname === path;
   const isActiveStart = (prefix) => location.pathname.startsWith(prefix);
@@ -90,17 +104,21 @@ export const PublicNav = () => {
             </span>
             {galleryDropdownOpen && (
               <div className="pub-dropdown-grid">
-                <Link to="/gallery/workers" className="pub-dropdown-item" onClick={() => setGalleryDropdownOpen(false)}>
-                  <span className="pub-dropdown-icon"><Users size={18} strokeWidth={2} /></span>
-                  <span>Sutana Workers &amp; Workplace</span>
-                </Link>
-                <Link to="/gallery/cars" className="pub-dropdown-item" onClick={() => setGalleryDropdownOpen(false)}>
+                <Link to="/gallery#section-cars" className="pub-dropdown-item" onClick={() => setGalleryDropdownOpen(false)}>
                   <span className="pub-dropdown-icon"><Car size={18} strokeWidth={2} /></span>
-                  <span>Cars</span>
+                  <span>Cars &amp; Fleet</span>
                 </Link>
-                <Link to="/gallery/other" className="pub-dropdown-item" onClick={() => setGalleryDropdownOpen(false)}>
-                  <span className="pub-dropdown-icon"><Folder size={18} strokeWidth={2} /></span>
-                  <span>Other</span>
+                <Link to="/gallery#section-workplace" className="pub-dropdown-item" onClick={() => setGalleryDropdownOpen(false)}>
+                  <span className="pub-dropdown-icon"><Users size={18} strokeWidth={2} /></span>
+                  <span>Workers &amp; Workplace</span>
+                </Link>
+                <Link to="/gallery#section-events" className="pub-dropdown-item" onClick={() => setGalleryDropdownOpen(false)}>
+                  <span className="pub-dropdown-icon"><PartyPopper size={18} strokeWidth={2} /></span>
+                  <span>Events &amp; Activities</span>
+                </Link>
+                <Link to="/gallery#section-products" className="pub-dropdown-item" onClick={() => setGalleryDropdownOpen(false)}>
+                  <span className="pub-dropdown-icon"><Package size={18} strokeWidth={2} /></span>
+                  <span>Products Showcase</span>
                 </Link>
               </div>
             )}
@@ -140,17 +158,56 @@ export const PublicNav = () => {
                   <span className="pub-dropdown-icon"><Video size={18} strokeWidth={2} /></span>
                   <span>Video</span>
                 </Link>
-                <Link to="/news/gallery" className={`pub-dropdown-item${isActive('/news/gallery') ? ' pub-dropdown-item--active' : ''}`} onClick={() => setNewsDropdownOpen(false)}>
-                  <span className="pub-dropdown-icon"><GalleryHorizontal size={18} strokeWidth={2} /></span>
-                  <span>Gallery</span>
-                </Link>
               </div>
             )}
           </div>
         </nav>
 
-        {/* Right: Login only */}
+        {/* Right: Notifications + Login */}
         <div className="pub-nav-right-modern">
+          <div ref={notifRef} style={{ position: 'relative' }}>
+            <button
+              className="pub-icon-btn"
+              onClick={() => setNotifOpen(o => !o)}
+              title="Notifications"
+              style={{ position: 'relative' }}
+            >
+              <Bell size={20} />
+              <span style={{
+                position: 'absolute', top: '2px', right: '2px',
+                width: '8px', height: '8px', borderRadius: '50%', background: '#ef4444'
+              }} />
+            </button>
+            {notifOpen && (
+              <div style={{
+                position: 'absolute', top: 'calc(100% + 8px)', right: 0,
+                width: '360px', background: 'white', borderRadius: '12px',
+                boxShadow: '0 20px 60px rgba(0,0,0,0.15)', border: '1px solid #e5e7eb',
+                zIndex: 1000, overflow: 'hidden'
+              }}>
+                <div style={{ padding: '14px 18px', borderBottom: '1px solid #f3f4f6', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontWeight: 700, fontSize: 15, color: '#111827' }}>Announcements</span>
+                </div>
+                <div style={{ maxHeight: '320px', overflowY: 'auto' }}>
+                  {guestNotifications.map(n => (
+                    <div key={n.id} style={{
+                      padding: '14px 18px', borderBottom: '1px solid #f9fafb',
+                      cursor: 'default', display: 'flex', gap: '12px', alignItems: 'flex-start'
+                    }}>
+                      <div style={{ width: '36px', height: '36px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: '#eff6ff' }}>
+                        <CheckCircle size={16} color="#3b82f6" />
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <p style={{ margin: '0 0 2px', fontWeight: 600, fontSize: 13, color: '#111827' }}>{n.title}</p>
+                        <p style={{ margin: 0, fontSize: 12, color: '#6b7280' }}>{n.message}</p>
+                        <p style={{ margin: '4px 0 0', fontSize: 11, color: '#9ca3af' }}>{n.time}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
           <button className="pub-btn-solid-modern" onClick={() => navigate('/login')}>Login</button>
         </div>
       </div>
