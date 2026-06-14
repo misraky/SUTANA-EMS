@@ -1,6 +1,8 @@
 const { db, transaction } = require('../../config/database');
 const AppError = require('../../utils/AppError');
 
+const imgUrl = (file) => file ? `/uploads/products/${file.filename}` : null;
+
 const generateInvoiceNumber = async (prefix, trx, table) => {
   const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
   const lastRecord = await trx(table)
@@ -149,11 +151,14 @@ exports.createProduct = catchAsync(async (req, res) => {
   const { name, category_id, description, usage_instructions, price, stock_quantity, reorder_level } = req.body;
   if (!name || !price) throw new AppError('Product name and price are required', 400);
 
+  let product_image = imgUrl(req.file);
+
   const [id] = await db('farming_products').insert({
     name,
     category_id: category_id || null,
     description: description || null,
     usage_instructions: usage_instructions || null,
+    product_image,
     price: parseFloat(price),
     stock_quantity: parseInt(stock_quantity || 0),
     reorder_level: parseInt(reorder_level || 10),
@@ -179,6 +184,11 @@ exports.updateProduct = catchAsync(async (req, res) => {
   if (price !== undefined) updates.price = parseFloat(price);
   if (reorder_level !== undefined) updates.reorder_level = parseInt(reorder_level);
   if (is_active !== undefined) updates.is_active = is_active;
+  if (req.file) {
+    const { deleteFile } = require('../../config/multer');
+    if (product.product_image) deleteFile(product.product_image);
+    updates.product_image = imgUrl(req.file);
+  }
   updates.updated_at = db.fn.now();
 
   await db('farming_products').where({ id }).update(updates);
@@ -216,15 +226,18 @@ exports.updateStock = catchAsync(async (req, res) => {
 });
 
 exports.createCategory = catchAsync(async (req, res) => {
-  const { name, description, icon_class } = req.body;
+  const { name, description, icon_class, type } = req.body;
   if (!name) throw new AppError('Category name is required', 400);
   const slug = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
   const existing = await db('farming_categories').where({ slug }).first();
   if (existing) throw new AppError('Category with this name already exists', 400);
 
+  let cover_image = imgUrl(req.file);
+
   const [id] = await db('farming_categories').insert({
     name, slug, description: description || null,
-    icon_class: icon_class || null, is_active: true, created_at: db.fn.now()
+    icon_class: icon_class || null, cover_image,
+    type: type || 'general', is_active: true, created_at: db.fn.now()
   });
   const category = await db('farming_categories').where({ id }).first();
   res.status(201).json({ status: 'success', message: 'Category created', data: category });
@@ -357,6 +370,53 @@ exports.posCheckout = catchAsync(async (req, res) => {
   res.status(201).json({ status: 'success', message: 'Sale completed!', data: result });
 });
 
+// --- Reorder Requests ---
+
+exports.createReorderRequest = catchAsync(async (req, res) => {
+  const { product_id, quantity_requested, notes } = req.body;
+  const requested_by = req.user.id;
+  if (!product_id || !quantity_requested) {
+    return res.status(400).json({ status: 'error', message: 'Product and quantity are required' });
+  }
+  const product = await db('farming_products').where({ id: product_id, is_active: true }).first();
+  if (!product) throw new AppError('Product not found', 404);
+
+  const [id] = await db('farming_reorder_requests').insert({
+    product_id, requested_by, quantity_requested: parseInt(quantity_requested),
+    notes: notes || null, status: 'PENDING', created_at: db.fn.now(), updated_at: db.fn.now()
+  });
+  const request = await db('farming_reorder_requests').where({ id }).first();
+  res.status(201).json({ status: 'success', message: 'Reorder request submitted', data: request });
+});
+
+exports.getReorderRequests = catchAsync(async (req, res) => {
+  const { status } = req.query;
+  let query = db('farming_reorder_requests')
+    .select('farming_reorder_requests.*', 'farming_products.name as product_name', 'requesters.full_name as requester_name')
+    .leftJoin('farming_products', 'farming_reorder_requests.product_id', 'farming_products.id')
+    .leftJoin('users as requesters', 'farming_reorder_requests.requested_by', 'requesters.id');
+  if (status) query = query.where('farming_reorder_requests.status', status);
+  const requests = await query.orderBy('farming_reorder_requests.created_at', 'desc');
+  res.json({ status: 'success', data: requests });
+});
+
+exports.approveReorderRequest = catchAsync(async (req, res) => {
+  const { id } = req.params;
+  const { status, notes } = req.body;
+  if (!['APPROVED', 'REJECTED'].includes(status)) {
+    return res.status(400).json({ status: 'error', message: 'Status must be APPROVED or REJECTED' });
+  }
+  const request = await db('farming_reorder_requests').where({ id }).first();
+  if (!request) throw new AppError('Request not found', 404);
+  if (request.status !== 'PENDING') throw new AppError('Request already processed', 400);
+
+  await db('farming_reorder_requests').where({ id }).update({
+    status, approved_by: req.user.id, notes: notes || request.notes, updated_at: db.fn.now()
+  });
+  const updated = await db('farming_reorder_requests').where({ id }).first();
+  res.json({ status: 'success', message: `Request ${status.toLowerCase()}`, data: updated });
+});
+
 // --- Finance Report ---
 
 exports.getDailySalesSummary = catchAsync(async (req, res) => {
@@ -401,6 +461,109 @@ exports.submitFinanceReport = catchAsync(async (req, res) => {
   });
 
   res.status(201).json({ status: 'success', message: 'Report submitted to Finance successfully', data: { id: reportId } });
+});
+
+// --- Shift Management ---
+
+exports.openShift = catchAsync(async (req, res) => {
+  const { opening_float, shift_type } = req.body;
+  const worker_id = req.user.id;
+
+  const existing = await db('farming_shifts').where({ worker_id, status: 'OPEN' }).first();
+  if (existing) return res.status(400).json({ status: 'error', message: 'You already have an open shift. Close it first.' });
+
+  const shift_type_val = shift_type || 'morning';
+  const today = new Date().toISOString().split('T')[0];
+
+  const [id] = await db('farming_shifts').insert({
+    worker_id, shift_type: shift_type_val,
+    opening_float: parseFloat(opening_float || 0),
+    total_sales: 0, transaction_count: 0,
+    cash_collected: 0, telebirr_collected: 0, transfer_collected: 0,
+    status: 'OPEN',
+    opened_at: db.fn.now(), created_at: db.fn.now(), updated_at: db.fn.now()
+  });
+
+  const shift = await db('farming_shifts').where({ id }).first();
+  res.status(201).json({ status: 'success', message: 'Shift opened', data: shift });
+});
+
+exports.closeShift = catchAsync(async (req, res) => {
+  const { physical_cash_counted, difference_reason, refunds_given, expenses_transport, expenses_loading, notes } = req.body;
+  const worker_id = req.user.id;
+
+  const shift = await db('farming_shifts').where({ worker_id, status: 'OPEN' }).first();
+  if (!shift) return res.status(404).json({ status: 'error', message: 'No open shift found.' });
+
+  const today = new Date().toISOString().split('T')[0];
+  const sales = await db('farming_orders')
+    .where('status', 'COMPLETED')
+    .whereRaw(`DATE(created_at) = ?`, [today]);
+
+  const totalSales = sales.reduce((sum, o) => sum + parseFloat(o.total_amount), 0);
+  const cashCollected = sales.filter(o => o.payment_method === 'cash').reduce((sum, o) => sum + parseFloat(o.total_amount), 0);
+  const telebirrCollected = sales.filter(o => o.payment_method === 'telebirr').reduce((sum, o) => sum + parseFloat(o.total_amount), 0);
+  const transferCollected = sales.filter(o => o.payment_method === 'bank_transfer').reduce((sum, o) => sum + parseFloat(o.total_amount), 0);
+  const transactionCount = sales.length;
+
+  const counted = parseFloat(physical_cash_counted || 0);
+  const expectedCash = parseFloat(shift.opening_float) + cashCollected;
+  const difference = counted - expectedCash;
+  const cashToHandover = cashCollected; // sales cash only (float excluded)
+
+  await db('farming_shifts').where({ id: shift.id }).update({
+    total_sales: totalSales, transaction_count: transactionCount,
+    cash_collected: cashCollected, telebirr_collected: telebirrCollected,
+    transfer_collected: transferCollected,
+    physical_cash_counted: counted, difference_amount: difference,
+    difference_reason: difference_reason || null,
+    status: 'CLOSED', closed_at: db.fn.now(), updated_at: db.fn.now()
+  });
+
+  // Also submit a finance report entry
+  await db('farming_finance_reports').insert({
+    farming_worker_id: worker_id,
+    report_date: today,
+    total_system_sales: totalSales,
+    cash_collected: cashCollected,
+    telebirr_collected: telebirrCollected,
+    transfer_collected: transferCollected,
+    physical_cash_counted: counted,
+    difference_amount: difference,
+    difference_reason: difference_reason || null,
+    refunds_given: parseFloat(refunds_given || 0),
+    expenses_transport: parseFloat(expenses_transport || 0),
+    expenses_loading: parseFloat(expenses_loading || 0),
+    notes: notes || null,
+    status: 'SUBMITTED',
+    created_at: db.fn.now()
+  });
+
+  res.json({
+    status: 'success',
+    message: 'Shift closed successfully. Report submitted to Finance.',
+    data: {
+      shift_id: shift.id, total_sales: totalSales, cash_collected: cashCollected,
+      telebirr_collected: telebirrCollected, transfer_collected: transferCollected,
+      transaction_count: transactionCount, physical_cash_counted: counted,
+      expected_cash: expectedCash, difference, cash_to_handover: cashToHandover,
+      opening_float: shift.opening_float
+    }
+  });
+});
+
+exports.getCurrentShift = catchAsync(async (req, res) => {
+  const worker_id = req.user.id;
+  const shift = await db('farming_shifts').where({ worker_id, status: 'OPEN' }).first();
+  res.json({ status: 'success', data: shift || null });
+});
+
+exports.getShiftHistory = catchAsync(async (req, res) => {
+  const worker_id = req.user.id;
+  const limit = parseInt(req.query.limit || 10);
+  const shifts = await db('farming_shifts')
+    .where({ worker_id }).orderBy('created_at', 'desc').limit(limit);
+  res.json({ status: 'success', data: shifts });
 });
 
 // --- Overview Stats ---

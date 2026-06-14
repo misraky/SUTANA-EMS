@@ -171,7 +171,9 @@ class RoleModel {
         permissions: {
           reports: ['read', 'export'],
           dashboard: ['read'],
-          approvals: ['discount', 'po']
+          purchase_orders: ['approve', 'read'],
+          suppliers: ['read'],
+          receiving: ['read', 'create']
         }
       },
       Finance: {
@@ -194,7 +196,10 @@ class RoleModel {
         description: 'Supplier and PO management',
         permissions: {
           suppliers: ['create', 'read', 'update'],
-          purchase_orders: ['create', 'read', 'update', 'approve']
+          purchase_orders: ['create', 'read', 'update'],
+          receiving: ['create', 'read'],
+          inventory: ['read'],
+          reports: ['read']
         }
       },
       'Store Worker': {

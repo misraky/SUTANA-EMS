@@ -143,8 +143,8 @@ class PurchaseOrderModel {
     if (totalOrdered === 0) return 0;
     return (totalReceived / totalOrdered) * 100;
   }
-  requiresApproval(threshold = 200000) {
-    return this.totalAmount > threshold;
+  requiresApproval() {
+    return true;
   }
   getRemainingBalance() {
     return this.totalAmount - this.paidAmount;

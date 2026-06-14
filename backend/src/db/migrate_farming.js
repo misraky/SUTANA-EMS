@@ -108,6 +108,67 @@ async function migrateFarmingTables() {
       console.log('ℹ️ farming_finance_reports table already exists');
     }
 
+    // 6. farming_reorder_requests
+    const hasReorderRequests = await db.schema.hasTable('farming_reorder_requests');
+    if (!hasReorderRequests) {
+      await db.schema.createTable('farming_reorder_requests', (table) => {
+        table.increments('id').primary();
+        table.integer('product_id').unsigned().references('id').inTable('farming_products').onDelete('CASCADE');
+        table.integer('requested_by').references('id').inTable('users');
+        table.integer('approved_by').nullable().references('id').inTable('users');
+        table.integer('quantity_requested').notNullable();
+        table.string('status').defaultTo('PENDING'); // PENDING, APPROVED, REJECTED, ORDERED
+        table.text('notes');
+        table.timestamp('created_at').defaultTo(db.fn.now());
+        table.timestamp('updated_at').defaultTo(db.fn.now());
+      });
+      console.log('✅ Created farming_reorder_requests table');
+    } else {
+      console.log('ℹ️ farming_reorder_requests table already exists');
+    }
+
+    // 7. farming_shifts
+    const hasShifts = await db.schema.hasTable('farming_shifts');
+    if (!hasShifts) {
+      await db.schema.createTable('farming_shifts', (table) => {
+        table.increments('id').primary();
+        table.integer('worker_id').unsigned().nullable();
+        table.integer('manager_id').unsigned().nullable();
+        table.enum('shift_type', ['morning', 'afternoon']).defaultTo('morning');
+        table.decimal('opening_float', 12, 2).defaultTo(0);
+        table.decimal('total_sales', 12, 2).defaultTo(0);
+        table.integer('transaction_count').defaultTo(0);
+        table.decimal('cash_collected', 12, 2).defaultTo(0);
+        table.decimal('telebirr_collected', 12, 2).defaultTo(0);
+        table.decimal('transfer_collected', 12, 2).defaultTo(0);
+        table.decimal('physical_cash_counted', 12, 2).nullable();
+        table.decimal('difference_amount', 12, 2).defaultTo(0);
+        table.string('difference_reason');
+        table.enum('status', ['OPEN', 'CLOSED', 'VERIFIED']).defaultTo('OPEN');
+        table.text('manager_notes');
+        table.text('finance_notes');
+        table.timestamp('opened_at').defaultTo(db.fn.now());
+        table.timestamp('closed_at').nullable();
+        table.timestamp('verified_at').nullable();
+        table.timestamp('created_at').defaultTo(db.fn.now());
+        table.timestamp('updated_at').defaultTo(db.fn.now());
+      });
+      console.log('✅ Created farming_shifts table');
+    } else {
+      console.log('ℹ️ farming_shifts table already exists');
+    }
+
+    // 8. Add type column to farming_categories (if not exists)
+    const hasTypeCol = await db.schema.hasColumn('farming_categories', 'type');
+    if (!hasTypeCol) {
+      await db.schema.alterTable('farming_categories', (table) => {
+        table.string('type').defaultTo('general');
+      });
+      console.log('✅ Added type column to farming_categories');
+    } else {
+      console.log('ℹ️ type column already exists on farming_categories');
+    }
+
     console.log('🎉 Farming module migration completed successfully!');
   } catch (error) {
     console.error('❌ Migration failed:', error);

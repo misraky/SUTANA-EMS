@@ -16,6 +16,8 @@ const rentalOrderRoutes = require('./rentalOrder.routes');
 const notificationRoutes = require('./notification.routes');
 const pharmacyRoutes = require('./pharmacy.routes');
 const farmingRoutes = require('./farming.routes');
+const retailRoutes = require('./retail.routes');
+const galleryRoutes = require('./gallery.routes');
 
 router.use('/auth', authRoutes);
 router.use('/users', userRoutes);
@@ -33,5 +35,7 @@ router.use('/rental-orders', rentalOrderRoutes);
 router.use('/notifications', notificationRoutes);
 router.use('/pharmacy', pharmacyRoutes);
 router.use('/farming', farmingRoutes);
+router.use('/retail', retailRoutes);
+router.use('/gallery', galleryRoutes);
 
 module.exports = router;

@@ -557,6 +557,87 @@ exports.calculatePrice = catchAsync(async (req, res) => {
     }
   });
 });
+exports.createCustomerOrder = catchAsync(async (req, res) => {
+  const userId = req.user.id;
+  const {
+    productType, quantity, paperType, pagesPerCopy,
+    colorPrinting, bindingType, dueDate, specialInstructions
+  } = req.body;
+
+  const OrderModel = require('../../models/Order.model');
+  const orderModel = new OrderModel({
+    paperType: paperType || 'A4',
+    pagesPerCopy: parseInt(pagesPerCopy) || 1,
+    quantity: parseInt(quantity) || 1,
+    colorPrinting: colorPrinting === true || colorPrinting === 'true',
+    bindingType: bindingType || 'None'
+  });
+  const pricing = orderModel.calculatePrice();
+  const orderNumber = await generateOrderNumber('PRT');
+  const initialStatus = await db('order_statuses').where('status_code', 'received').first();
+
+  const user = await db('users').where('id', userId).first();
+  let customerId = null;
+  if (user) {
+    const existing = await db('customers').where('phone', user.phone).whereNull('deleted_at').first();
+    if (existing) {
+      customerId = existing.id;
+    } else {
+      const [newId] = await db('customers').insert({
+        name: user.full_name || 'Customer',
+        phone: user.phone || '',
+        customer_type_id: 1,
+        created_at: db.fn.now(),
+        updated_at: db.fn.now()
+      });
+      customerId = newId;
+    }
+  }
+
+  const [orderId] = await db('printing_orders').insert({
+    order_number: orderNumber,
+    customer_id: customerId,
+    customer_type_id: 1,
+    product_type: productType || 'Book',
+    paper_type: paperType || 'A4',
+    pages_per_copy: parseInt(pagesPerCopy) || 1,
+    color_printing: colorPrinting === true || colorPrinting === 'true' ? 1 : 0,
+    binding_type: bindingType || 'None',
+    quantity: parseInt(quantity) || 1,
+    special_instructions: specialInstructions || null,
+    due_date: dueDate || null,
+    price_per_unit: pricing.pricePerUnit,
+    binding_cost: pricing.bindingCost,
+    total_price: pricing.totalPrice,
+    status_id: initialStatus?.id || 1,
+    created_by: userId,
+    created_at: db.fn.now(),
+    updated_at: db.fn.now()
+  });
+
+  res.status(201).json({ status: 'success', message: 'Order placed successfully', data: { orderId, orderNumber, totalPrice: pricing.totalPrice } });
+});
+
+exports.getCustomerOrders = catchAsync(async (req, res) => {
+  const userId = req.user.id;
+  const user = await db('users').where('id', userId).first();
+  if (!user) throw new AppError('User not found', 404);
+
+  const customer = await db('customers').where('phone', user.phone).whereNull('deleted_at').first();
+  if (!customer) {
+    return res.json({ status: 'success', data: { orders: [] } });
+  }
+
+  const orders = await db('printing_orders as po')
+    .leftJoin('order_statuses as os', 'po.status_id', 'os.id')
+    .select('po.*', 'os.status_name', 'os.status_code', 'os.color_hex')
+    .where('po.customer_id', customer.id)
+    .whereNull('po.deleted_at')
+    .orderBy('po.created_at', 'desc');
+
+  res.json({ status: 'success', data: { orders } });
+});
+
 exports.getCustomerTypes = catchAsync(async (req, res) => {
   const customerTypes = await db('customer_types')
     .select('id', 'name', 'color_code', 'icon_name', 'sort_order')

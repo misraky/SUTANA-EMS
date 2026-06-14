@@ -39,7 +39,7 @@ const environment = {
     maxFileSizeMB: parseInt(process.env.MAX_FILE_SIZE_MB || '50', 10),
     allowedFileTypes: process.env.ALLOWED_FILE_TYPES 
       ? process.env.ALLOWED_FILE_TYPES.split(',')
-      : ['image/jpeg', 'image/png', 'application/pdf', 'application/msword'],
+      : ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf', 'application/msword'],
   },
   banks: {
     cbe: {
