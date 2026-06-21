@@ -190,12 +190,26 @@ exports.createOrder = catchAsync(async (req, res) => {
   } = req.body;
   const userId = req.user.id;
   const ip = req.ip;
-  const customer = await db('customers')
-    .where('user_id', userId)
-    .orWhere('email', req.user.email)
+  let customer = await db('customers')
+    .where(function () {
+      this.where('user_id', userId).orWhere('email', req.user.email);
+    })
     .first();
+  // Auto-create customer profile if it doesn't exist (handles users created before auto-linking)
   if (!customer) {
-    throw new AppError('Customer profile not found. Please contact support.', 404);
+    const user = await db('users').where('id', userId).first();
+    if (!user) throw new AppError('User not found', 404);
+    const regularType = await db('customer_types').where('name', 'Regular').first();
+    const [newCustomerId] = await db('customers').insert({
+      user_id: userId,
+      name: user.full_name,
+      email: user.email,
+      phone: user.phone || null,
+      customer_type_id: regularType ? regularType.id : 1,
+      created_by: userId,
+      created_at: db.fn.now()
+    });
+    customer = await db('customers').where('id', newCustomerId).first();
   }
   const orderNumber = await generateOrderNumber('PRT');
   const priceCalculation = calculatePrintingPrice({
