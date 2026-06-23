@@ -3,7 +3,7 @@ const router = express.Router();
 const { body, query, param } = require('express-validator');
 const FinanceController = require('../controllers/finance.controller');
 const { validate } = require('../middleware/validate.middleware');
-const { authenticate, authorize } = require('../middleware/auth.middleware');
+const { authenticate, authorize, authorizeRoles } = require('../middleware/auth.middleware');
 const { uploads, handleUploadError } = require('../../config/multer');
 const { limiters } = require('../../config/rateLimit');
 const createExpenseValidation = [
@@ -277,3 +277,8 @@ router.get(
   FinanceController.getFinanceStatistics
 );
 module.exports = router;
+
+// --- Cash Handovers (Unified) ---
+router.get('/cash-handovers', authenticate, authorizeRoles(['Finance', 'Admin', 'CEO']), FinanceController.getCashHandovers);
+router.post('/cash-handovers/:id/approve', authenticate, authorizeRoles(['CEO']), FinanceController.approveCashHandover);
+router.post('/cash-handovers/:id/reject', authenticate, authorizeRoles(['CEO']), FinanceController.rejectCashHandover);
