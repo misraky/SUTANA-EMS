@@ -7,7 +7,7 @@ const { AppError } = require('../utils/AppError');
 const { generateOrderNumber } = require('../utils/orderNumber');
 const carts = new Map();
 const getProducts = async (filters) => {
-  const { page = 1, limit = 50, categoryId } = filters;
+  const { page = 1, limit = 50, categoryId, source } = filters;
   const offset = (page - 1) * limit;
   let query = db('products as p')
     .leftJoin('product_categories as pc', 'p.category_id', 'pc.id')
@@ -20,12 +20,16 @@ const getProducts = async (filters) => {
       'p.selling_price',
       'pc.name as category_name',
       'u.abbreviation as unit',
-      db.raw('COALESCE(i.quantity, 0) as stock_quantity')
+      db.raw('COALESCE(i.quantity, p.stock_quantity, 0) as stock_quantity'),
+      'p.business_unit as source'
     )
     .where('p.is_active', true)
     .whereNull('p.deleted_at');
   if (categoryId) {
     query = query.where('p.category_id', categoryId);
+  }
+  if (source) {
+    query = query.where('p.business_unit', source);
   }
   const total = await query.clone().count('p.id as total').first();
   const products = await query
