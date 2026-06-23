@@ -69,6 +69,27 @@ const requestsController = {
       });
     }
 
+    // Insert notification only for Admin/CEO users
+    try {
+      const customerName = request.customer_name || 'A customer';
+      const adminUsers = await db('users')
+        .join('user_roles', 'users.id', 'user_roles.user_id')
+        .join('roles', 'user_roles.role_id', 'roles.id')
+        .whereIn('roles.name', ['Admin', 'CEO'])
+        .select('users.id');
+      const userIds = [...new Set(adminUsers.map(u => u.id))];
+      for (const uid of userIds) {
+        await db('notifications').insert({
+          user_id: uid,
+          title: `New Prescription Request: ${request_number}`,
+          message: `${customerName} ordered ${request.medication_name} x${request.quantity}`,
+          type: 'pharmacy',
+          is_read: 0,
+          created_at: db.fn.now()
+        });
+      }
+    } catch (_) {}
+
     res.status(201).json({ status: 'success', data: request });
   }),
 
@@ -243,14 +264,51 @@ const requestsController = {
   // ==============================
   markComplete: catchAsync(async (req, res) => {
     const { id } = req.params;
-    const { status } = req.body; // 'picked_up' or 'delivered'
+    const { status, payment_method } = req.body; // 'picked_up' or 'delivered'
 
     const request = await db('prescription_requests').where({ id }).first();
     if (!request) throw new AppError('Request not found', 404);
 
-    await db('prescription_requests').where({ id }).update({
-      status: status || 'picked_up',
-      completed_at: db.fn.now()
+    await db.transaction(async (trx) => {
+      await trx('prescription_requests').where({ id }).update({
+        status: status || 'picked_up',
+        completed_at: trx.fn.now()
+      });
+
+      // Record online payments into POS logs
+      if (payment_method && request.estimated_price) {
+        const shift = await trx('pos_shifts').where({ cashier_id: req.user.id, status: 'OPEN' }).first();
+        if (shift) {
+          let completedStatus = await trx('sale_statuses').where('status_code', 'completed').first();
+          const pMethodRec = await trx('payment_methods').where('name', payment_method).first();
+
+          if (completedStatus && pMethodRec) {
+            await trx('pos_sales').insert({
+              invoice_number: `ONL-P-${request.request_number}`,
+              customer_id: request.customer_id || null,
+              subtotal: request.estimated_price,
+              tax_amount: 0,
+              discount_amount: 0,
+              total_amount: request.estimated_price,
+              payment_method_id: pMethodRec.id,
+              amount_paid: request.estimated_price,
+              change_amount: 0,
+              cashier_id: req.user.id,
+              sale_date: trx.fn.now(),
+              status_id: completedStatus.id,
+              notes: `Pharmacy Request #${request.request_number}`
+            });
+
+            await trx('pos_shifts').where({ id: shift.id }).update({
+              transaction_count: trx.raw('transaction_count + 1'),
+              total_sales: trx.raw('COALESCE(total_sales,0) + ?', [request.estimated_price]),
+              cash_collected: payment_method === 'Cash' ? trx.raw('COALESCE(cash_collected,0) + ?', [request.estimated_price]) : trx.raw('cash_collected'),
+              telebirr_collected: payment_method === 'Telebirr' ? trx.raw('COALESCE(telebirr_collected,0) + ?', [request.estimated_price]) : trx.raw('telebirr_collected'),
+              transfer_collected: payment_method === 'Bank Transfer' ? trx.raw('COALESCE(transfer_collected,0) + ?', [request.estimated_price]) : trx.raw('transfer_collected')
+            });
+          }
+        }
+      }
     });
 
     const updated = await db('prescription_requests').where({ id }).first();
