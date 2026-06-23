@@ -675,7 +675,7 @@ const getApproversForPO = async () => {
     .leftJoin('user_roles', 'users.id', 'user_roles.user_id')
     .leftJoin('roles', 'user_roles.role_id', 'roles.id')
     .where('roles.name', 'CEO')
-    .select('users.email', 'users.full_name');
+    .select('users.email', 'users.full_name', 'users.id');
   return ceoUsers;
 };
 const validateApprovalAuthority = async (userId) => {
