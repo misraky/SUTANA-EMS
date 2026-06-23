@@ -2,8 +2,9 @@ const express = require('express');
 const router = express.Router();
 const { body, query, param } = require('express-validator');
 const PurchaseController = require('../controllers/purchase.controller');
+const PurchaseWorkflowController = require('../controllers/purchaseWorkflow.controller');
 const { validate } = require('../middleware/validate.middleware');
-const { authenticate, authorize } = require('../middleware/auth.middleware');
+const { authenticate, authorize, authorizeRoles } = require('../middleware/auth.middleware');
 const { uploads, handleUploadError } = require('../../config/multer');
 const { limiters } = require('../../config/rateLimit');
 
@@ -120,5 +121,38 @@ router.get('/statistics', authenticate, authorize(['purchase_orders:read']), Pur
 router.get('/reorder-suggestions', authenticate, authorize(['purchase_orders:read']), PurchaseController.getReorderSuggestions);
 router.get('/sectors', authenticate, PurchaseController.getSectors);
 router.get('/payment-terms', authenticate, PurchaseController.getPaymentTerms);
+
+const wfAuth = (roles) => [authenticate, authorizeRoles(roles)];
+const storeRoles = ['Store Manager', 'Store Worker', 'Sales/Cashier', 'CEO', 'Admin'];
+const poRoles = ['Purchase', 'Admin', 'CEO'];
+const finRoles = ['Finance', 'Admin', 'CEO'];
+const ceoRoles = ['CEO', 'Admin'];
+
+router.get('/workflow', wfAuth([...storeRoles, ...poRoles, ...finRoles, ...ceoRoles]), PurchaseWorkflowController.list);
+router.get('/workflow/:id', wfAuth([...storeRoles, ...poRoles, ...finRoles, ...ceoRoles]), PurchaseWorkflowController.detail);
+router.post('/workflow', wfAuth(storeRoles), [
+  body('product_name').notEmpty().isString(),
+  body('quantity').isInt({ min: 1 }),
+  body('estimated_cost').optional().isFloat({ min: 0 }),
+  body('supplier_name').optional().isString(),
+  body('supplier_contact').optional().isString(),
+  body('store_notes').optional().isString(),
+], validate, PurchaseWorkflowController.create);
+router.patch('/workflow/:id/status', wfAuth([...storeRoles, ...poRoles, ...finRoles, ...ceoRoles]), [
+  body('status').isIn(['BUDGET_REQUESTED','BUDGET_FORWARDED_CEO','BUDGET_APPROVED','BUDGET_READY','GOODS_PURCHASED','ADVANCE_PAID','GOODS_RECEIVED','RECEIPT_CONFIRMED','REMAINING_APPROVED','REMAINING_PAID','CANCELLED']),
+  body('po_number').optional().isString(),
+  body('budget_request_notes').optional().isString(),
+  body('budget_amount').optional().isFloat({ min: 0 }),
+  body('finance_notes').optional().isString(),
+  body('ceo_budget_notes').optional().isString(),
+  body('purchase_notes').optional().isString(),
+  body('advance_amount').optional().isFloat({ min: 0 }),
+  body('advance_payment_ref').optional().isString(),
+  body('receiving_notes').optional().isString(),
+  body('receipt_notes').optional().isString(),
+  body('remaining_notes').optional().isString(),
+  body('remaining_payment_ref').optional().isString(),
+  body('finance_payment_notes').optional().isString(),
+], validate, PurchaseWorkflowController.updateStatus);
 
 module.exports = router;
