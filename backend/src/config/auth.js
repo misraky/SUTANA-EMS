@@ -127,13 +127,21 @@ const hashToken = (token) => {
 };
 const rolePermissions = {
   Admin: ['*'],
-  CEO: ['reports:read', 'reports:export', 'dashboard:read', 'approvals:discount', 'approvals:po'],
-  Finance: ['payments:create', 'payments:read', 'expenses:create', 'expenses:read', 'expenses:update', 'reports:read', 'reports:export'],
+  'Sales Manager': ['pos:create', 'pos:read', 'pos:update', 'pos:verify', 'pos:void', 'customers:create', 'customers:read', 'reports:read'],
+  CEO: ['reports:read', 'reports:export', 'dashboard:read', 'approvals:discount', 'approvals:po', 'pos:verify', 'pos:void'],
+  Finance: ['payments:create', 'payments:read', 'expenses:create', 'expenses:read', 'expenses:update', 'reports:read', 'reports:export', 'pos:void'],
   'Printing Supervisor': ['orders:create', 'orders:read', 'orders:update', 'orders:approve', 'inventory:read', 'tax_receipts:create', 'tax_receipts:read'],
+  'Printing Worker': ['orders:create', 'orders:read', 'pos:create', 'pos:read', 'tax_receipts:create', 'tax_receipts:read'],
   Purchase: ['suppliers:create', 'suppliers:read', 'suppliers:update', 'purchase_orders:create', 'purchase_orders:read', 'purchase_orders:update', 'purchase_orders:approve'],
   'Store Worker': ['inventory:create', 'inventory:read', 'inventory:update', 'receiving:create', 'receiving:read'],
   'Sales/Cashier': ['pos:create', 'pos:read', 'pos:update', 'customers:create', 'customers:read'],
-  Customer: ['orders:create', 'orders:read', 'profile:read', 'profile:update']
+  Customer: ['orders:create', 'orders:read', 'profile:read', 'profile:update'],
+  'Farming Worker': ['pos:create', 'pos:read', 'pos:update', 'farming:create', 'farming:read', 'customers:create', 'customers:read', 'reports:read'],
+  'Farming Manager': ['farming:create', 'farming:read', 'farming:update', 'pos:create', 'pos:read', 'pos:update', 'pos:verify', 'reports:read'],
+  Pharmacist: ['pharmacy:create', 'pharmacy:read', 'pharmacy:update', 'reports:read'],
+  'Pharmacy Worker': ['pos:create', 'pos:read', 'pharmacy:read', 'customers:create', 'customers:read'],
+  'Car Renting Manager': ['car_renting:create', 'car_renting:read', 'car_renting:update', 'reports:read'],
+  'Market Research': ['purchase_research:read', 'purchase_research:update']
 };
 const hasPermission = (userPermissions, requiredPermission) => {
   if (userPermissions.includes('*')) return true;
