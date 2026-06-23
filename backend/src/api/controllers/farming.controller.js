@@ -30,39 +30,33 @@ const catchAsync = (fn) => (req, res, next) => {
 // =============================================================
 
 exports.getCategories = catchAsync(async (req, res) => {
-  const categories = await db('product_categories as pc')
-    .select('pc.*', 'fc.type')
-    .leftJoin('farming_categories as fc', 'pc.name', 'fc.name')
-    .where(function () {
-      this.where('pc.business_unit', 'farming').orWhere('pc.business_unit', 'all');
-    })
-    .where('pc.is_active', true)
-    .orderBy('pc.name');
+  const categories = await db('farming_categories')
+    .where('is_active', true)
+    .orderBy('name');
   res.json({ status: 'success', data: categories });
 });
 
 exports.getProducts = catchAsync(async (req, res) => {
   const { category_id, search } = req.query;
-  let query = db('products as p')
+  let query = db('farming_products as fp')
     .select(
-      'p.id', 'p.name', 'p.sku',
-      db.raw('p.selling_price as price'),
-      'p.category_id', 'p.product_image', 'p.description',
-      'p.stock_quantity', 'p.reorder_level',
-      'p.is_active', 'pc.name as category_name'
+      'fp.id', 'fp.name',
+      'fp.price',
+      'fp.category_id', 'fp.product_image', 'fp.description',
+      'fp.stock_quantity', 'fp.reorder_level',
+      'fp.is_active', 'fp.usage_instructions',
+      'fc.name as category_name'
     )
-    .leftJoin('product_categories as pc', 'p.category_id', 'pc.id')
-    .where('p.business_unit', 'farming')
-    .where('p.is_active', true)
-    .whereNull('p.deleted_at');
-  if (category_id) query = query.andWhere('p.category_id', category_id);
+    .leftJoin('farming_categories as fc', 'fp.category_id', 'fc.id')
+    .where('fp.is_active', true);
+  if (category_id) query = query.andWhere('fp.category_id', category_id);
   if (search) {
     query = query.andWhere((q) => {
-      q.where('p.name', 'like', `%${search}%`)
-       .orWhere('p.description', 'like', `%${search}%`);
+      q.where('fp.name', 'like', `%${search}%`)
+       .orWhere('fp.description', 'like', `%${search}%`);
     });
   }
-  const products = await query.orderBy('p.name');
+  const products = await query.orderBy('fp.name');
   res.json({ status: 'success', data: products });
 });
 
@@ -82,19 +76,16 @@ exports.createOrder = catchAsync(async (req, res) => {
     const resolvedItems = [];
 
     for (const item of items) {
-      const product = await trx('products')
-        .where({ id: item.product_id, business_unit: 'farming' })
+      const product = await trx('farming_products')
+        .where({ id: item.product_id })
         .forUpdate()
         .first();
       if (!product) throw new AppError(`Product ${item.product_id} not found`, 404);
       if (product.stock_quantity < item.quantity) {
         throw new AppError(`Insufficient stock for "${product.name}". Available: ${product.stock_quantity}`, 400);
       }
-      total_amount += (product.selling_price * item.quantity);
-      // Map to legacy farming_products id via SKU (format: FARM-{old_id})
-      const oldId = parseInt((product.sku || '').replace('FARM-', ''), 10);
-      const farmingProduct = oldId ? await trx('farming_products').where({ id: oldId }).first() : null;
-      resolvedItems.push({ product, quantity: item.quantity, farmingProductId: farmingProduct ? farmingProduct.id : null });
+      total_amount += (product.price * item.quantity);
+      resolvedItems.push({ product, quantity: item.quantity });
     }
 
     total_amount += parseFloat(delivery_fee || 0);
@@ -115,15 +106,13 @@ exports.createOrder = catchAsync(async (req, res) => {
       updated_at: db.fn.now()
     });
 
-    for (const { product, quantity, farmingProductId } of resolvedItems) {
-      // Use legacy farming_products.id for FK constraint compatibility
-      const fkId = farmingProductId || product.id;
+    for (const { product, quantity } of resolvedItems) {
       await trx('farming_order_items').insert({
         order_id: orderId,
-        product_id: fkId,
+        product_id: product.id,
         quantity,
-        unit_price: product.selling_price,
-        subtotal: product.selling_price * quantity
+        unit_price: product.price,
+        subtotal: product.price * quantity
       });
       // Stock is NOT decremented here — it will be decremented when the
       // order is marked CONFIRMED (paid) in updateOrderStatus.
@@ -267,6 +256,62 @@ exports.updateStock = catchAsync(async (req, res) => {
     message: `Stock updated. New quantity: ${newStock}`,
     data: { id: parseInt(id), previous: product.stock_quantity, new: newStock, operation, notes }
   });
+});
+
+exports.updateCategory = catchAsync(async (req, res) => {
+  const { id } = req.params;
+  const { name, description, icon_class, type } = req.body;
+  const category = await db('farming_categories').where({ id }).first();
+  if (!category) throw new AppError('Category not found', 404);
+
+  const updates = {};
+  if (name !== undefined) {
+    updates.name = name;
+    const slug = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+    const dup = await db('farming_categories').where({ slug }).whereNot({ id }).first();
+    if (dup) throw new AppError('Another category with this name already exists', 400);
+    updates.slug = slug;
+  }
+  if (description !== undefined) updates.description = description;
+  if (icon_class !== undefined) updates.icon_class = icon_class;
+  if (type !== undefined) updates.type = type;
+  if (req.file) {
+    const { deleteFile } = require('../../config/multer');
+    if (category.cover_image) deleteFile(category.cover_image);
+    updates.cover_image = imgUrl(req.file);
+  }
+
+  await db('farming_categories').where({ id }).update(updates);
+  const updated = await db('farming_categories').where({ id }).first();
+  res.json({ status: 'success', message: 'Category updated', data: updated });
+});
+
+exports.deleteCategory = catchAsync(async (req, res) => {
+  const { id } = req.params;
+  const category = await db('farming_categories').where({ id }).first();
+  if (!category) throw new AppError('Category not found', 404);
+
+  const productCount = await db('farming_products').where({ category_id: id }).count('* as cnt').first();
+  if (parseInt(productCount.cnt) > 0) {
+    throw new AppError(`Cannot delete category: ${productCount.cnt} products are linked to it. Reassign or delete them first.`, 400);
+  }
+
+  const { deleteFile } = require('../../config/multer');
+  if (category.cover_image) deleteFile(category.cover_image);
+  await db('farming_categories').where({ id }).del();
+  res.json({ status: 'success', message: 'Category deleted' });
+});
+
+exports.deleteProduct = catchAsync(async (req, res) => {
+  const { id } = req.params;
+  const product = await db('farming_products').where({ id }).first();
+  if (!product) throw new AppError('Product not found', 404);
+
+  const { deleteFile } = require('../../config/multer');
+  if (product.product_image) deleteFile(product.product_image);
+  await db('farming_reorder_requests').where({ product_id: id }).del();
+  await db('farming_products').where({ id }).del();
+  res.json({ status: 'success', message: 'Product deleted' });
 });
 
 exports.createCategory = catchAsync(async (req, res) => {
@@ -506,18 +551,16 @@ exports.posCheckout = catchAsync(async (req, res) => {
     const resolvedItems = [];
 
     for (const item of items) {
-      const product = await trx('products')
-        .where({ id: item.product_id, business_unit: 'farming' })
+      const product = await trx('farming_products')
+        .where({ id: item.product_id })
         .forUpdate()
         .first();
       if (!product) throw new AppError(`Product ID ${item.product_id} not found`, 404);
       if (!online_order_id && product.stock_quantity < item.quantity) {
         throw new AppError(`Insufficient stock for "${product.name}". Only ${product.stock_quantity} remaining.`, 400);
       }
-      total_amount += (product.selling_price * item.quantity);
-      const oldId = parseInt((product.sku || '').replace('FARM-', ''), 10);
-      const farmingProduct = oldId ? await trx('farming_products').where({ id: oldId }).first() : null;
-      resolvedItems.push({ product, quantity: item.quantity, farmingProductId: farmingProduct ? farmingProduct.id : null });
+      total_amount += (product.price * item.quantity);
+      resolvedItems.push({ product, quantity: item.quantity });
     }
 
     let orderId = online_order_id;
@@ -546,26 +589,19 @@ exports.posCheckout = catchAsync(async (req, res) => {
       });
       orderId = newOrderId;
 
-      for (const { product, quantity, farmingProductId } of resolvedItems) {
-        const fkId = farmingProductId || product.id;
+      for (const { product, quantity } of resolvedItems) {
         await trx('farming_order_items').insert({
           order_id: orderId,
-          product_id: fkId,
+          product_id: product.id,
           quantity,
-          unit_price: product.selling_price,
-          subtotal: product.selling_price * quantity
+          unit_price: product.price,
+          subtotal: product.price * quantity
         });
-        const updatedProducts = await trx('products')
-          .where({ id: product.id, business_unit: 'farming' })
+        const updatedProducts = await trx('farming_products')
+          .where({ id: product.id })
           .where('stock_quantity', '>=', quantity)
           .decrement('stock_quantity', quantity);
         if (!updatedProducts) throw new AppError(`Race condition on stock for "${product.name}".`, 409);
-        if (farmingProductId) {
-          await trx('farming_products')
-            .where({ id: farmingProductId })
-            .where('stock_quantity', '>=', quantity)
-            .decrement('stock_quantity', quantity);
-        }
       }
     }
 
@@ -799,7 +835,8 @@ exports.openShift = catchAsync(async (req, res) => {
     const user = await db('users').where('id', worker_id).first();
     if (user) {
       const newEmpId = `EMP${String(worker_id).padStart(4, '0')}`;
-      await db.raw(`INSERT IGNORE INTO employees (employee_id, user_id, full_name, email, phone, department, status, created_at) VALUES (?, ?, ?, ?, ?, 'Farming', 'Active', NOW())`, [newEmpId, worker_id, user.full_name || user.username || user.email, user.email || '', user.phone || '']);
+      const empEmail = user.email && user.email.trim() ? user.email : `worker_${worker_id}@farming.local`;
+      await db.raw(`INSERT IGNORE INTO employees (employee_id, user_id, full_name, email, phone, department, status, created_at) VALUES (?, ?, ?, ?, ?, 'Farming', 'Active', NOW())`, [newEmpId, worker_id, user.full_name || user.username || user.email, empEmail, user.phone || '']);
       empId = newEmpId;
     }
   }
@@ -912,7 +949,8 @@ exports.closeShift = catchAsync(async (req, res) => {
     const user = await db('users').where('id', worker_id).first();
     if (user) {
       const newEmpId = `EMP${String(worker_id).padStart(4, '0')}`;
-      await db.raw(`INSERT IGNORE INTO employees (employee_id, user_id, full_name, email, phone, department, status, created_at) VALUES (?, ?, ?, ?, ?, 'Farming', 'Active', NOW())`, [newEmpId, worker_id, user.full_name || user.username || user.email, user.email || '', user.phone || '']);
+      const empEmail = user.email && user.email.trim() ? user.email : `worker_${worker_id}@farming.local`;
+      await db.raw(`INSERT IGNORE INTO employees (employee_id, user_id, full_name, email, phone, department, status, created_at) VALUES (?, ?, ?, ?, ?, 'Farming', 'Active', NOW())`, [newEmpId, worker_id, user.full_name || user.username || user.email, empEmail, user.phone || '']);
       empId = newEmpId;
     }
   }
@@ -1512,4 +1550,85 @@ exports.getQuickActions = catchAsync(async (req, res) => {
   });
 
   res.json({ status: 'success', data: filtered });
+});
+
+// ── CEO-facing: Today's Farming Attendance (from farming_shifts) ──
+exports.getTodayFarmingAttendance = catchAsync(async (req, res) => {
+  const today = new Date().toISOString().split('T')[0];
+
+  // All users with Farming Worker / Farming Manager roles
+  const farmingUsers = await db('users')
+    .join('user_roles', 'users.id', 'user_roles.user_id')
+    .join('roles', 'user_roles.role_id', 'roles.id')
+    .whereIn('roles.name', ['Farming Worker', 'Farming Manager'])
+    .whereNull('users.deleted_at')
+    .select('users.id', 'users.full_name', 'users.email', 'users.phone')
+    .groupBy('users.id');
+
+  // Today's shifts from farming_shifts
+  const shifts = await db('farming_shifts')
+    .where(function () {
+      this.whereRaw('DATE(farming_shifts.opened_at) = ?', [today])
+        .orWhere('farming_shifts.status', 'OPEN');
+    })
+    .select('*')
+    .orderBy('farming_shifts.opened_at', 'asc');
+
+  // Map worker_id -> shift
+  const shiftMap = {};
+  shifts.forEach(s => { shiftMap[s.worker_id] = s; });
+
+  const records = [];
+  const empSet = new Set();
+
+  // First, add all farming workers with their shift data
+  farmingUsers.forEach(u => {
+    const eid = `EMP${String(u.id).padStart(4, '0')}`;
+    empSet.add(eid);
+    const s = shiftMap[u.id];
+    const clockInTime = s ? (s.clocked_in_at || s.opened_at) : null;
+    const clockOutTime = s ? (s.clocked_out_at || s.closed_at) : null;
+
+    // Always add a base record so the worker appears in the employee list
+    const baseRec = {
+      employee_id: eid,
+      full_name: u.full_name || 'Unknown',
+      department: 'Farming',
+      position: 'Farming Worker',
+      work_date: today,
+      phone: u.phone || '-',
+    };
+
+    if (clockInTime) {
+      records.push({ ...baseRec, action: 'CLOCK_IN', status: 'Present', timestamp: clockInTime });
+    }
+    if (clockOutTime) {
+      records.push({ ...baseRec, action: 'CLOCK_OUT', status: 'Present', timestamp: clockOutTime });
+    }
+    // Mark absent if no shift at all today
+    if (!clockInTime) {
+      records.push({ ...baseRec, action: 'NO_SHIFT', status: 'Absent', timestamp: null });
+    }
+  });
+
+  // Also add any workers from farming_shifts who are NOT in the users query
+  // (e.g., deleted users who still have open shifts)
+  shifts.forEach(s => {
+    const eid = `EMP${String(s.worker_id).padStart(4, '0')}`;
+    if (empSet.has(eid)) return;
+    const clockInTime = s.clocked_in_at || s.opened_at;
+    const clockOutTime = s.clocked_out_at || s.closed_at;
+    const baseRec = {
+      employee_id: eid,
+      full_name: 'Unknown',
+      department: 'Farming',
+      position: 'Farming Worker',
+      work_date: today,
+      phone: '-',
+    };
+    if (clockInTime) records.push({ ...baseRec, action: 'CLOCK_IN', status: 'Present', timestamp: clockInTime });
+    if (clockOutTime) records.push({ ...baseRec, action: 'CLOCK_OUT', status: 'Present', timestamp: clockOutTime });
+  });
+
+  res.json({ status: 'success', data: records });
 });
