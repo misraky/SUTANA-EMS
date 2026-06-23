@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { PublicNav, PublicFooter } from './PublicNavFooter';
+import { PublicNav } from './PublicNavFooter';
 import authService from '../../services/authService';
 import axios from '../../services/apiClient';
 import { Search, Sprout, Leaf, MapPin, Package, X, ChevronDown, ChevronUp, Calendar, Info, ShoppingCart, Star, Shield, Truck, Droplets, Wrench } from 'lucide-react';
 import PrescriptionViewer from '../shared/PrescriptionViewer';
 import styles from './FarmingServicePage.module.css';
+import farmingHero from '../../assets/hero-section/farming.jpg';
 
 const TYPE_CONFIG = {
   seeds: { icon: <Sprout size={16} />, label: 'Seeds', color: '#d97706', bg: '#fffbeb' },
@@ -38,6 +39,8 @@ const FarmingServicePage = () => {
   const [orderQuantity, setOrderQuantity] = useState(1);
   const [deliveryOption, setDeliveryOption] = useState('pickup');
   const [deliveryAddress, setDeliveryAddress] = useState('');
+  const [customerName, setCustomerName] = useState('');
+  const [customerPhone, setCustomerPhone] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [submitError, setSubmitError] = useState('');
@@ -108,6 +111,8 @@ const FarmingServicePage = () => {
     try {
       await axios.post('/farming/orders', {
         items: [{ product_id: selectedProduct.id, quantity: orderQuantity }],
+        customer_name: customerName,
+        customer_phone: customerPhone,
         delivery_type: deliveryOption,
         delivery_address: deliveryOption === 'delivery' ? deliveryAddress : '',
         delivery_fee: deliveryOption === 'delivery' ? 50 : 0
@@ -115,6 +120,7 @@ const FarmingServicePage = () => {
       setSubmitSuccess(true);
       setTimeout(() => {
         setIsModalOpen(false); setSubmitSuccess(false); setOrderQuantity(1);
+        setCustomerName(''); setCustomerPhone('');
         setDeliveryOption('pickup'); setDeliveryAddress('');
       }, 2500);
     } catch (err) {
@@ -143,11 +149,10 @@ const FarmingServicePage = () => {
       <PublicNav />
 
       {/* Hero Section */}
-      <section className={styles.heroSection}>
-        <div className={styles.heroBgPattern} />
+      <section className={styles.heroSection} style={{ background: `linear-gradient(rgba(26,43,75,0.75), rgba(13,124,102,0.7)), url(${farmingHero}) center/cover` }}>
         <div className={styles.heroContent}>
           <div className={styles.heroBadge}><Sprout size={18} /> SUTANA Farming</div>
-          <h1>Premium Agricultural <span className={styles.greenText}>Supplies</span></h1>
+          <h1>SUTANA Agricultural <span className={styles.goldText}>Supplies</span></h1>
           <p>Seeds, Fertilizers, and Tools for Modern Farming</p>
           <div className={styles.searchContainer}>
             <div className={styles.searchWrapper}>
@@ -198,7 +203,7 @@ const FarmingServicePage = () => {
                           {expandedDesc[cat.id] ? 'Read Less' : 'Read More'}
                         </button>
                       )}
-                      <div className={styles.catProductCount}>{allProducts.filter(p => p.category_id === cat.id).length} Products</div>
+                      <div className={styles.catProductCount} style={{ display: 'none' }}>{allProducts.filter(p => p.category_id === cat.id).length} Products</div>
                     </div>
                   </div>
                 );
@@ -213,7 +218,7 @@ const FarmingServicePage = () => {
             <h2 className={styles.sectionTitle}>
               {selectedCategory ? categories.find(c => c.id === selectedCategory)?.name || 'Products' : 'All Products'}
             </h2>
-            <span className={styles.productCount}>{searchResults.length} product{searchResults.length !== 1 ? 's' : ''}</span>
+            <span className={styles.productCount} style={{ display: 'none' }}>{searchResults.length} product{searchResults.length !== 1 ? 's' : ''}</span>
           </div>
 
           {loading ? (
@@ -231,7 +236,6 @@ const FarmingServicePage = () => {
               {searchResults.map((product) => {
                 const cat = categories.find(c => c.id === product.category_id);
                 const tc = cat ? TYPE_CONFIG[cat.type] || TYPE_CONFIG.general : TYPE_CONFIG.general;
-                const pct = product.stock_quantity > 0 ? Math.min(100, (product.stock_quantity / (product.reorder_level * 3)) * 100) : 0;
                 return (
                   <div key={product.id} className={styles.productCard}>
                     {/* Image Section */}
@@ -275,16 +279,6 @@ const FarmingServicePage = () => {
                           )}
                         </div>
                       )}
-
-                      {/* Stock Indicator */}
-                      <div className={styles.stockSection}>
-                        <div className={styles.stockBarTrack}>
-                          <div className={styles.stockBarFill} style={{ width: `${pct}%`, background: product.stock_quantity <= 0 ? '#ef4444' : pct < 25 ? '#f59e0b' : '#10b981' }} />
-                        </div>
-                        <span className={styles.stockLabel} style={{ color: product.stock_quantity <= 0 ? '#ef4444' : product.stock_quantity <= product.reorder_level ? '#f59e0b' : '#16a34a' }}>
-                          {product.stock_quantity > 0 ? `${product.stock_quantity} in stock` : 'Out of stock'}
-                        </span>
-                      </div>
 
                       <button className={styles.orderBtn} onClick={() => handleRequestOrder(product)} disabled={product.stock_quantity <= 0}>
                         <ShoppingCart size={16} /> {product.stock_quantity > 0 ? 'Order Now' : 'Unavailable'}
@@ -351,8 +345,6 @@ const FarmingServicePage = () => {
         </div>
       </section>
 
-      <PublicFooter />
-
       {/* Order Modal */}
       {isModalOpen && selectedProduct && (
         <div className={styles.modalOverlay}>
@@ -363,7 +355,7 @@ const FarmingServicePage = () => {
                 <div className={styles.successIconCircle}><Sprout size={40} /></div>
                 <h2>Order Placed!</h2>
                 <p>Your order has been submitted successfully. Track it in your dashboard.</p>
-                <button className={styles.successBtn} onClick={() => navigate('/customer/orders')}>View My Orders</button>
+                <button className={styles.successBtn} onClick={() => navigate('/customer/farming-orders')}>View My Orders</button>
               </div>
             ) : (
               <>
@@ -378,8 +370,16 @@ const FarmingServicePage = () => {
                 <form onSubmit={handleOrderSubmit}>
                   {submitError && <div className={styles.errorMsg}>{submitError}</div>}
                   <div className={styles.formGroup}>
+                    <label>Your Name</label>
+                    <input type="text" value={customerName} onChange={e => setCustomerName(e.target.value)} placeholder="Full name" required />
+                  </div>
+                  <div className={styles.formGroup}>
+                    <label>Phone Number</label>
+                    <input type="tel" value={customerPhone} onChange={e => setCustomerPhone(e.target.value)} placeholder="+251 9XX XXX XXX" required />
+                  </div>
+                  <div className={styles.formGroup}>
                     <label>Quantity</label>
-                    <input type="number" min="1" max={selectedProduct.stock_quantity} value={orderQuantity} onChange={e => setOrderQuantity(Number(e.target.value))} required />
+                    <input type="number" min="1" value={orderQuantity} onChange={e => setOrderQuantity(Number(e.target.value))} required />
                   </div>
                   <div className={styles.totalRow}>Total: <strong>{(selectedProduct.price * orderQuantity).toFixed(2)} ETB</strong></div>
                   <div className={styles.formGroup}>
