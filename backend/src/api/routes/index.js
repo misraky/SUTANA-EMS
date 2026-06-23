@@ -18,6 +18,12 @@ const pharmacyRoutes = require('./pharmacy.routes');
 const farmingRoutes = require('./farming.routes');
 const retailRoutes = require('./retail.routes');
 const galleryRoutes = require('./gallery.routes');
+const publicRoutes = require('./public.routes');
+const newsRoutes = require('./news.routes');
+const tenderRoutes = require('./tender.routes');
+const contactRoutes = require('./contact.routes');
+const hrRoutes = require('./hr.routes');
+const storeRoutes = require('./store.routes');
 
 router.use('/auth', authRoutes);
 router.use('/users', userRoutes);
@@ -37,5 +43,11 @@ router.use('/pharmacy', pharmacyRoutes);
 router.use('/farming', farmingRoutes);
 router.use('/retail', retailRoutes);
 router.use('/gallery', galleryRoutes);
+router.use('/public', publicRoutes);
+router.use('/news', newsRoutes);
+router.use('/tenders', tenderRoutes);
+router.use('/contact', contactRoutes);
+router.use('/hr', hrRoutes);
+router.use('/store', storeRoutes);
 
 module.exports = router;
