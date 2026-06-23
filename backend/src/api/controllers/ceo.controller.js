@@ -1324,24 +1324,6 @@ async function getSectorComparison(metric, period) {
       break;
     default:
       startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-  }
-async function getSectorComparison(metric, period) {
-  const now = new Date();
-  let startDate, endDate = now;
-  switch (period) {
-    case 'month':
-      startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-      break;
-    case 'quarter': {
-      const quarterStartMonth = Math.floor(now.getMonth() / 3) * 3;
-      startDate = new Date(now.getFullYear(), quarterStartMonth, 1);
-      break;
-    }
-    case 'year':
-      startDate = new Date(now.getFullYear(), 0, 1);
-      break;
-    default:
-      startDate = new Date(now.getFullYear(), now.getMonth(), 1);
       endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
   }
   const sectors = [
@@ -1574,5 +1556,79 @@ async function getPendingPOApprovalsData() {
     .orderBy('po.created_at', 'asc');
   return orders.map(o => ({ ...o, total_amount: parseFloat(o.total_amount) }));
 }
-module.exports = exports;
-}
+console.log('[CEO_CTRL] About to register getDailyEmployees...');
+console.log('[CEO_CTRL] catchAsync type:', typeof catchAsync);
+// â”€â”€ CEO-only: Daily employees + attendance (bypasses HR permissions) â”€â”€
+module.exports.getDailyEmployees = catchAsync(async (req, res) => {
+  const today = new Date().toISOString().split('T')[0];
+
+  // 1. All active employees
+  const employees = await db('employees')
+    .where('status', 'Active')
+    .orderBy('full_name', 'asc');
+
+  // 2. Attendance records for today
+  const attendanceRaw = await db.raw(`
+    SELECT
+      a.employee_id,
+      e.full_name AS employee_name,
+      e.position,
+      e.department,
+      a.work_date,
+      a.status,
+      MAX(CASE WHEN a.action IN ('CLOCK_IN', 'MANAGER_MARK') THEN a.timestamp END) AS clock_in,
+      MAX(CASE WHEN a.action = 'CLOCK_OUT' THEN a.timestamp END) AS clock_out
+    FROM attendance_records a
+    LEFT JOIN employees e ON a.employee_id = e.employee_id
+    WHERE a.work_date = ?
+    GROUP BY a.employee_id, a.work_date, e.full_name, e.position, e.department, a.status
+  `, [today]);
+
+  const farmingShiftsRaw = await db.raw(`
+    SELECT fs.id as shift_id, fs.worker_id, fs.opened_at, fs.closed_at, fs.status as shift_status, u.full_name, e.employee_id
+    FROM farming_shifts fs
+    LEFT JOIN users u ON fs.worker_id = u.id
+    LEFT JOIN employees e ON u.id = e.user_id
+    WHERE DATE(fs.opened_at) = ? OR fs.status = 'OPEN'
+  `, [today]);
+
+  res.json({
+    status: 'success',
+    data: { 
+      employees, 
+      attendance: attendanceRaw[0] || [], 
+      farmingShifts: farmingShiftsRaw[0] || [] 
+    }
+  });
+});
+
+// â”€â”€ CEO-only: Monthly attendance for an employee â”€â”€
+module.exports.getEmployeeMonthlyAttendance = catchAsync(async (req, res) => {
+  const { employeeId } = req.params;
+  const month = req.query.month || new Date().toISOString().slice(0, 7);
+  const year = parseInt(month);
+  const mon = parseInt(month.split('-')[1]);
+  const daysInMonth = new Date(year, mon, 0).getDate();
+  const startDate = `${month}-01`;
+  const endDate = `${month}-${daysInMonth}`;
+  
+  const recordsRaw = await db.raw(`
+    SELECT
+      a.employee_id,
+      a.work_date,
+      a.status,
+      MAX(CASE WHEN a.action IN ('CLOCK_IN', 'MANAGER_MARK') THEN a.timestamp END) AS clock_in,
+      MAX(CASE WHEN a.action = 'CLOCK_OUT' THEN a.timestamp END) AS clock_out,
+      TIMESTAMPDIFF(MINUTE,
+        MAX(CASE WHEN a.action IN ('CLOCK_IN', 'MANAGER_MARK') THEN a.timestamp END),
+        MAX(CASE WHEN a.action = 'CLOCK_OUT' THEN a.timestamp END)
+      ) AS duration_minutes
+    FROM attendance_records a
+    WHERE a.employee_id = ? AND a.work_date >= ? AND a.work_date <= ?
+    GROUP BY a.employee_id, a.work_date, a.status
+    ORDER BY a.work_date
+  `, [employeeId, startDate, endDate]);
+
+  const records = recordsRaw[0] || [];
+  res.json({ status: 'success', data: { records } });
+});
