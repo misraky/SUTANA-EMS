@@ -24,6 +24,9 @@ router.post('/requests', uploads.generic.single('prescription_image'), handleUpl
 router.get('/requests/my-requests', requestsController.getMyRequests);
 router.delete('/requests/:id/cancel', requestsController.cancelRequest);
 
+// POS Checkout (Pharmacist)
+router.post('/pos/checkout', pharmacyController.posCheckout);
+
 // Pharmacist only endpoints
 router.use(authorizeRoles(['Pharmacist', 'Admin', 'CEO']));
 
