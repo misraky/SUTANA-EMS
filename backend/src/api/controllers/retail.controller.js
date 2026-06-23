@@ -21,35 +21,55 @@ const getCartForUser = async (userId) => {
 exports.getProducts = catchAsync(async (req, res) => {
   const { category_id, search, page = 1, limit = 30 } = req.query;
   const offset = (page - 1) * limit;
-  let query = db('retail_products')
-    .select('retail_products.*', 'retail_categories.name as category_name')
-    .leftJoin('retail_categories', 'retail_products.category_id', 'retail_categories.id')
-    .where('retail_products.is_active', true);
-  if (category_id) query = query.andWhere('retail_products.category_id', category_id);
+  let query = db('products as p')
+    .select(
+      'p.id', 'p.name', 'p.sku',
+      db.raw('p.selling_price as price'),
+      'p.category_id', 'p.product_image', 'p.description',
+      'p.stock_quantity', 'p.reorder_level',
+      'p.is_active', 'pc.name as category_name'
+    )
+    .leftJoin('product_categories as pc', 'p.category_id', 'pc.id')
+    .where('p.business_unit', 'retail')
+    .where('p.is_active', true)
+    .whereNull('p.deleted_at');
+  if (category_id) query = query.andWhere('p.category_id', category_id);
   if (search) {
     query = query.andWhere(q => {
-      q.where('retail_products.name', 'like', `%${search}%`)
-       .orWhere('retail_products.sku', 'like', `%${search}%`)
-       .orWhere('retail_products.description', 'like', `%${search}%`);
+      q.where('p.name', 'like', `%${search}%`)
+       .orWhere('p.sku', 'like', `%${search}%`)
+       .orWhere('p.description', 'like', `%${search}%`);
     });
   }
-  const total = await query.clone().clearSelect().count('retail_products.id as count').first();
-  const products = await query.orderBy('retail_products.name').limit(parseInt(limit)).offset(offset);
+  const total = await query.clone().clearSelect().count('p.id as count').first();
+  const products = await query.orderBy('p.name').limit(parseInt(limit)).offset(offset);
   res.json({ status: 'success', data: { products, pagination: { page: parseInt(page), limit: parseInt(limit), total: parseInt(total.count) } } });
 });
 
 exports.getProductById = catchAsync(async (req, res) => {
-  const product = await db('retail_products')
-    .select('retail_products.*', 'retail_categories.name as category_name')
-    .leftJoin('retail_categories', 'retail_products.category_id', 'retail_categories.id')
-    .where('retail_products.id', req.params.id)
+  const product = await db('products as p')
+    .select(
+      'p.id', 'p.name', 'p.sku',
+      db.raw('p.selling_price as price'),
+      'p.category_id', 'p.product_image', 'p.description',
+      'p.stock_quantity', 'p.reorder_level',
+      'p.is_active', 'pc.name as category_name'
+    )
+    .leftJoin('product_categories as pc', 'p.category_id', 'pc.id')
+    .where('p.id', req.params.id)
+    .where('p.business_unit', 'retail')
     .first();
   if (!product) throw new AppError('Product not found', 404);
   res.json({ status: 'success', data: product });
 });
 
 exports.getCategories = catchAsync(async (req, res) => {
-  const categories = await db('retail_categories').where({ is_active: true }).orderBy('name');
+  const categories = await db('product_categories')
+    .where(function () {
+      this.where('business_unit', 'retail').orWhere('business_unit', 'all');
+    })
+    .where('is_active', true)
+    .orderBy('name');
   res.json({ status: 'success', data: categories });
 });
 
