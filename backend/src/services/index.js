@@ -13,6 +13,7 @@ const BackupService = require('./backup.service');
 const AuditService = require('./audit.service');
 const CacheService = require('./cache.service');
 const PdfService = require('./pdf.service');
+const HrService = require('./hr.service');
 module.exports = {
   AuthService,
   UserService,
@@ -28,5 +29,6 @@ module.exports = {
   BackupService,
   AuditService,
   CacheService,
-  PdfService
+  PdfService,
+  HrService
 };
