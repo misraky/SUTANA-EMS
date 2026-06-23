@@ -41,7 +41,14 @@ exports.createPost = catchAsync(async (req, res) => {
     if (hiring_email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(hiring_email)) throw new AppError('Invalid apply email format', 400);
   }
 
-  const parsedImages = images ? (typeof images === 'string' ? JSON.parse(images) : images) : null;
+  let parsedImages = null;
+  if (images) {
+    if (typeof images === 'string') {
+      try { parsedImages = JSON.parse(images); } catch (_) { parsedImages = null; }
+    } else {
+      parsedImages = images;
+    }
+  }
 
   const [id] = await db('news_posts').insert({
     type, title, content: content || null,
@@ -53,12 +60,12 @@ exports.createPost = catchAsync(async (req, res) => {
     hiring_email: hiring_email || null,
     hiring_location: hiring_location || null,
     status: status || 'draft',
-    posted_by: req.user.id,
+    posted_by: req.user && req.user.id ? req.user.id : null,
     send_notification: send_notification !== false,
   });
 
   const post = await db('news_posts').where('id', id).first();
-  await createNotifications(post);
+  try { await createNotifications(post); } catch (_) { /* notification errors don't block response */ }
   res.status(201).json({ status: 'success', data: post });
 });
 
@@ -78,7 +85,7 @@ exports.updatePost = catchAsync(async (req, res) => {
     if (new Date(hiring_deadline) <= new Date()) throw new AppError('Deadline must be a future date', 400);
   }
 
-  const parsedImages = images ? (typeof images === 'string' ? JSON.parse(images) : images) : existing.images;
+  let parsedImages = images !== undefined ? (typeof images === 'string' ? (() => { try { return JSON.parse(images); } catch (_) { return null; } })() : images) : existing.images;
 
   const updates = {};
   if (type !== undefined) updates.type = type;
@@ -99,7 +106,7 @@ exports.updatePost = catchAsync(async (req, res) => {
   const post = await db('news_posts').where('id', req.params.id).first();
 
   if (post.status === 'published' && post.send_notification) {
-    await createNotifications(post);
+    try { await createNotifications(post); } catch (_) { /* ignore */ }
   }
 
   res.json({ status: 'success', data: post });
