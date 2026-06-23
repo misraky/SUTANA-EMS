@@ -104,6 +104,7 @@ exports.getOrders = catchAsync(async (req, res) => {
   }
   let query = db('printing_orders as po')
     .leftJoin('order_statuses as os', 'po.status_id', 'os.id')
+    .leftJoin('customers as c', 'po.customer_id', 'c.id')
     .select(
       'po.id',
       'po.order_number',
@@ -115,6 +116,7 @@ exports.getOrders = catchAsync(async (req, res) => {
       'po.total_price',
       'os.status_name as status',
       'os.color_hex as status_color',
+      'c.phone as customer_phone',
       'po.created_at'
     )
     .where('po.customer_id', customer.id)
@@ -352,6 +354,7 @@ exports.trackOrder = catchAsync(async (req, res) => {
   }
   const order = await db('printing_orders as po')
     .leftJoin('order_statuses as os', 'po.status_id', 'os.id')
+    .leftJoin('customers as c', 'po.customer_id', 'c.id')
     .select(
       'po.order_number',
       'po.product_type',
@@ -360,6 +363,7 @@ exports.trackOrder = catchAsync(async (req, res) => {
       'po.attachments',
       'os.status_name as status',
       'os.color_hex as status_color',
+      'c.phone as customer_phone',
       'po.created_at'
     )
     .where('po.id', id)
