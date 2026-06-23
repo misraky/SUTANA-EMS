@@ -5,17 +5,19 @@ import {
   CarFront, CheckCircle2, Clock, AlertTriangle, ArrowRight, X,
   ChevronLeft, ChevronRight
 } from 'lucide-react';
-import { PublicNav, PublicFooter } from './ServicesPage';
+import { PublicNav } from './ServicesPage';
 import RentalAgreementModal from './RentalAgreementModal';
 import carService from '../../services/carService';
 import authService from '../../services/authService';
 import styles from './FleetGalleryPage.module.css';
+import carHero from '../../assets/hero-section/car rental.jpg';
 
 const getImageUrl = (path) => {
   if (!path) return null;
   if (path.startsWith('http')) return path;
   const baseUrl = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1').replace('/api/v1', '');
-  return `${baseUrl}${path}`;
+  const safePath = path.startsWith('/') ? path : `/${path}`;
+  return `${baseUrl}${safePath}`;
 };
 
 const FleetGalleryPage = () => {
@@ -124,7 +126,6 @@ const FleetGalleryPage = () => {
         <div className={styles.loadingContainer}>
           <div className={styles.loader}>Loading our fleet...</div>
         </div>
-        <PublicFooter />
       </div>
     );
   }
@@ -138,7 +139,6 @@ const FleetGalleryPage = () => {
           <h3>No vehicles available</h3>
           <p>We are currently updating our fleet. Please check back soon.</p>
         </div>
-        <PublicFooter />
       </div>
     );
   }
@@ -169,11 +169,14 @@ const FleetGalleryPage = () => {
         </div>
       )}
       
-      <div className={styles.galleryContainer}>
-        <div className={styles.header}>
+      <div className={styles.heroSection} style={{ background: `linear-gradient(rgba(26,43,75,0.6), rgba(13,124,102,0.55)), url(${carHero}) center/cover` }}>
+        <div className={styles.heroContent}>
           <h1>Our Premium Fleet</h1>
           <p>Choose from our wide selection of high-quality vehicles</p>
         </div>
+      </div>
+
+      <div className={styles.galleryContainer}>
 
         <div className={styles.carouselContainer}>
           <button className={styles.navBtn} onClick={handlePrev}>
@@ -352,7 +355,6 @@ const FleetGalleryPage = () => {
         />
       )}
 
-      <PublicFooter />
     </div>
   );
 };

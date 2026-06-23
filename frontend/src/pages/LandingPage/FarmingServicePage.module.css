@@ -1,13 +1,13 @@
 .pageWrapper {
   min-height: 100vh;
-  background: #f0fdf4;
+  background: linear-gradient(160deg, #f8fafc 0%, #f1f5f9 100%);
   display: flex;
   flex-direction: column;
 }
 
 /* ── Hero ─────────────────────────────────────────── */
 .heroSection {
-  background: linear-gradient(135deg, #059669 0%, #10b981 40%, #047857 100%);
+  background: linear-gradient(135deg, #1a2b4b 0%, #0D7C66 100%);
   padding: 7rem 2rem 5rem;
   color: white;
   text-align: center;
@@ -15,9 +15,11 @@
   overflow: hidden;
 }
 
-.heroBgPattern {
+.heroSection::before {
+  content: '';
   position: absolute;
   inset: 0;
+  opacity: 0.04;
   background-image:
     radial-gradient(circle at 20% 50%, rgba(255,255,255,0.08) 0%, transparent 50%),
     radial-gradient(circle at 80% 20%, rgba(255,255,255,0.06) 0%, transparent 50%),
@@ -52,10 +54,13 @@
   margin-bottom: 0.75rem;
   line-height: 1.15;
   letter-spacing: -0.02em;
+  color: #FFD700;
+  text-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
 }
 
-.greenText {
-  color: #a7f3d0;
+.goldText {
+  color: #FFD700;
+  text-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
 }
 
 .heroContent > p {
