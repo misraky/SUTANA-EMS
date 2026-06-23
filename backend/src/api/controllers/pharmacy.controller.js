@@ -69,12 +69,15 @@ const pharmacyController = {
   // CATEGORIES
   // ==============================
   getCategories: async (req, res) => {
-    const categories = await db('pharmacy_categories').orderBy('display_order', 'asc');
+    const categories = await db('pharmacy_categories')
+      .where('is_active', true)
+      .orderBy('display_order', 'asc')
+      .orderBy('name', 'asc');
     
-    // Get product counts for each category
     const counts = await db('pharmacy_medications')
       .select('category_id')
       .count('* as count')
+      .where('is_active', true)
       .groupBy('category_id');
       
     const categoriesWithCounts = categories.map(cat => {
@@ -191,11 +194,15 @@ const pharmacyController = {
   // MEDICATIONS / PRODUCTS
   // ==============================
   getProducts: async (req, res) => {
-    const products = await db('pharmacy_medications as m')
-      .join('pharmacy_categories as c', 'm.category_id', 'c.id')
-      .select('m.*', 'c.name as category_name')
-      .orderBy('m.created_at', 'desc');
-      
+    const products = await db('pharmacy_medications as pm')
+      .leftJoin('pharmacy_categories as pc', 'pm.category_id', 'pc.id')
+      .select(
+        'pm.*',
+        'pc.name as category_name'
+      )
+      .where('pm.is_active', true)
+      .orderBy('pm.created_at', 'desc');
+
     res.json({ status: 'success', data: products });
   },
 
@@ -203,34 +210,47 @@ const pharmacyController = {
     const { q } = req.query;
     if (!q) return res.json({ status: 'success', data: [] });
 
-    const products = await db('pharmacy_medications as m')
-      .join('pharmacy_categories as c', 'm.category_id', 'c.id')
-      .select('m.*', 'c.name as category_name')
-      .where('m.name', 'like', `%${q}%`)
-      .orWhere('m.generic_name', 'like', `%${q}%`)
-      .orderBy('m.name', 'asc');
+    const products = await db('pharmacy_medications as pm')
+      .leftJoin('pharmacy_categories as pc', 'pm.category_id', 'pc.id')
+      .select(
+        'pm.*',
+        'pc.name as category_name'
+      )
+      .where(function () {
+        this.where('pm.name', 'like', `%${q}%`)
+          .orWhere('pm.generic_name', 'like', `%${q}%`);
+      })
+      .where('pm.is_active', true)
+      .orderBy('pm.name', 'asc');
 
     res.json({ status: 'success', data: products });
   },
 
   getProductById: async (req, res) => {
-    const product = await db('pharmacy_medications as m')
-      .join('pharmacy_categories as c', 'm.category_id', 'c.id')
-      .select('m.*', 'c.name as category_name')
-      .where('m.id', req.params.id)
+    const product = await db('pharmacy_medications as pm')
+      .leftJoin('pharmacy_categories as pc', 'pm.category_id', 'pc.id')
+      .select(
+        'pm.*',
+        'pc.name as category_name'
+      )
+      .where('pm.id', req.params.id)
       .first();
-      
+
     if (!product) throw new AppError('Product not found', 404);
     res.json({ status: 'success', data: product });
   },
 
   getProductsByCategory: async (req, res) => {
-    const products = await db('pharmacy_medications as m')
-      .join('pharmacy_categories as c', 'm.category_id', 'c.id')
-      .select('m.*', 'c.name as category_name')
-      .where('m.category_id', req.params.id)
-      .orderBy('m.name', 'asc');
-      
+    const products = await db('pharmacy_medications as pm')
+      .leftJoin('pharmacy_categories as pc', 'pm.category_id', 'pc.id')
+      .select(
+        'pm.*',
+        'pc.name as category_name'
+      )
+      .where('pm.category_id', req.params.id)
+      .where('pm.is_active', true)
+      .orderBy('pm.name', 'asc');
+
     res.json({ status: 'success', data: products });
   },
 
@@ -409,6 +429,69 @@ const pharmacyController = {
 
     await db('pharmacy_branches').where({ id }).del();
     res.status(204).send();
+  },
+
+  // POS Walk-in Checkout for Pharmacists
+  posCheckout: async (req, res) => {
+    try {
+      const { items, payment_method } = req.body;
+      if (!items || items.length === 0) {
+        return res.status(400).json({ status: 'error', message: 'Cart items are required' });
+      }
+
+      let total_amount = 0;
+      const resolvedItems = [];
+
+      for (const item of items) {
+        const product = await db('pharmacy_medications').where({ id: item.product_id, is_active: true }).first();
+        if (!product) throw new AppError(`Product ID ${item.product_id} not found`, 404);
+        if (product.stock_quantity < item.quantity) {
+          throw new AppError(`Insufficient stock for "${product.name}". Only ${product.stock_quantity} remaining.`, 400);
+        }
+        total_amount += (parseFloat(product.price) * item.quantity);
+        resolvedItems.push({ product, quantity: item.quantity });
+      }
+
+      // Generate a simple invoice number
+      const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+      const count = await db('pos_sales').count('id as total').first();
+      const invoice_number = `PH-${dateStr}-${String(parseInt(count.total) + 1).padStart(4, '0')}`;
+
+      // Decrement stock for each item
+      for (const { product, quantity } of resolvedItems) {
+        await db('pharmacy_medications').where({ id: product.id }).decrement('stock_quantity', quantity);
+      }
+
+      // Track in pos_sales for system manager reporting
+      const paymentMethodRecord = await db('payment_methods').where('name', 'like', `%${payment_method}%`).first() || await db('payment_methods').first();
+      if (paymentMethodRecord) {
+        const completedStatus = await db('sale_statuses').where('status_code', 'completed').first();
+        if (completedStatus) {
+          await db('pos_sales').insert({
+            invoice_number,
+            subtotal: total_amount,
+            tax_amount: 0,
+            discount_amount: 0,
+            total_amount,
+            payment_method_id: paymentMethodRecord.id,
+            amount_paid: total_amount,
+            change_amount: 0,
+            cashier_id: req.user.id,
+            sale_date: db.fn.now(),
+            status_id: completedStatus.id,
+            notes: `Pharmacy POS: ${items.map(i => `${i.product_id}x${i.quantity}`).join(', ')}`
+          });
+        }
+      }
+
+      res.status(200).json({
+        status: 'success',
+        message: 'Checkout successful',
+        data: { invoice_number, total_amount }
+      });
+    } catch (err) {
+      res.status(err.statusCode || 500).json({ status: 'error', message: err.message });
+    }
   }
 };
 
