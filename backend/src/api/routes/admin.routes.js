@@ -207,4 +207,19 @@ router.get(
   authorize(['admin:database']),
   AdminController.getDatabaseStatus
 );
+
+// ── Alerts ────────────────────────────────────────────────────
+router.get(
+  '/alerts',
+  authenticate,
+  authorize(['admin:dashboard']),
+  AdminController.getAlerts
+);
+router.post(
+  '/alerts/:alertId/dismiss',
+  authenticate,
+  authorize(['admin:dashboard']),
+  AdminController.dismissAlert
+);
+
 module.exports = router;

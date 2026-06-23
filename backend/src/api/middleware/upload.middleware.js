@@ -21,7 +21,8 @@ const UPLOAD_DIRS = {
   pharmacyDrugs: 'uploads/pharmacy/drugs',
   pharmacyCovers: 'uploads/pharmacy/covers',
   pharmacyCategories: 'uploads/pharmacy/categories',
-  pharmacyBranches: 'uploads/pharmacy/branches'
+  pharmacyBranches: 'uploads/pharmacy/branches',
+  research: 'uploads/research'
 };
 Object.values(UPLOAD_DIRS).forEach(dir => {
   const fullPath = path.join(process.cwd(), dir);
