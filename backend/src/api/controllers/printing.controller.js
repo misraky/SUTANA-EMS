@@ -19,7 +19,7 @@ exports.getAllOrders = catchAsync(async (req, res) => {
     .leftJoin('users as u', 'po.created_by', 'u.id')
     .select(
       'po.id', 'po.order_number', 'po.total_price', 'po.quantity',
-      'po.created_at', 'po.completed_at', 'po.updated_at',
+      'po.due_date', 'po.created_at', 'po.completed_at', 'po.updated_at',
       'os.status_name', 'os.status_code', 'os.color_hex',
       'c.name as customer_name', 'c.phone as customer_phone',
       'u.full_name as created_by_name'
@@ -34,7 +34,7 @@ exports.getAllOrders = catchAsync(async (req, res) => {
   }
   if (startDate && endDate) query = query.whereBetween('po.created_at', [startDate, endDate]);
   const total = await query.clone().clearSelect().count('po.id as count').first();
-  const orders = await query.orderBy('po.created_at', 'desc').limit(parseInt(limit)).offset(offset);
+  const orders = await query.orderBy('po.due_date', 'asc').limit(parseInt(limit)).offset(offset);
   res.json({
     status: 'success',
     data: {
@@ -55,7 +55,7 @@ exports.getPendingOrders = catchAsync(async (req, res) => {
     .select('po.*', 'os.status_name', 'os.color_hex', 'c.name as customer_name')
     .whereNull('po.deleted_at')
     .where('po.status_id', '!=', deliveredStatus?.id || 5)
-    .orderBy('po.created_at', 'desc');
+    .orderBy('po.due_date', 'asc');
   res.json({ status: 'success', data: { orders } });
 });
 exports.getOrderById = catchAsync(async (req, res) => {
@@ -690,4 +690,24 @@ exports.getProductTypes = catchAsync(async (req, res) => {
     status: 'success',
     data: { productTypes }
   });
+});
+
+exports.closeShift = catchAsync(async (req, res) => {
+  const worker_id = req.user.id;
+  const today = new Date().toISOString().split('T')[0];
+  const sales = await db('printing_orders').where('status', 'Delivered').whereRaw('DATE(created_at) = ?', [today]);
+  const totalSales = sales.reduce((sum, o) => sum + parseFloat(o.total_price), 0);
+  const financeUser = await db('users').join('user_roles', 'users.id', 'user_roles.user_id').join('roles', 'user_roles.role_id', 'roles.id').where('roles.name', 'Finance').first() || { user_id: 3 };
+  await db('cash_handovers').insert({
+    from_user_id: worker_id,
+    to_user_id: financeUser.user_id,
+    handover_type: 'PRINTING_TO_FINANCE',
+    total_cash: totalSales,
+    total_amount: totalSales,
+    notes: 'Printing Daily Sales Handover',
+    status: 'PENDING',
+    created_at: db.fn.now(),
+    updated_at: db.fn.now()
+  });
+  res.json({ status: 'success', message: 'Printing daily sales handed over to finance.' });
 });
