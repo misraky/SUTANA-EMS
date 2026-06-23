@@ -24,8 +24,7 @@ const searchProductsValidation = [
 ];
 const addToCartValidation = [
   body('productId')
-    .notEmpty().withMessage('Product ID is required')
-    .isInt().withMessage('Product ID must be a valid integer'),
+    .notEmpty().withMessage('Product ID is required'),
   body('quantity')
     .notEmpty().withMessage('Quantity is required')
     .isInt({ min: 1 }).withMessage('Quantity must be at least 1')
@@ -63,16 +62,16 @@ const checkoutValidation = [
   body('customer.phone')
     .if(body('customerId').not().exists())
     .optional()
-    .matches(/^09[0-9]{8}$/).withMessage('Phone number must be Ethiopian format (09xxxxxxxx)'),
+    .matches(/^(09[0-9]{8}|\+251[0-9]{9})$/).withMessage('Phone must be Ethiopian format (09xxxxxxxx or +251xxxxxxxxx)'),
   body('paymentMethod')
     .notEmpty().withMessage('Payment method is required')
-    .isIn(['Cash', 'Credit', 'Bank Transfer', 'Telebirr']),
+    .isIn(['Cash', 'Credit', 'Bank Transfer', 'Telebirr', 'Check']),
   body('amountPaid')
     .notEmpty().withMessage('Amount paid is required')
     .isFloat({ min: 0 }).withMessage('Amount paid must be a positive number'),
   body('paymentReference')
-    .if(body('paymentMethod').isIn(['Bank Transfer', 'Telebirr']))
-    .notEmpty().withMessage('Payment reference is required for bank transfer and Telebirr')
+    .if(body('paymentMethod').isIn(['Bank Transfer', 'Telebirr', 'Check']))
+    .notEmpty().withMessage('Payment reference is required for bank transfer, Telebirr and Check')
     .optional(),
   body('notes')
     .optional()
@@ -99,6 +98,7 @@ router.get(
   query('page').optional().isInt().toInt(),
   query('limit').optional().isInt().toInt(),
   query('categoryId').optional().isInt(),
+  query('source').optional().isIn(['retail', 'farming', 'pharmacy']),
   validate,
   POSController.getProducts
 );
@@ -214,6 +214,8 @@ router.get(
   query('startDate').optional().isISO8601(),
   query('endDate').optional().isISO8601(),
   query('customerId').optional().isInt(),
+  query('search').optional().isString(),
+  query('source').optional().isIn(['retail', 'farming', 'pharmacy']),
   validate,
   POSController.getSalesHistory
 );
@@ -236,7 +238,7 @@ router.get(
 router.post(
   '/sales/:saleId/void',
   authenticate,
-  authorize(['pos:update']),
+  authorize(['pos:void']),
   voidSaleValidation,
   validate,
   POSController.voidSale
@@ -258,4 +260,115 @@ router.get(
   validate,
   POSController.validateDiscount
 );
+
+/* ── Shift Management ── */
+router.get('/shifts/current', authenticate, authorize(['pos:read']), POSController.getCurrentShift);
+router.post('/shifts/open', authenticate, authorize(['pos:create']),
+  body('opening_float').isFloat({ min: 0 }).withMessage('Opening float must be a positive number'),
+  body('shift_type').optional().isIn(['morning', 'afternoon', 'evening']),
+  validate, POSController.openShift
+);
+router.post('/shifts/close', authenticate, authorize(['pos:update']),
+  body('physical_cash_counted').isFloat({ min: 0 }).withMessage('Physical cash counted is required'),
+  body('difference_reason').optional().isString().isLength({ max: 500 }),
+  validate, POSController.closeShift
+);
+router.get('/shifts/history', authenticate, authorize(['pos:read']),
+  query('limit').optional().isInt().toInt(), validate, POSController.getShiftHistory
+);
+
+/* ── Manager Shift Verification ── */
+router.get('/shifts/all-open', authenticate, authorize(['pos:read']), POSController.getAllOpenShifts);
+router.get('/shifts/all-history', authenticate, authorize(['pos:verify']),
+  query('limit').optional().isInt().toInt(),
+  query('startDate').optional().isISO8601(),
+  query('endDate').optional().isISO8601(),
+  query('search').optional().isString(),
+  validate, POSController.getAllShiftHistory
+);
+router.post('/shifts/:shiftId/verify', authenticate, authorize(['pos:verify']),
+  param('shiftId').isInt(),
+  body('status').isIn(['VERIFIED', 'REJECTED']),
+  validate, POSController.verifyShift
+);
+
+/* ── Cash Handover ── */
+router.post('/handover/from-cashier', authenticate, authorize(['pos:create']),
+  body('to_user_id').isInt(),
+  body('total_cash').isFloat({ min: 0 }),
+  body('total_telebirr').optional().isFloat({ min: 0 }),
+  body('total_transfer').optional().isFloat({ min: 0 }),
+  body('total_credit').optional().isFloat({ min: 0 }),
+  body('total_check').optional().isFloat({ min: 0 }),
+  body('notes').optional().isString(),
+  validate, POSController.submitCashierHandover
+);
+router.post('/handover/to-finance', authenticate, authorize(['pos:update']),
+  body('to_user_id').isInt(),
+  body('total_cash').isFloat({ min: 0 }),
+  body('total_telebirr').optional().isFloat({ min: 0 }),
+  body('total_transfer').optional().isFloat({ min: 0 }),
+  body('total_credit').optional().isFloat({ min: 0 }),
+  body('total_check').optional().isFloat({ min: 0 }),
+  body('notes').optional().isString(),
+  validate, POSController.submitManagerHandover
+);
+router.get('/handover/pending', authenticate, authorize(['pos:read', 'pos:update']), POSController.getPendingHandovers);
+router.post('/handover/:handoverId/verify', authenticate, authorize(['pos:update']),
+  param('handoverId').isInt(),
+  body('status').isIn(['VERIFIED', 'REJECTED']),
+  validate, POSController.verifyHandover
+);
+
+/* ── Manager Sale Approval / Audit ── */
+router.get('/manager/sales', authenticate, authorize(['pos:read']),
+  query('page').optional().isInt().toInt(),
+  query('limit').optional().isInt().toInt(),
+  query('saleType').optional().isIn(['walk_in', 'online']),
+  query('startDate').optional().isISO8601(),
+  query('endDate').optional().isISO8601(),
+  query('status').optional().isIn(['pending', 'approved', 'flagged']),
+  validate, POSController.getManagerSales
+);
+router.post('/manager/sales/:saleId/approve', authenticate, authorize(['pos:update']),
+  param('saleId').isInt().toInt(),
+  body('reason').optional().isString(),
+  validate, POSController.managerApproveSale
+);
+router.post('/manager/sales/:saleId/flag', authenticate, authorize(['pos:update']),
+  param('saleId').isInt().toInt(),
+  body('reason').notEmpty().withMessage('Flag reason is required'),
+  validate, POSController.managerFlagSale
+);
+router.get('/sales/:saleId/audit-log', authenticate, authorize(['pos:read']),
+  param('saleId').isInt().toInt(),
+  validate, POSController.getSaleAuditLog
+);
+
+/* ── Reports ── */
+router.get('/reports/combined-daily', authenticate, authorize(['pos:read']),
+  query('date').optional().isISO8601(),
+  validate, POSController.getCombinedDailyReport
+);
+router.get('/reports/today-summary', authenticate, authorize(['pos:read']), POSController.getTodaySummary);
+router.get('/reports/audit-pdf', authenticate, authorize(['pos:read', 'reports:read']),
+  query('startDate').optional(), query('endDate').optional(),
+  query('source').optional().isIn(['retail', 'farming', 'pharmacy']),
+  validate, POSController.exportAuditPDF
+);
+router.get('/reports/audit-excel', authenticate, authorize(['pos:read', 'reports:read']),
+  query('startDate').optional(), query('endDate').optional(),
+  query('source').optional().isIn(['retail', 'farming', 'pharmacy']),
+  validate, POSController.exportAuditExcel
+);
+
+/* ── Online Order Collection (Cashier collects prepaid online order) ── */
+router.post('/collect-online-order', authenticate, authorize(['pos:create']),
+  body('orderSource').notEmpty().isIn(['farming_orders', 'retail_orders', 'pharmacy_orders']),
+  body('orderId').notEmpty().isInt().toInt(),
+  body('paymentMethod').optional().isIn(['Cash', 'Credit', 'Bank Transfer', 'Telebirr', 'Check']),
+  body('amountPaid').optional().isFloat({ min: 0 }),
+  validate, POSController.collectOnlineOrder
+);
+
 module.exports = router;
