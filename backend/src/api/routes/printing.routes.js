@@ -237,4 +237,12 @@ router.get(
   validate,
   PrintingController.calculatePrice
 );
+
+router.post(
+  '/close-shift',
+  authenticate,
+  authorize(['orders:update']),
+  PrintingController.closeShift
+);
+
 module.exports = router;
