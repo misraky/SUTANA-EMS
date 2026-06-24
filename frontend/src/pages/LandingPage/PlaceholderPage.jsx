@@ -1,6 +1,6 @@
 import React from 'react';
 import { useLocation, Link } from 'react-router-dom';
-import { PublicNav, PublicFooter } from './ServicesPage';
+import { PublicNav } from './ServicesPage';
 import './PublicLayout.css';
 
 const pageInfo = {
@@ -32,7 +32,6 @@ const PlaceholderPage = () => {
           </div>
         </div>
       </main>
-      <PublicFooter />
     </div>
   );
 };

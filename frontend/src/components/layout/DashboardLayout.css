@@ -356,7 +356,6 @@ body {
 .dash-notif-btn:hover {
   background: var(--surface-2, #F9FAFB);
   color: var(--text-primary);
-.dash-notif-btn:hover { 
   border-color: #0070F2;
   color: #0070F2;
   background: #f0f7ff;

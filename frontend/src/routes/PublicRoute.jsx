@@ -26,7 +26,7 @@ const PublicRoute = ({ children }) => {
     };
     const rolePriority = [
       'Admin', 'CEO', 'Finance', 'Purchase', 'Store Manager', 'Store Worker', 'Sales/Cashier', 
-      'Printing Supervisor', 'Farming Manager', 'Pharmacist', 'Car Renting Manager', 'Customer'
+      'Printing Supervisor', 'Farming Manager', 'Pharmacist', 'Car Renting Manager', 'Customer',
       'Admin', 'CEO', 'Finance', 'Purchase', 'Store Manager', 'Sales/Cashier', 
       'Printing Supervisor', 'Printing Worker', 'Farming Manager', 'Farming Worker', 'Pharmacist', 'Pharmacy Worker', 'Car Renting Manager',
       'Market Research', 'HR Manager', 'Customer'

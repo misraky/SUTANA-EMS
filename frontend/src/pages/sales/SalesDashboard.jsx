@@ -14,30 +14,6 @@ import RetailOrderPage from './RetailOrderPage';
 const SalesDashboard = () => {
   const location = useLocation();
   const menuItems = [
-    { label: 'Sales Overview', path: '/sales/overview', icon: 'bar-chart' },
-    { label: 'Point of Sale', path: '/sales/pos', icon: 'shopping-cart' },
-    { label: 'Orders', path: '/sales/orders', icon: 'package' },
-    { label: 'Customers', path: '/sales/customers', icon: 'users' },
-    { label: 'Sales Reports', path: '/sales/reports', icon: 'file-text' },
-    { label: 'Returns & Refunds', path: '/sales/returns', icon: 'rotate-ccw' },
-    { label: 'Z-Report', path: '/sales/z-report', icon: 'clipboard' },
-  ];
-
-  return (
-    <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
-      <DashboardLayout menuItems={menuItems}>
-        <Routes>
-          <Route path="overview" element={<SalesHome />} />
-          <Route path="pos" element={<POSPage />} />
-          <Route path="orders" element={<SalesOrders />} />
-          <Route path="customers" element={<CustomerManagement />} />
-          <Route path="reports" element={<SalesReports />} />
-          <Route path="returns" element={<ReturnsPage />} />
-          <Route path="z-report" element={<ZReportPage />} />
-          <Route path="/" element={<Navigate to="overview" replace />} />
-        </Routes>
-      </DashboardLayout>
-    </div>
     { label: 'Walk-In Sale (POS)', path: '/sales/pos', icon: 'shopping-cart' },
     { label: 'Post Tender', path: '/sales/post-tender', icon: 'file-text' },
     { label: 'Manage Tenders', path: '/sales/manage-tenders', icon: 'list' },

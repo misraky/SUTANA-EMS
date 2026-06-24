@@ -288,6 +288,7 @@
 
 .kpiLabel {
   font-size: 0.75rem;
+}
 .revenueMetricsRow {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -324,6 +325,7 @@
 }
 
 .kpiMeta {
+}
 .metricValue {
   font-size: 1.75rem;
   font-weight: 700;
@@ -548,6 +550,7 @@
 
 .cfNegative {
   color: #dc2626;
+}
 .cardTitle {
   font-size: 1.1rem;
   font-weight: 700;
@@ -675,6 +678,7 @@
 .alertItem {
   padding: 0.9rem;
   border-radius: 8px;
+}
 .alertsList {
   margin-top: 0.75rem;
 }
@@ -1000,4 +1004,5 @@
   font-size: 0.75rem;
   color: #94a3b8;
   margin-top: 0.15rem;
+}
 }

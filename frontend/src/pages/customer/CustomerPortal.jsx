@@ -30,18 +30,6 @@ export const PlaceOrderModal = ({ open, onClose }) => {
   const navigate = useNavigate();
   if (!open) return null;
   return (
-    <div className={styles.homeContainer}>
-      <h1 className={styles.welcomeText}>Welcome to your Portal</h1>
-      <div className={styles.statsGrid}>
-        <div className={styles.statCard}>
-          <h3>Current Balance</h3>
-          <p className={balance > 0 ? styles.textGreen : styles.textRed}>
-            {formatCurrency(balance)}
-          </p>
-        </div>
-        <div className={styles.statCard}>
-          <h3>Unread Notifications</h3>
-          <p>{notifications.length}</p>
     <div onClick={onClose} style={{
       position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 9999,
       display: 'flex', alignItems: 'center', justifyContent: 'center'

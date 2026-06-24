@@ -7,6 +7,7 @@ const notificationService = {
 
   markAsRead: async (id, source) => {
     return await apiClient.put(`/notifications/${id}/read`, { source });
+  },
   getMyNotifications: async (filter = '') => {
     const params = filter ? `?filter=${filter}` : '';
     const res = await apiClient.get(`/news/notifications${params}`);
@@ -34,15 +35,15 @@ const notificationService = {
     const res = await apiClient.get('/news/notifications/unread-count');
     return res;
   },
-  markAsRead: async (id) => {
-    const res = await apiClient.put(`/news/notifications/${id}/read`);
-    return res;
-  },
 
   markAllAsRead: async () => {
     return await apiClient.put('/notifications/read-all');
   },
-  getMyNotifications: async () => {
+  markAllNewsAsRead: async () => {
+    const res = await apiClient.put('/news/notifications/read-all');
+    return res;
+  },
+  getMyNotificationsV2: async () => {
     const res = await apiClient.get('/notifications/v2');
     return res.data;
   },
@@ -53,9 +54,6 @@ const notificationService = {
   markAllAsReadV2: async () => {
     const res = await apiClient.patch('/notifications/v2/mark-all-read');
     return res.data;
-  }
-    const res = await apiClient.put('/news/notifications/read-all');
-    return res;
   },
   getSystemNotifications: async () => {
     const res = await apiClient.get('/notifications');

@@ -200,7 +200,6 @@ exports.createOrder = catchAsync(async (req, res) => {
   } = req.body;
   const userId = req.user.id;
   const ip = req.ip;
-  const customer = await getOrCreateCustomer(req.user);
   let customer = await db('customers')
     .where(function () {
       this.where('user_id', userId).orWhere('email', req.user.email);

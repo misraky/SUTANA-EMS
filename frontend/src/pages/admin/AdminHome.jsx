@@ -59,28 +59,10 @@ const AdminHome = () => {
   const { stats, health } = dashboardData;
   const userStats = stats?.userStats || {};
   const sysHealth = health || {};
-
-  return (
-    <div className="admin-home">
-      <div className="page-header">
-        <h1>ERP Admin Dashboard</h1>
-        <p>Enterprise administration and system governance</p>
-      </div>
-
-      <div className="stats-grid">
-        <div className="stat-card blue">
-          <div className="stat-content">
-            <h3>{formatNumber(userStats.total || 0)}</h3>
-            <p>Total Users</p>
-          </div>
-  const graphs = stats?.graphs || {};
-  const sysHealth = stats?.systemHealth || {};
-  const backup = stats?.backupStatus || {};
-
-  // Backup success ring
-  const bh = graphs.backupHistory || { successful: 0, total: 30 };
-  const backupPct = bh.total > 0 ? Math.round((bh.successful / bh.total) * 100) : 0;
-  const backupColor = backupPct >= 97 ? '#10b981' : backupPct >= 90 ? '#f59e0b' : '#ef4444';
+  const backup2 = stats?.backupStatus || {};
+  const bh2 = stats?.graphs?.backupHistory || { successful: 0, total: 30 };
+  const backupPct2 = bh2.total > 0 ? Math.round((bh2.successful / bh2.total) * 100) : 0;
+  const backupColor2 = backupPct2 >= 97 ? '#10b981' : backupPct2 >= 90 ? '#f59e0b' : '#ef4444';
 
   return (
     <div style={{ padding: '4px 0' }}>
@@ -108,6 +90,8 @@ const AdminHome = () => {
           <div className="stat-content">
             <h3>{dashboardData.tiers?.coverage ? Object.keys(dashboardData.tiers.coverage).length : 0}</h3>
             <p>Admin Tiers</p>
+          </div>
+        </div>
         <div className="stat-card">
           <div className="stat-header"><span className="stat-label">Alerts Today</span></div>
           <div className="stat-value">{stats?.alertCountToday || 0}</div>
@@ -170,6 +154,10 @@ const AdminHome = () => {
             {dimStatuses.dr?.status === 'warning' && <div className="alert-item warning">DR: No recent test passed</div>}
             {dimStatuses.apiKeys?.count === 0 && <div className="alert-item info">No API keys registered</div>}
             {dimStatuses.dr?.status === 'ok' && <div className="alert-item ok">System operations nominal</div>}
+          </div>
+        </div>
+      </div>
+
       {/* ── 6 Graphs ── */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 24 }}>
         {/* 1. System Uptime */}
@@ -352,6 +340,8 @@ const AdminHome = () => {
               <span className="arrow">&rarr;</span>
             </Link>
           ))}
+          </div>
+        </div>
       {/* ── System Health Row ── */}
       <div className="card" style={{ marginBottom: 20 }}>
         <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 12, color: '#0f172a' }}>System Health</h3>

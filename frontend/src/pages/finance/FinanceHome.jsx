@@ -2,6 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import financeService from '../../services/financeService';
 import printingService from '../../services/printingService';
+import {
+  TrendingUp, TrendingDown, AlertTriangle, RefreshCw,
+  CheckCircle2, XCircle, Clock, DollarSign, FileText,
+  Paperclip, RotateCcw, ShieldCheck
+} from 'lucide-react';
 import styles from './FinanceHome.module.css';
 
 const FinanceHome = () => {
@@ -105,12 +110,10 @@ const FinanceHome = () => {
             <span className={`${styles.miniValue} ${styles.danger}`}>{printingStats?.pastDueOrders ?? 0}</span>
           </div>
         </div>
-import {
-  TrendingUp, TrendingDown, AlertTriangle, RefreshCw,
-  CheckCircle2, XCircle, Clock, DollarSign, FileText,
-  Paperclip, RotateCcw, ShieldCheck
-} from 'lucide-react';
-import styles from './FinanceHome.module.css';
+      </div>
+    </div>
+  );
+};
 
 // ─── Mock Data ────────────────────────────────────────────────────────────────
 
@@ -575,204 +578,6 @@ const TransactionLedger = ({ transactions }) => {
           </tbody>
         </table>
       </div>
-    </div>
-  );
-};
-
-// ─── Main FinanceHome ─────────────────────────────────────────────────────────
-
-const FinanceHome = () => {
-  const [verifications, setVerifications] = useState([]);
-  const [refunds, setRefunds] = useState([]);
-  const [transactions, setTransactions] = useState([]);
-  const [toast, setToast] = useState(null);
-
-  const fetchPending = async () => {
-    try {
-      const res = await financeService.getPendingRentalPayments();
-      if (res.status === 'success') {
-        const orders = res.data;
-        const verif = [];
-        const refs = [];
-        orders.forEach(o => {
-          if (o.paymentStatus === 'PENDING_VERIFICATION') {
-            verif.push({
-              id: o.id,
-              orderId: o.orderNumber,
-              module: 'Rental',
-              customer: o.customerName,
-              amount: o.additionalOwed > 0 ? o.additionalOwed : o.totalAmount,
-              method: o.paymentMethod,
-              reference: 'Check Proof',
-              submittedAt: new Date(o.updatedAt).toLocaleString(),
-              proofFile: o.paymentProofUrl || 'No file',
-              status: 'PENDING'
-            });
-          }
-          if (Number(o.refundAmount) > 0) {
-            refs.push({
-              id: o.id,
-              orderId: o.orderNumber,
-              module: 'Rental',
-              customer: o.customerName,
-              originalAmount: o.totalAmount,
-              cancellationFee: 0,
-              refundAmount: o.refundAmount,
-              reason: 'Refund requested',
-              originalMethod: o.paymentMethod,
-              status: 'PENDING'
-            });
-          }
-        });
-        setVerifications(verif);
-        setRefunds(refs);
-      }
-    } catch(err) {
-      console.error(err);
-    }
-  };
-
-  const fetchLedger = async () => {
-    try {
-      const res = await financeService.getPayments({ limit: 50 });
-      if (res.data && res.data.data && res.data.data.payments) {
-         const pays = res.data.data.payments.map(p => ({
-            id: p.id,
-            time: new Date(p.processedAt || p.createdAt).toLocaleTimeString(),
-            module: p.referenceType,
-            type: 'PAYMENT',
-            amount: p.amount,
-            method: p.paymentMethod || 'System',
-            invoice: p.referenceNumber,
-            status: p.status === 'Paid' ? 'VERIFIED' : 'PENDING'
-         }));
-         setTransactions(pays);
-      }
-    } catch(err) {
-      console.error(err);
-    }
-  };
-
-  useEffect(() => {
-    fetchPending();
-    fetchLedger();
-  }, []);
-
-  const showToast = (msg) => {
-    setToast(msg);
-    setTimeout(() => setToast(null), 4000);
-  };
-
-  const handleVerificationUpdate = async (id, status, rejectReason) => {
-    const item = verifications.find(i => i.id === id);
-    if (!item) return;
-    try {
-       await financeService.verifyRentalPayment(id, {
-         isVerified: status === 'APPROVED',
-         verifiedAmount: item.amount,
-         referenceNumber: item.reference || 'SYSTEM_VERIFIED',
-         notes: rejectReason || 'Verified via Finance Dashboard'
-       });
-       showToast(status === 'APPROVED' ? `✅ Payment for ${item.orderId} verified.` : `❌ Payment rejected.`);
-       fetchPending();
-       fetchLedger();
-    } catch(e) {
-       console.error(e);
-       showToast('Error processing verification');
-    }
-  };
-
-  const handleRefundUpdate = async (id, status) => {
-    const item = refunds.find(i => i.id === id);
-    if (!item) return;
-    try {
-       await financeService.verifyRentalPayment(id, {
-         isVerified: status === 'APPROVED',
-         verifiedAmount: 0,
-         referenceNumber: 'REFUND_PROCESSED',
-         notes: 'Refund processed via Finance Dashboard'
-       });
-       showToast(status === 'APPROVED' ? `🔄 Refund of ${item.refundAmount} ETB approved.` : `Refund rejected.`);
-       fetchPending();
-       fetchLedger();
-    } catch(e) {
-       console.error(e);
-       showToast('Error processing refund');
-    }
-  };
-
-  const totalIncome = transactions.filter(t => t.amount > 0 && t.status === 'VERIFIED').reduce((s, t) => s + t.amount, 0);
-  const totalRefunds = transactions.filter(t => t.amount < 0).reduce((s, t) => s + Math.abs(t.amount), 0);
-  const pendingVerif = verifications.filter(v => v.status === 'PENDING').length;
-  const pendingRefunds = refunds.filter(r => r.status === 'PENDING').length;
-
-  return (
-    <div className={styles.container}>
-      <div className={styles.header}>
-        <div>
-          <h1>Finance Dashboard</h1>
-          <p>Monitor income, verify payments, and process refunds across all modules.</p>
-        </div>
-      </div>
-
-      {toast && (
-        <div className={styles.successAlert}>
-          {toast}
-        </div>
-      )}
-
-      {/* Quick Stats */}
-      <div className={styles.statsGrid}>
-        <div className={styles.statCard}>
-          <div className={styles.statIcon} style={{ background: '#d1fae5', color: '#10b981' }}>
-            <TrendingUp size={24} />
-          </div>
-          <div className={styles.statInfo}>
-            <span className={styles.statLabel}>Total Income Today</span>
-            <span className={styles.statValue}>{totalIncome.toLocaleString('en-ET', { minimumFractionDigits: 2 })} ETB</span>
-            <span className={styles.statSub}>Verified transactions only</span>
-          </div>
-        </div>
-        <div className={styles.statCard}>
-          <div className={styles.statIcon} style={{ background: '#fee2e2', color: '#ef4444' }}>
-            <TrendingDown size={24} />
-          </div>
-          <div className={styles.statInfo}>
-            <span className={styles.statLabel}>Total Refunds</span>
-            <span className={styles.statValue}>{totalRefunds.toLocaleString('en-ET', { minimumFractionDigits: 2 })} ETB</span>
-            <span className={styles.statSub}>Processed today</span>
-          </div>
-        </div>
-        <div className={styles.statCard}>
-          <div className={styles.statIcon} style={{ background: '#fef9c3', color: '#f59e0b' }}>
-            <AlertTriangle size={24} />
-          </div>
-          <div className={styles.statInfo}>
-            <span className={styles.statLabel}>Pending Verifications</span>
-            <span className={styles.statValue}>{pendingVerif}</span>
-            <span className={styles.statSub}>Need manual review</span>
-          </div>
-        </div>
-        <div className={styles.statCard}>
-          <div className={styles.statIcon} style={{ background: '#fce7f3', color: '#db2777' }}>
-            <RefreshCw size={24} />
-          </div>
-          <div className={styles.statInfo}>
-            <span className={styles.statLabel}>Pending Refunds</span>
-            <span className={styles.statValue}>{pendingRefunds}</span>
-            <span className={styles.statSub}>Awaiting approval</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Verifications */}
-      <VerificationSection items={verifications} onUpdate={handleVerificationUpdate} />
-
-      {/* Refunds */}
-      <RefundSection items={refunds} onUpdate={handleRefundUpdate} />
-
-      {/* Unified Transaction Ledger */}
-      <TransactionLedger transactions={transactions} />
     </div>
   );
 };

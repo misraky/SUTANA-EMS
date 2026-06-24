@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate, useSearchParams, Link } from 'react-router-dom';
-import { useNavigate, Link, useLocation } from 'react-router-dom';
+import { useNavigate, useSearchParams, Link, useLocation } from 'react-router-dom';
 import authService from '../../services/authService';
 import styles from './LoginPage.module.css';
 const LoginPage = () => {

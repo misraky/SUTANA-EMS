@@ -4,7 +4,6 @@ import axios from '../../services/apiClient';
 import inventoryService from '../../services/inventoryService';
 import printingService from '../../services/printingService';
 import { formatCurrency, formatNumber } from '../../utils/formatters';
-import { formatNumber } from '../../utils/formatters';
 import { useAuth } from '../../hooks/useAuth';
 import styles from './StoreHome.module.css';
 const StoreHome = () => {
@@ -488,6 +487,9 @@ const StoreHome = () => {
                 })}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
       {purchaseItem && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }} onClick={() => setPurchaseItem(null)}>
           <div style={{ background: '#fff', borderRadius: 12, padding: 24, maxWidth: 420, width: '90%' }} onClick={e => e.stopPropagation()}>

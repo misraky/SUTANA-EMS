@@ -303,6 +303,7 @@ const adminService = {
   },
   rotateApiKey: async (id) => {
     return await apiClient.post(`/admin/api-keys/${id}/rotate`);
+  },
   getSocialLinks: async () => {
     return await apiClient.get('/public/social-links');
   },

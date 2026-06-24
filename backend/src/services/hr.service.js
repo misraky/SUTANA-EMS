@@ -1,13 +1,4 @@
 const { db } = require('../config/database');
-
-const getHRSummary = async () => {
-  const total = await db('employees').count('id as count').first();
-  const byDepartment = await db('employees').select('department').count('id as count').groupBy('department').orderBy('department');
-  const byStatus = await db('employees').select('status').count('id as count').groupBy('status');
-  const active = await db('employees').where('status', 'Active').count('id as count').first();
-  const inactive = await db('employees').where('status', 'Inactive').count('id as count').first();
-  const hiredThisYear = await db('employees').whereRaw('YEAR(join_date) = ?', [new Date().getFullYear()]).count('id as count').first();
-  const departedThisYear = await db('employees').where('status', 'Inactive').whereRaw('YEAR(created_at) = ?', [new Date().getFullYear()]).count('id as count').first();
   const genderBreakdown = await db('employees').select('gender').count('id as count').groupBy('gender');
   const payrollTotal = await db('payroll').where('status', 'paid').sum('net_pay as total').first();
   const recentHires = await db('employees').where('status', 'Active').orderBy('join_date', 'desc').limit(5);
@@ -162,7 +153,6 @@ const getDEIMetrics = async () => {
   };
 };
 
-module.exports = { getHRSummary, getAttritionData, getCompensationData, getSuccessionPipeline, getDEIMetrics };
 const bcrypt = require('bcrypt');
 
 // ─────────────────────────────────────────────────────────────
@@ -611,7 +601,7 @@ module.exports = {
   getTodayAttendance, getMonthlyAttendance, getDailyAttendances,
   registerComputer, getRegisteredComputers,
   createLeaveRequest, getLeaveRequests, approveLeave,
-  getHRSummary, calculatePayroll, getPayroll,
+  getHRSummary, getAttritionData, getCompensationData, getSuccessionPipeline, getDEIMetrics, calculatePayroll, getPayroll,
   sendPayrollToFinance, approvePayroll, markPayrollPaid,
   getManagerAccuracyReport,
 };

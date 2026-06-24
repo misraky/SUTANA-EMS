@@ -45,8 +45,6 @@ const PharmacyWorkerDashboard = lazy(() => import('../pages/pharmacy/PharmacyWor
 const CarRentingDashboard = lazy(() => import('../pages/car-renting/CarRentingDashboard'));
 const ReportsIndex    = lazy(() => import('../pages/reports/ReportsIndex'));
 const PlaceholderPage = lazy(() => import('../pages/LandingPage/PlaceholderPage'));
-const TrackOrderPage = lazy(() => import('../pages/LandingPage/TrackOrderPage'));
-const ReportsIndex     = lazy(() => import('../pages/reports/ReportsIndex'));
 const HRDashboard      = lazy(() => import('../pages/hr/HRDashboard'));
 const NotificationsPage = lazy(() => import('../pages/employee/NotificationsPage'));
 const PrescriptionViewer = lazy(() => import('../pages/shared/PrescriptionViewer'));

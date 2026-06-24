@@ -172,7 +172,7 @@ class RoleModel {
           reports: ['read', 'export'],
           dashboard: ['read'],
           expenses: ['read'],
-          approvals: ['discount', 'po']
+          approvals: ['discount', 'po'],
           purchase_orders: ['approve', 'read'],
           suppliers: ['read'],
           receiving: ['read', 'create']

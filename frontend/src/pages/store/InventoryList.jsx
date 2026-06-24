@@ -399,6 +399,7 @@ const InventoryList = () => {
       {renderDetailSection()}
 
       <AddProductModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSuccess={() => { setIsModalOpen(false); loadAll(); }} />
+      </div>
     </div>
   );
 };

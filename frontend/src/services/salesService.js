@@ -56,20 +56,7 @@ const salesService = {
   // Customer with purchase history
   getCustomerFullProfile: async (id) => {
     return await apiClient.get(`/pos/customers/${id}/profile`);
-  }
-  getSales: async (params) => apiClient.get('/pos/sales', { params }),
-  getSaleById: async (id) => apiClient.get(`/pos/sales/${id}`),
-  createSale: async (data) => apiClient.post('/pos/checkout', data),
-  getCart: async () => apiClient.get('/pos/cart'),
-  getPOSProducts: async (params) => apiClient.get('/pos/products', { params }),
-  addToCart: async (data) => apiClient.post('/pos/cart/items', data),
-  updateCartItem: async (itemId, data) => apiClient.put(`/pos/cart/items/${itemId}`, data),
-  removeFromCart: async (itemId) => apiClient.delete(`/pos/cart/items/${itemId}`),
-  clearCart: async () => apiClient.delete('/pos/cart'),
-  getCustomers: async (params) => apiClient.get('/pos/customers', { params }),
-  getCustomerById: async (id) => apiClient.get(`/pos/customers/${id}`),
-  createCustomer: async (data) => apiClient.post('/pos/customers', data),
-  getSalesReports: async (params) => apiClient.get('/pos/reports', { params }),
+  },
   applyDiscount: async (data) => apiClient.put('/pos/cart/discount', data),
   removeDiscount: async () => apiClient.delete('/pos/cart/discount'),
   validateDiscount: async (params) => apiClient.get('/pos/validate-discount', { params }),

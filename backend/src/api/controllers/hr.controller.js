@@ -161,4 +161,4 @@ exports.authenticate = catchAsync(async (req, res) => {
     { expiresIn: '12h' }
   );
   res.json({ status: 'success', data: { token, employee: emp } });
-});
+}));

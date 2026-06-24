@@ -5,8 +5,8 @@ import {
   Home, Users, ClipboardList, Settings, BarChart2, ShoppingCart, FileText, Wallet,
   CreditCard, TrendingUp, Package, Truck, Printer, Layers, Receipt, AreaChart,
   List, User, FilePlus, Box, ArrowRight, Bell, LogOut, ChevronDown, Monitor, CheckCircle, Car,
-  Target, Shield, AlertTriangle, GitBranch, Scale, Building, AlertOctagon, UserCheck, Layout, Lock
-  List, User, FilePlus, Box, ArrowRight, Bell, Search, LogOut, ChevronDown, Monitor, CheckCircle, Car, X,
+  Target, Shield, AlertTriangle, GitBranch, Scale, Building, AlertOctagon, UserCheck, Layout, Lock,
+  Search, X,
   Key, Sprout, Pill, CirclePlus, MessageCircle
 } from 'lucide-react';
 import notificationService from '../../services/notificationService';
@@ -221,9 +221,6 @@ const DashboardLayout = ({ children, menuItems, title, hideTopbar }) => {
     }
     setMobileOpen(false);
   };
-  const isActive = (path) => {
-    if (path === '/') return location.pathname === '/';
-    return location.pathname.startsWith(path + '/') || location.pathname === path;
   const isActive = (item) => {
     const paths = item.activeMatch || [item.path];
     return paths.some(p => location.pathname.startsWith(p));
@@ -261,7 +258,7 @@ const DashboardLayout = ({ children, menuItems, title, hideTopbar }) => {
             return (
               <button
                 key={item.path || index}
-                className={`dash-nav-item ${isActive(item.path) ? 'active' : ''}`}
+                className={`dash-nav-item ${isActive(item) ? 'active' : ''}`}
                 onClick={() => handleNav(item)}
                 title={sidebarCollapsed ? item.label : ''}
               >

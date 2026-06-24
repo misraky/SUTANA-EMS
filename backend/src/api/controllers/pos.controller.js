@@ -134,8 +134,6 @@ exports.getCart = catchAsync(async (req, res) => {
   res.json({ status: 'success', data: { ...cart, customerLoyalty } });
 });
 exports.addToCart = catchAsync(async (req, res) => {
-  const { productId, quantity, customerId } = req.body;
-  const result = await posService.addToCart(req.user.id, productId, quantity, customerId || null);
   let { productId, quantity } = req.body;
   const userId = req.user.id;
 

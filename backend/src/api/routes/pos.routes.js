@@ -329,7 +329,7 @@ router.get(
   authorize(['pos:read']),
   query('date').optional().isISO8601(),
   validate,
-  POSController.getZReport
+  POSController.getZReport);
 /* ── Shift Management ── */
 router.get('/shifts/current', authenticate, authorize(['pos:read']), POSController.getCurrentShift);
 router.post('/shifts/open', authenticate, authorize(['pos:create']),

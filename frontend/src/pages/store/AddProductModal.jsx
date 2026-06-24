@@ -13,9 +13,7 @@ const AddProductModal = ({ isOpen, onClose, onSuccess }) => {
     sellingPrice: '',
     reorderLevel: '0',
     expiryDate: '',
-    requiresSerial: false
-    name: '', sku: '', categoryId: '', unitId: '', sellingPrice: '',
-    reorderLevel: '0', currentStock: '', expiryDate: '', requiresSerial: false
+    requiresSerial: false,
   });
   const [categories, setCategories] = useState([]);
   const [units, setUnits] = useState([]);

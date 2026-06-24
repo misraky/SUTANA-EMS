@@ -204,8 +204,6 @@ const RentalPaymentVerification = () => {
                 const typeText = isRefund ? 'REFUND' : (isAdditional ? 'ADDITIONAL PAYMENT' : 'INITIAL PAYMENT');
 
                 const isRejected = order.paymentStatus === 'PAYMENT_REJECTED';
-                const amountToShow = isRefund ? order.refundAmount : (isAdditional ? order.additionalOwed : order.totalAmount);
-                const typeText = isRefund ? 'REFUND' : (isAdditional ? 'ADDITIONAL PAYMENT' : 'INITIAL PAYMENT');
                 const statusLabel = isRejected
                   ? 'Rejected — Awaiting Re-upload'
                   : order.paymentStatus === 'PENDING_VERIFICATION'

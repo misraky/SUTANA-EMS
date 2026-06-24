@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { PublicNav, PublicFooter } from './ServicesPage';
+import { PublicNav } from './ServicesPage';
 import './PublicLayout.css';
 import './ContactPage.css';
 import ToggleSection from './ToggleSection';
@@ -271,8 +271,6 @@ const ContactPage = () => {
           </div>
         </div>
       </section>
-
-      <PublicFooter />
     </div>
   );
 };
