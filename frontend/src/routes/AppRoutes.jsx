@@ -9,10 +9,6 @@ const FleetGalleryPage = lazy(() => import('../pages/LandingPage/FleetGalleryPag
 const NewsPage          = lazy(() => import('../pages/LandingPage/NewsPage'));
 const AboutPage        = lazy(() => import('../pages/LandingPage/AboutPage'));
 const ContactPage      = lazy(() => import('../pages/LandingPage/ContactPage'));
-const PrintingPage     = lazy(() => import('../pages/LandingPage/PrintingPage'));
-const PharmacyPage     = lazy(() => import('../pages/LandingPage/PharmacyPage'));
-const FarmingPage      = lazy(() => import('../pages/LandingPage/FarmingPage'));
-const RetailPage       = lazy(() => import('../pages/LandingPage/RetailPage'));
 const FinancePage      = lazy(() => import('../pages/LandingPage/FinancePage'));
 const InventoryPage    = lazy(() => import('../pages/LandingPage/InventoryPage'));
 const SalesPage        = lazy(() => import('../pages/LandingPage/SalesPage'));
@@ -72,10 +68,6 @@ const AppRoutes = () => {
         {/* Public / Landing Pages — redirect to dashboard if logged in */}
         <Route path="/"         element={<PublicRoute><LandingPage /></PublicRoute>} />
         <Route path="/services" element={<PublicRoute><ServicesPage /></PublicRoute>} />
-        <Route path="/services/printing" element={<PublicRoute><PrintingPage /></PublicRoute>} />
-        <Route path="/services/pharmacy" element={<PublicRoute><PharmacyPage /></PublicRoute>} />
-        <Route path="/services/farming" element={<PublicRoute><FarmingPage /></PublicRoute>} />
-        <Route path="/services/retail" element={<PublicRoute><RetailPage /></PublicRoute>} />
         <Route path="/services/finance" element={<PublicRoute><FinancePage /></PublicRoute>} />
         <Route path="/services/inventory" element={<PublicRoute><InventoryPage /></PublicRoute>} />
         <Route path="/services/sales" element={<PublicRoute><SalesPage /></PublicRoute>} />
