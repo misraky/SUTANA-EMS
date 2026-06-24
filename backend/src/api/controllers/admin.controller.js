@@ -738,7 +738,7 @@ function formatBytes(bytes) {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
-// ── Alert Center ──────────────────────────────────────────────
+// ── Alerts ────────────────────────────────────────────────────
 exports.getAlerts = catchAsync(async (req, res) => {
   const userId = req.user.id;
 
@@ -865,4 +865,34 @@ exports.dismissAlert = catchAsync(async (req, res) => {
 
   await audit('ALERT_DISMISSED', null, { ip, details: { alertId } });
   res.json({ status: 'success', message: 'Alert dismissed' });
+});
+
+// ── Social Links ──────────────────────────────────────────────
+exports.getSocialLinks = catchAsync(async (req, res) => {
+  const links = await db('social_links').where('is_active', true);
+  res.json({ status: 'success', data: links });
+});
+
+exports.updateSocialLinks = catchAsync(async (req, res) => {
+  const { links } = req.body;
+  if (!Array.isArray(links)) {
+    return res.status(400).json({ status: 'error', message: 'Links must be an array' });
+  }
+
+  await db.transaction(async (trx) => {
+    for (const link of links) {
+      if (!link.platform) continue;
+      await trx('social_links')
+        .where('platform', link.platform)
+        .update({
+          url: link.url,
+          is_active: link.is_active !== undefined ? link.is_active : true,
+          updated_at: db.fn.now()
+        });
+    }
+  });
+
+  await audit('SOCIAL_LINKS_UPDATED', req.user.id, { ip: req.ip });
+  const updatedLinks = await db('social_links').where('is_active', true);
+  res.json({ status: 'success', message: 'Social links updated', data: updatedLinks });
 });
