@@ -118,6 +118,7 @@ exports.getOrders = catchAsync(async (req, res) => {
   const customer = await getOrCreateCustomer(req.user);
   let query = db('printing_orders as po')
     .leftJoin('order_statuses as os', 'po.status_id', 'os.id')
+    .leftJoin('customers as c', 'po.customer_id', 'c.id')
     .select(
       'po.id',
       'po.order_number',
@@ -129,6 +130,7 @@ exports.getOrders = catchAsync(async (req, res) => {
       'po.total_price',
       'os.status_name as status',
       'os.color_hex as status_color',
+      'c.phone as customer_phone',
       'po.created_at'
     )
     .where('po.customer_id', customer.id)
@@ -199,6 +201,27 @@ exports.createOrder = catchAsync(async (req, res) => {
   const userId = req.user.id;
   const ip = req.ip;
   const customer = await getOrCreateCustomer(req.user);
+  let customer = await db('customers')
+    .where(function () {
+      this.where('user_id', userId).orWhere('email', req.user.email);
+    })
+    .first();
+  // Auto-create customer profile if it doesn't exist (handles users created before auto-linking)
+  if (!customer) {
+    const user = await db('users').where('id', userId).first();
+    if (!user) throw new AppError('User not found', 404);
+    const regularType = await db('customer_types').where('name', 'Regular').first();
+    const [newCustomerId] = await db('customers').insert({
+      user_id: userId,
+      name: user.full_name,
+      email: user.email,
+      phone: user.phone || null,
+      customer_type_id: regularType ? regularType.id : 1,
+      created_by: userId,
+      created_at: db.fn.now()
+    });
+    customer = await db('customers').where('id', newCustomerId).first();
+  }
   const orderNumber = await generateOrderNumber('PRT');
   const priceCalculation = calculatePrintingPrice({
     paperType,
@@ -328,6 +351,8 @@ exports.trackOrder = catchAsync(async (req, res) => {
   const customer = await getOrCreateCustomer(req.user);
   const order = await db('printing_orders as po')
     .leftJoin('order_statuses as os', 'po.status_id', 'os.id')
+    .leftJoin('customers as c', 'po.customer_id', 'c.id')
+    .leftJoin('users as u', 'po.created_by', 'u.id')
     .select(
       'po.order_number',
       'po.product_type',
@@ -336,6 +361,8 @@ exports.trackOrder = catchAsync(async (req, res) => {
       'po.attachments',
       'os.status_name as status',
       'os.color_hex as status_color',
+      'c.phone as customer_phone',
+      'u.phone as user_phone',
       'po.created_at'
     )
     .where('po.id', id)

@@ -6,6 +6,8 @@ import {
   CreditCard, TrendingUp, Package, Truck, Printer, Layers, Receipt, AreaChart,
   List, User, FilePlus, Box, ArrowRight, Bell, LogOut, ChevronDown, Monitor, CheckCircle, Car,
   Target, Shield, AlertTriangle, GitBranch, Scale, Building, AlertOctagon, UserCheck, Layout, Lock
+  List, User, FilePlus, Box, ArrowRight, Bell, Search, LogOut, ChevronDown, Monitor, CheckCircle, Car, X,
+  Key, Sprout, Pill, CirclePlus, MessageCircle
 } from 'lucide-react';
 import notificationService from '../../services/notificationService';
 import './DashboardLayout.css';
@@ -16,6 +18,8 @@ const ICONS = {
   clipboard:     <ClipboardList size={18} strokeWidth={2.5} />,
   settings:      <Settings size={18} strokeWidth={2.5} />,
   'bar-chart':   <BarChart2 size={18} strokeWidth={2.5} />,
+  'bar-chart-2': <BarChart2 size={18} strokeWidth={2.5} />,
+  database:      <Monitor size={18} strokeWidth={2.5} />,
   'shopping-cart':<ShoppingCart size={18} strokeWidth={2.5} />,
   'file-text':   <FileText size={18} strokeWidth={2.5} />,
   wallet:        <Wallet size={18} strokeWidth={2.5} />,
@@ -44,6 +48,13 @@ const ICONS = {
   layout:        <Layout size={18} strokeWidth={2.5} />,
   lock:          <Lock size={18} strokeWidth={2.5} />,
   monitor:       <Monitor size={18} strokeWidth={2.5} />,
+  car:           <Car size={18} strokeWidth={2.5} />,
+  key:           <Key size={18} strokeWidth={2.5} />,
+  sprout:        <Sprout size={18} strokeWidth={2.5} />,
+  pill:          <Pill size={18} strokeWidth={2.5} />,
+  'plus-circle': <CirclePlus size={18} strokeWidth={2.5} />,
+  'message-circle': <MessageCircle size={18} strokeWidth={2.5} />,
+  search:        <Search size={18} strokeWidth={2.5} />,
   default:       <CheckCircle size={18} strokeWidth={2.5} />
 };
 
@@ -170,9 +181,9 @@ const NotificationBell = ({ navigate }) => {
           {count > 0 && (
             <div style={{ padding: '10px 18px', borderTop: '1px solid #F3F4F6', textAlign: 'center' }}>
               <button
-                onClick={() => { navigate('/car-renting/overview'); setOpen(false); }}
-                style={{ fontSize: '13px', color: '#2563EB', background: 'none', border: 'none', cursor: 'pointer', fontWeight: '600' }}
-              >View all in Car Rental Dashboard →</button>
+                onClick={() => { navigate('/notifications'); setOpen(false); }}
+                  style={{ fontSize: '13px', color: '#059669', background: 'none', border: 'none', cursor: 'pointer', fontWeight: '600' }}
+                >View All Notifications →</button>
             </div>
           )}
         </div>
@@ -180,7 +191,7 @@ const NotificationBell = ({ navigate }) => {
     </div>
   );
 };
-const DashboardLayout = ({ children, menuItems }) => {
+const DashboardLayout = ({ children, menuItems, title, hideTopbar }) => {
   const { user, logout } = useAuth();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -213,6 +224,9 @@ const DashboardLayout = ({ children, menuItems }) => {
   const isActive = (path) => {
     if (path === '/') return location.pathname === '/';
     return location.pathname.startsWith(path + '/') || location.pathname === path;
+  const isActive = (item) => {
+    const paths = item.activeMatch || [item.path];
+    return paths.some(p => location.pathname.startsWith(p));
   };
   const toggleSidebar = () => {
     if (window.innerWidth <= 1024) {
@@ -234,7 +248,6 @@ const DashboardLayout = ({ children, menuItems }) => {
         <div className="dash-brand" onClick={() => navigate('/')}>
           <img src="/logo.png" alt="SUTANA" className="dash-brand-logo"
             onError={(e) => { e.target.style.display = 'none'; }} />
-          <span className="dash-brand-name">SUTANA</span>
         </div>
         {}
         <nav className="dash-nav">
@@ -257,11 +270,23 @@ const DashboardLayout = ({ children, menuItems }) => {
               </button>
             );
           })}
+          {menuItems.map((item) => (
+            <button
+              key={item.path}
+              className={`dash-nav-item ${isActive(item) ? 'active' : ''}`}
+              onClick={() => handleNav(item.path)}
+              title={sidebarCollapsed ? item.label : ''}
+            >
+              <span className="nav-icon">{ICONS[item.icon] || ICONS.default}</span>
+              <span>{item.label}</span>
+            </button>
+          ))}
         </nav>
       </aside>
       {/* ── Main Content Area ── */}
       <main className="dash-main">
         {/* ── Topbar ── */}
+        {!hideTopbar && (
         <header className="dash-topbar">
           <div className="dash-topbar-left">
             <button 
@@ -271,11 +296,25 @@ const DashboardLayout = ({ children, menuItems }) => {
             >
               ☰
             </button>
+            {title && (
+              <h2 className="dash-topbar-title">
+                {title.split('\n').map((line, i) => (
+                  <React.Fragment key={i}>
+                    {line}
+                    {i !== title.split('\n').length - 1 && <br/>}
+                  </React.Fragment>
+                ))}
+              </h2>
+            )}
+          </div>
+          
+          <div className="dash-topbar-center">
             <div className="dash-search">
               <span className="dash-search-icon">🔍</span>
-              <input type="text" placeholder="Search across ERP..." />
+              <input type="text" placeholder="Search medicines, orders, or customers..." />
             </div>
           </div>
+
           <div className="dash-topbar-right">
             <NotificationBell navigate={navigate} />
             <div className="dash-profile-dropdown" ref={profileRef}>
@@ -314,7 +353,7 @@ const DashboardLayout = ({ children, menuItems }) => {
             </div>
           </div>
         </header>
-        {}
+        )}
         <div className="dash-content">
           {children}
         </div>

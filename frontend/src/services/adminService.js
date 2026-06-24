@@ -303,6 +303,11 @@ const adminService = {
   },
   rotateApiKey: async (id) => {
     return await apiClient.post(`/admin/api-keys/${id}/rotate`);
+  getSocialLinks: async () => {
+    return await apiClient.get('/public/social-links');
+  },
+  updateSocialLinks: async (links) => {
+    return await apiClient.put('/admin/social-links', { links });
   }
 };
 export default adminService;

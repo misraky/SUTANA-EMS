@@ -271,4 +271,56 @@ router.post('/report-approvals/:id/reject', authenticate, authorize(['ceo:report
   body('reason').notEmpty().isString().isLength({ min: 5 }), validate, ReportSubmissionController.reject
 );
 router.get('/report-approvals/all', authenticate, authorize(['ceo:reports']), ReportSubmissionController.getAllSubmissions);
+router.get(
+  '/activity',
+  authenticate,
+  authorize(['ceo:dashboard']),
+  query('limit').optional().isInt({ min: 1, max: 50 }),
+  validate,
+  CEODashboardController.getActivityLog
+);
+router.get(
+  '/pending-approvals',
+  authenticate,
+  authorize(['ceo:dashboard']),
+  CEODashboardController.getPendingPOApprovals
+);
+router.post(
+  '/approve/:id',
+  authenticate,
+  authorize(['ceo:dashboard']),
+  CEODashboardController.approvePO
+);
+router.post(
+  '/reject/:id',
+  authenticate,
+  authorize(['ceo:dashboard']),
+  body('rejectionReason').notEmpty().withMessage('Rejection reason is required'),
+  validate,
+  CEODashboardController.rejectPO
+);
+router.get(
+  '/pending-approvals-count',
+  authenticate,
+  authorize(['ceo:dashboard']),
+  CEODashboardController.getPendingApprovalsCount
+);
+router.get(
+  '/hr-summary',
+  authenticate,
+  authorize(['ceo:dashboard']),
+  CEODashboardController.getHRSummary
+);
+router.get(
+  '/daily-employees',
+  authenticate,
+  authorize(['ceo:dashboard']),
+  CEODashboardController.getDailyEmployees
+);
+router.get(
+  '/employee-attendance/:employeeId',
+  authenticate,
+  authorize(['ceo:dashboard']),
+  CEODashboardController.getEmployeeMonthlyAttendance
+);
 module.exports = router;

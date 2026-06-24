@@ -190,6 +190,7 @@ exports.getExpiringProducts = catchAsync(async (req, res) => {
       unitCost,
       sellingPrice,
       reorderLevel = 0,
+      currentStock = 0,
       expiryDate,
       supplierId
     } = req.body;
@@ -215,15 +216,18 @@ exports.getExpiringProducts = catchAsync(async (req, res) => {
       is_active: true,
       created_at: db.fn.now()
     });
+    const qty = parseInt(currentStock) || 0;
     await db('inventory').insert({
       product_id: productId,
       quantity: 0,
       unit_cost: unitCost || 0,
+      quantity: qty,
+      unit_cost: 0,
       last_updated: db.fn.now()
     });
     await audit('PRODUCT_CREATED', productId, {
       ip,
-      details: { name, sku, categoryId, sellingPrice }
+      details: { name, sku, categoryId, sellingPrice, initialStock: qty }
     });
     res.status(201).json({
       status: 'success',

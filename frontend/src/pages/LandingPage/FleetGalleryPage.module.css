@@ -29,6 +29,25 @@
   color: #666;
 }
 
+.heroSection {
+  padding: 130px 20px 90px;
+  text-align: center;
+  color: white;
+}
+
+.heroContent h1 {
+  font-size: 38px;
+  font-weight: 800;
+  margin: 0 0 10px;
+  color: #fff;
+}
+
+.heroContent p {
+  font-size: 16px;
+  color: rgba(255,255,255,0.85);
+  margin: 0;
+}
+
 /* Carousel Container */
 .carouselContainer {
   display: flex;

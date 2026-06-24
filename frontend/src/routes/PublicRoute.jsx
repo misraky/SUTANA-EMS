@@ -13,26 +13,33 @@ const PublicRoute = ({ children }) => {
       'Store Manager': '/store',
       'Store Worker': '/store',
       'Sales/Cashier': '/sales',
-      'Printing Supervisor': '/printing',
-      'Farming Manager': '/farming',
+      'Printing Supervisor': '/printing-manager',
+      'Printing Worker': '/printing-worker',
+      'Farming Manager': '/farming-manager',
+      'Farming Worker': '/farming-worker',
       'Pharmacist': '/pharmacy',
+      'Pharmacy Worker': '/pharmacy-worker',
       'Car Renting Manager': '/car-renting',
+      'Market Research': '/market',
+      'HR Manager': '/hr',
       'Customer': '/customer'
     };
     const rolePriority = [
       'Admin', 'CEO', 'Finance', 'Purchase', 'Store Manager', 'Store Worker', 'Sales/Cashier', 
       'Printing Supervisor', 'Farming Manager', 'Pharmacist', 'Car Renting Manager', 'Customer'
+      'Admin', 'CEO', 'Finance', 'Purchase', 'Store Manager', 'Sales/Cashier', 
+      'Printing Supervisor', 'Printing Worker', 'Farming Manager', 'Farming Worker', 'Pharmacist', 'Pharmacy Worker', 'Car Renting Manager',
+      'Market Research', 'HR Manager', 'Customer'
     ];
-    let targetPath = '/customer';
     if (user?.roles) {
       for (const r of rolePriority) {
         if (user.roles.includes(r)) {
-          targetPath = dashboardMap[r];
-          break;
+          if (dashboardMap[r]) return <Navigate to={dashboardMap[r]} replace />;
+          return <Navigate to="/unauthorized" replace />;
         }
       }
     }
-    return <Navigate to={targetPath} replace />;
+    return <Navigate to="/unauthorized" replace />;
   }
   return children;
 };

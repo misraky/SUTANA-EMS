@@ -13,6 +13,14 @@ import ReportApprovals from './ReportApprovals';
 import CEOInventoryReport from './CEOInventoryReport';
 import CEOExpenses from './CEOExpenses';
 import SalesReports from '../sales/SalesReports';
+import CEODashboardSummary from './CEODashboardSummary';
+import PurchaseApprovals from './PurchaseApprovals';
+import CashHandovers from '../finance/CashHandovers';
+import CEOFarmingRequests from './CEOFarmingRequests';
+import CEOPharmacyRequests from './CEOPharmacyRequests';
+import CEORequests from './CEORequests';
+import CEOPurchaseResearch from './CEOPurchaseResearch';
+import CEOPurchaseWorkflow from './CEOPurchaseWorkflow';
 import styles from './CEODashboard.module.css';
 
 const CEODashboard = () => {
@@ -34,11 +42,16 @@ const CEODashboard = () => {
     { type: 'section', label: 'Oversight' },
     { label: 'Risk & Compliance',  path: '/ceo/risk',      icon: 'alert-triangle' },
     { label: 'Crisis Management',  path: '/ceo/crisis',    icon: 'alert-octagon' },
+    { label: 'Overview', path: '/ceo/overview', icon: 'home' },
+    { label: 'Requests', path: '/ceo/requests', icon: 'shopping-cart', activeMatch: ['/ceo/requests', '/ceo/farming-requests', '/ceo/pharmacy-requests'] },
+    { label: 'Purchase Research', path: '/ceo/purchase-research', icon: 'shopping-cart' },
+    { label: 'Budget Workflow', path: '/ceo/budget-workflow', icon: 'credit-card' },
+    { label: 'Tender Management', path: '/tenders/manage', icon: 'clipboard' },
   ];
 
   return (
     <div className={styles.dashboardWrapper}>
-      <DashboardLayout menuItems={menuItems}>
+      <DashboardLayout menuItems={menuItems} title="CEO Dashboard">
         <div className={styles.dashboardContent}>
           <Routes>
             <Route path="overview"  element={<CEOHome />} />
@@ -53,6 +66,14 @@ const CEODashboard = () => {
             <Route path="report-approvals" element={<ReportApprovals />} />
             <Route path="risk"      element={<CEORisk />} />
             <Route path="crisis"    element={<CEOCrisis />} />
+            <Route path="summary"   element={<CEODashboardSummary />} />
+            <Route path="approvals" element={<PurchaseApprovals />} />
+            <Route path="handovers" element={<CashHandovers />} />
+            <Route path="requests" element={<CEORequests />} />
+            <Route path="farming-requests" element={<CEOFarmingRequests />} />
+            <Route path="pharmacy-requests" element={<CEOPharmacyRequests />} />
+            <Route path="purchase-research" element={<CEOPurchaseResearch />} />
+            <Route path="budget-workflow" element={<CEOPurchaseWorkflow />} />
             <Route path="/"         element={<Navigate to="overview" replace />} />
           </Routes>
         </div>

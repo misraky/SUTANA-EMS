@@ -168,8 +168,8 @@ const commonSchemas = {
   },
   phone: {
     phone: (val) => {
-      const phoneRegex = /^09[0-9]{8}$/;
-      if (!phoneRegex.test(val)) throw new Error('Invalid Ethiopian phone number (format: 09xxxxxxxx)');
+      const phoneRegex = /^(09[0-9]{8}|\+251[0-9]{9})$/;
+      if (!phoneRegex.test(val)) throw new Error('Invalid Ethiopian phone number (format: 09xxxxxxxx or +251xxxxxxxxx)');
       return val;
     }
   }

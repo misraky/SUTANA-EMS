@@ -1,0 +1,244 @@
+.container {
+  font-family: 'Inter', sans-serif;
+  color: #1e293b;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.header {
+  margin-bottom: 0.5rem;
+}
+.pageTitle {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 0.5rem;
+  letter-spacing: -0.025em;
+}
+.pageSubtitle {
+  font-size: 1rem;
+  color: #64748b;
+  margin: 0;
+}
+.tabs {
+  display: flex;
+  gap: 0.5rem;
+  background: #f1f5f9;
+  padding: 0.25rem;
+  border-radius: 8px;
+  width: fit-content;
+}
+.tab {
+  border: none;
+  background: transparent;
+  padding: 0.5rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #64748b;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.tab:hover {
+  background: #e2e8f0;
+}
+.activeTab {
+  background: #ffffff;
+  color: #0f172a;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+.loading {
+  text-align: center;
+  padding: 3rem;
+  color: #64748b;
+}
+.tableWrapper {
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+  overflow-x: auto;
+}
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+.table th {
+  text-align: left;
+  padding: 0.75rem 1rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  border-bottom: 2px solid #e2e8f0;
+  background: #f8fafc;
+}
+.table td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #f1f5f9;
+  color: #1e293b;
+}
+.table tbody tr:hover {
+  background: #f8fafc;
+}
+.nameCell {
+  font-weight: 600;
+}
+.daysCell {
+  text-align: center;
+  font-weight: 600;
+}
+.emptyCell {
+  text-align: center;
+  color: #94a3b8;
+  padding: 2rem !important;
+}
+.statusBadge {
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+.pending {
+  background: #fef3c7;
+  color: #d97706;
+}
+.approved {
+  background: #d1fae5;
+  color: #059669;
+}
+.rejected {
+  background: #fee2e2;
+  color: #dc2626;
+}
+.actionBtns {
+  display: flex;
+  gap: 0.5rem;
+}
+.approveBtn {
+  padding: 0.35rem 0.75rem;
+  border: none;
+  border-radius: 6px;
+  background: #059669;
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+.approveBtn:hover:not(:disabled) {
+  background: #047857;
+}
+.rejectBtn {
+  padding: 0.35rem 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  background: #fff;
+  color: #dc2626;
+  font-weight: 600;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+.rejectBtn:hover:not(:disabled) {
+  background: #fef2f2;
+}
+.approveBtn:disabled, .rejectBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.noAction {
+  color: #94a3b8;
+}
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.modal {
+  background: #fff;
+  border-radius: 16px;
+  width: 90%;
+  max-width: 480px;
+  box-shadow: 0 25px 50px rgba(0,0,0,0.25);
+}
+.modalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem 1.5rem 0;
+}
+.modalTitle {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 0;
+}
+.closeBtn {
+  border: none;
+  background: none;
+  font-size: 1.5rem;
+  color: #64748b;
+  cursor: pointer;
+  padding: 0.25rem;
+  line-height: 1;
+}
+.modalBody {
+  padding: 1.25rem 1.5rem;
+}
+.modalDesc {
+  font-size: 0.9rem;
+  color: #475569;
+  margin: 0 0 1rem;
+}
+.rejectInput {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-family: inherit;
+  resize: vertical;
+  box-sizing: border-box;
+}
+.rejectInput:focus {
+  outline: none;
+  border-color: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239,68,68,0.1);
+}
+.modalActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem 1.5rem;
+  border-top: 1px solid #e2e8f0;
+}
+.cancelBtn {
+  padding: 0.6rem 1.5rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #fff;
+  color: #475569;
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+.rejectConfirmBtn {
+  padding: 0.6rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  background: #dc2626;
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+.rejectConfirmBtn:hover:not(:disabled) {
+  background: #b91c1c;
+}
+.rejectConfirmBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

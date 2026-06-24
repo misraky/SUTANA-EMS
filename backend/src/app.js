@@ -23,7 +23,7 @@ app.use(helmet({
       fontSrc: ["'self'"],
       objectSrc: ["'none'"],
       mediaSrc: ["'self'"],
-      frameSrc: ["'none'"]
+      frameSrc: ["'self'", "https://www.youtube.com", "https://youtube.com"]
     }
   },
   crossOriginResourcePolicy: { policy: "cross-origin" },
@@ -140,6 +140,21 @@ const initializeApp = async () => {
     if (!dbConnected && config.isProduction) {
       throw new Error('Database connection failed in production');
     }
+
+    // Ensure notifications table has `type` column
+    try {
+      const { db } = require('./config/database');
+      const rows = await db.raw("SHOW COLUMNS FROM `notifications` LIKE 'type'");
+      if (!rows[0] || rows[0].length === 0) {
+        await db.raw("ALTER TABLE `notifications` ADD COLUMN `type` VARCHAR(50) NOT NULL DEFAULT 'general'");
+        await db.raw("UPDATE `notifications` SET `type` = 'general' WHERE `type` IS NULL");
+        // Backfill types for old farming notifications
+        await db.raw("UPDATE `notifications` SET `type` = 'farming' WHERE `title` LIKE 'Shift Closed%' OR `title` LIKE 'New Online Order%' OR `title` LIKE 'New Online Order%'");
+        // Backfill types for old pharmacy notifications
+        await db.raw("UPDATE `notifications` SET `type` = 'pharmacy' WHERE `title` LIKE 'Prescription Request%'");
+        logger.info('✅ Added `type` column to notifications table');
+      }
+    } catch (_) { /* migration not critical; repository falls back gracefully */ }
 
     // Start background services
     cronService.start();

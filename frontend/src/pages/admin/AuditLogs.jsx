@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import adminService from '../../services/adminService';
+import apiClient from '../../services/apiClient';
 import { formatDateTime } from '../../utils/formatters';
 import styles from './AuditLogs.module.css';
 
@@ -49,6 +50,7 @@ const AuditLogs = () => {
   const [logs, setLogs] = useState([]);
   const [pagination, setPagination] = useState({ total: 0, totalPages: 1 });
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
   const [expandedRow, setExpandedRow] = useState(null);
 
   // Filters
@@ -95,6 +97,30 @@ const AuditLogs = () => {
     return styles.badgeDefault;
   };
 
+  const handleExport = async (format) => {
+    setExporting(true);
+    try {
+      const params = {};
+      if (startDate) params.startDate = startDate;
+      if (endDate) params.endDate = endDate;
+      params.format = format;
+      const res = await apiClient.get('/admin/audit-logs/export', { params, responseType: 'blob' });
+      const ext = format === 'csv' ? 'csv' : 'xlsx';
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `audit_logs_${new Date().toISOString().slice(0, 10)}.${ext}`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Export failed:', err);
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const toggleRow = (id) => setExpandedRow(expandedRow === id ? null : id);
 
   return (
@@ -104,7 +130,17 @@ const AuditLogs = () => {
           <h2>Audit Logs</h2>
           <p>Complete, immutable history of all system changes and user actions</p>
         </div>
-        <div className={styles.totalBadge}>{pagination.total || 0} total records</div>
+        <div className={styles.totalBadge}>
+          <span>{pagination.total || 0} total records</span>
+          <div className={styles.exportGroup}>
+            <button className={styles.btnExport} disabled={exporting} onClick={() => handleExport('csv')}>
+              {exporting ? '...' : 'CSV'}
+            </button>
+            <button className={styles.btnExport} disabled={exporting} onClick={() => handleExport('excel')}>
+              {exporting ? '...' : 'Excel'}
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Filter Bar */}

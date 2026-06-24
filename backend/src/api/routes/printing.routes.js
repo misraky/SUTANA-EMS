@@ -115,6 +115,17 @@ const printTaxReceiptValidation = [
     .optional()
     .isString()
 ];
+// ── Public (no login required) ──────────────────────────────────
+router.get('/public/product-types', PrintingController.getProductTypes);
+router.get('/public/paper-types', PrintingController.getPaperTypes);
+router.get('/public/binding-types', PrintingController.getBindingTypes);
+router.get('/public/calculate-price', PrintingController.calculatePrice);
+
+// ── Customer (login required) ──────────────────────────────────
+router.post('/customer/orders', authenticate, PrintingController.createCustomerOrder);
+router.get('/customer/orders', authenticate, PrintingController.getCustomerOrders);
+
+// ── Worker / Manager (role required) ──────────────────────────
 router.get(
   '/orders',
   authenticate,
@@ -251,4 +262,12 @@ router.get(
   authenticate,
   PrintingController.getOrderStatuses
 );
+
+router.post(
+  '/close-shift',
+  authenticate,
+  authorize(['orders:update']),
+  PrintingController.closeShift
+);
+
 module.exports = router;

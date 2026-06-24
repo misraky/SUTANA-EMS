@@ -210,12 +210,36 @@ body {
   padding: 0 20px;
   z-index: 50;
   flex-shrink: 0;
+  background: #fff;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  z-index: 50;
+  flex-shrink: 0;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  gap: 16px;
 }
 
 .dash-topbar-left {
   display: flex;
   align-items: center;
   gap: 12px;
+  flex: 1;
+  min-width: 0;
+}
+
+.dash-topbar-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #0f172a;
+  white-space: nowrap;
+  letter-spacing: -0.01em;
+}
+
+.dash-topbar-center {
+  display: flex;
+  justify-content: center;
 }
 
 .dash-sidebar-toggle {
@@ -224,6 +248,10 @@ body {
   border-radius: var(--radius-sm);
   font-size: 16px;
   color: var(--text-secondary);
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 18px;
+  color: #475569;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -234,6 +262,14 @@ body {
 .dash-sidebar-toggle:hover {
   background: var(--surface-2, #F9FAFB);
   color: var(--text-primary);
+  padding: 6px 8px;
+  transition: all .2s cubic-bezier(0.4,0,0.2,1);
+  flex-shrink: 0;
+}
+.dash-sidebar-toggle:hover { 
+  background: #f1f5f9;
+  border-color: #0070F2;
+  color: #0070F2;
 }
 
 /* ── Breadcrumb ──────────────────────────────── */
@@ -262,6 +298,18 @@ body {
 .dash-search:focus-within {
   border-color: var(--primary);
   box-shadow: 0 0 0 3px rgba(28, 100, 242, 0.1);
+  background: #f1f5f9;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 8px 16px;
+  width: 320px;
+  gap: 8px;
+  transition: all .2s cubic-bezier(0.4,0,0.2,1);
+}
+.dash-search:focus-within {
+  border-color: #0070F2;
+  box-shadow: 0 0 0 3px rgba(0,112,242,0.12);
+  background: #fff;
 }
 .dash-search input {
   border: none;
@@ -270,16 +318,18 @@ body {
   font-size: 13px;
   width: 100%;
   font-family: inherit;
-  color: var(--text-primary);
+  color: #0f172a;
 }
-.dash-search input::placeholder { color: var(--text-muted); }
-.dash-search-icon { font-size: 13px; color: var(--text-muted); }
+.dash-search input::placeholder { color: #94a3b8; font-weight: 400; }
+.dash-search-icon { font-size: 14px; color: #94a3b8; flex-shrink: 0; }
 
 /* ── Topbar Right ────────────────────────────── */
 .dash-topbar-right {
   display: flex;
   align-items: center;
   gap: 8px;
+  margin-left: auto;
+  flex-shrink: 0;
 }
 
 /* ── Notification Button ─────────────────────── */
@@ -292,17 +342,24 @@ body {
   border-radius: var(--radius-md);
   border: 1px solid var(--border);
   background: var(--surface);
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 15px;
-  color: var(--text-secondary);
-  transition: all var(--transition);
+  color: #475569;
+  transition: all .2s cubic-bezier(0.4,0,0.2,1);
+  flex-shrink: 0;
 }
 .dash-notif-btn:hover {
   background: var(--surface-2, #F9FAFB);
   color: var(--text-primary);
+.dash-notif-btn:hover { 
+  border-color: #0070F2;
+  color: #0070F2;
+  background: #f0f7ff;
 }
 
 .notif-dot {
@@ -320,6 +377,13 @@ body {
   color: white;
   font-size: 9px;
   font-weight: 700;
+  top: 5px;
+  right: 5px;
+  width: 7px;
+  height: 7px;
+  background: #ef4444;
+  border-radius: 50%;
+  border: 2px solid #fff;
 }
 
 /* ── Notification Dropdown ───────────────────── */
@@ -463,6 +527,9 @@ body {
 .dash-content {
   flex: 1;
   padding: 24px 28px;
+  display: flex;
+  flex-direction: column;
+  padding: 28px 32px;
   overflow-y: auto;
   overflow-x: hidden;
   background: var(--bg);
@@ -738,6 +805,16 @@ body {
 @media (max-width: 480px) {
   .dash-content { padding: 8px; }
   .dash-notif-btn + div > div { width: 280px !important; right: -70px !important; }
+  .dash-topbar-center { display: none; }
+  .dash-topbar-title { font-size: 0.9rem; }
+  .dash-user-info { display: none; }
+  .dash-topbar { padding: 0 12px; gap: 8px; }
+}
+@media (max-width: 600px) {
+  .dash-topbar-right { gap: 4px; }
+  .dash-notif-btn { width: 32px; height: 32px; }
+  .dash-user-chip { padding: 3px; }
+  .dash-avatar { width: 26px; height: 26px; font-size: 11px; }
 }
 
 /* ══════════════════════════════════════════════

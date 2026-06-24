@@ -10,12 +10,12 @@ const { limiters } = require('../../config/rateLimit');
 const createProductValidation = [
   body('name').notEmpty().isLength({ min: 2, max: 200 }),
   body('sku').notEmpty().isLength({ min: 3, max: 50 }),
-  body('categoryId').notEmpty().isInt(),
-  body('unitId').notEmpty().isInt(),
-  body('sellingPrice').notEmpty().isFloat({ min: 0 }),
-  body('reorderLevel').optional().isInt({ min: 0 }),
-  body('expiryDate').optional().isISO8601(),
-  body('supplierId').optional().isInt()
+  body('categoryId').exists().isInt(),
+  body('unitId').exists().isInt(),
+  body('sellingPrice').exists().isFloat({ min: 0 }),
+  body('reorderLevel').optional({ values: 'falsy' }).isInt({ min: 0 }),
+  body('expiryDate').optional({ values: 'falsy' }).isISO8601(),
+  body('supplierId').optional({ values: 'falsy' }).isInt()
 ];
 const updateProductValidation = [
   body('name').optional().isLength({ min: 2, max: 200 }),

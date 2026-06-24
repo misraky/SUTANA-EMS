@@ -417,7 +417,7 @@ const submitForApproval = async (poId, userId) => {
       status_id: pendingStatus.id,
       updated_at: db.fn.now()
     });
-  const approvers = await getApproversForPO(purchaseOrder.total_amount);
+  const approvers = await getApproversForPO();
   const requester = await db('users').where('id', userId).first();
   for (const approver of approvers) {
     await sendEmail({
@@ -453,7 +453,7 @@ const approvePurchaseOrder = async (poId, approved, rejectionReason, userId) => 
   if (purchaseOrder.status_code !== 'pending') {
     throw new AppError('Only pending purchase orders can be approved/rejected', 400);
   }
-  await validateApprovalAuthority(purchaseOrder.total_amount, userId);
+  await validateApprovalAuthority(userId);
   const newStatus = approved ? 'approved' : 'rejected';
   const statusRecord = await db('po_statuses').where('status_code', newStatus).first();
   await db('purchase_orders')
@@ -712,35 +712,22 @@ const getPaymentTerms = async () => {
     .orderBy('days_net');
   return paymentTerms;
 };
-const getApproversForPO = async (totalAmount) => {
-  const approvers = [];
-  if (totalAmount > config.businessRules.highValuePoThreshold) {
-    const ceoUsers = await db('users')
-      .leftJoin('user_roles', 'users.id', 'user_roles.user_id')
-      .leftJoin('roles', 'user_roles.role_id', 'roles.id')
-      .where('roles.name', 'CEO')
-      .select('users.email', 'users.full_name');
-    approvers.push(...ceoUsers);
-  } else {
-    const managers = await db('users')
-      .leftJoin('user_roles', 'users.id', 'user_roles.user_id')
-      .leftJoin('roles', 'user_roles.role_id', 'roles.id')
-      .where('roles.name', 'Finance')
-      .select('users.email', 'users.full_name');
-    approvers.push(...managers);
-  }
-  return approvers;
+const getApproversForPO = async () => {
+  const ceoUsers = await db('users')
+    .leftJoin('user_roles', 'users.id', 'user_roles.user_id')
+    .leftJoin('roles', 'user_roles.role_id', 'roles.id')
+    .where('roles.name', 'CEO')
+    .select('users.email', 'users.full_name', 'users.id');
+  return ceoUsers;
 };
-const validateApprovalAuthority = async (totalAmount, userId) => {
-  if (totalAmount > config.businessRules.highValuePoThreshold) {
-    const userRoles = await db('user_roles')
-      .leftJoin('roles', 'user_roles.role_id', 'roles.id')
-      .where('user_roles.user_id', userId)
-      .select('roles.name');
-    const hasCeoRole = userRoles.some(r => r.name === 'CEO');
-    if (!hasCeoRole) {
-      throw new AppError('This purchase order requires CEO approval due to high value', 403);
-    }
+const validateApprovalAuthority = async (userId) => {
+  const userRoles = await db('user_roles')
+    .leftJoin('roles', 'user_roles.role_id', 'roles.id')
+    .where('user_roles.user_id', userId)
+    .select('roles.name');
+  const hasCeoRole = userRoles.some(r => r.name === 'CEO');
+  if (!hasCeoRole) {
+    throw new AppError('Only the CEO can approve purchase orders', 403);
   }
 };
 module.exports = {

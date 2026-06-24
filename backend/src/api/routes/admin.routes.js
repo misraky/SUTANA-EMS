@@ -326,4 +326,28 @@ router.get('/statistics/performance', authenticate, authorize(['admin:statistics
 router.post('/database/optimize', authenticate, authorize(['admin:database']), AdminController.optimizeDatabase);
 router.get('/database/status', authenticate, authorize(['admin:database']), AdminController.getDatabaseStatus);
 
+// ── Alerts ────────────────────────────────────────────────────
+router.get(
+  '/alerts',
+  authenticate,
+  authorize(['admin:dashboard']),
+  AdminController.getAlerts
+);
+router.post(
+  '/alerts/:alertId/dismiss',
+  authenticate,
+  authorize(['admin:dashboard']),
+  AdminController.dismissAlert
+);
+
+// ── Social Links ──────────────────────────────────────────────
+router.put(
+  '/social-links',
+  authenticate,
+  authorize(['admin:settings']),
+  body('links').isArray(),
+  validate,
+  AdminController.updateSocialLinks
+);
+
 module.exports = router;

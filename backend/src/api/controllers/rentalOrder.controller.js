@@ -267,13 +267,14 @@ exports.verifyPayment = async (req, res) => {
       }
     } else {
       updateData = {
-        payment_status: 'UNPAID', // back to unpaid so they can re-upload
+        payment_status: 'PAYMENT_REJECTED', // distinct status — not UNPAID, not PENDING_VERIFICATION
+        payment_proof_url: null,            // CRITICAL: clear proof so finance doesn't see it again on refresh
         finance_notes: notes,
         verified_by: req.user.id,
         verified_by_finance_at: new Date()
       };
       notificationTitle = 'Payment Rejected';
-      notificationMessage = `Your payment for order ${order.orderNumber} was rejected. Reason: ${notes}. Please review and try again.`;
+      notificationMessage = `Your payment for order ${order.orderNumber} was rejected. Reason: ${notes}. Please upload a new proof.`;
     }
 
     if (notificationTitle) {

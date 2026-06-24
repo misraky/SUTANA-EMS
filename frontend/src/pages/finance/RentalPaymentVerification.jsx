@@ -203,6 +203,16 @@ const RentalPaymentVerification = () => {
                 const amountToShow = isRefund ? order.refundAmount : (isAdditional ? order.additionalOwed : order.totalAmount);
                 const typeText = isRefund ? 'REFUND' : (isAdditional ? 'ADDITIONAL PAYMENT' : 'INITIAL PAYMENT');
 
+                const isRejected = order.paymentStatus === 'PAYMENT_REJECTED';
+                const amountToShow = isRefund ? order.refundAmount : (isAdditional ? order.additionalOwed : order.totalAmount);
+                const typeText = isRefund ? 'REFUND' : (isAdditional ? 'ADDITIONAL PAYMENT' : 'INITIAL PAYMENT');
+                const statusLabel = isRejected
+                  ? 'Rejected — Awaiting Re-upload'
+                  : order.paymentStatus === 'PENDING_VERIFICATION'
+                  ? 'Proof Submitted — Verify'
+                  : 'Waiting for Payment';
+                const statusColor = isRejected ? '#ef4444' : order.paymentStatus === 'PENDING_VERIFICATION' ? '#3b82f6' : '#94a3b8';
+                
                 return (
                   <div
                     key={order.id}
@@ -221,6 +231,7 @@ const RentalPaymentVerification = () => {
                         {isSearchResult ? order.status : (order.paymentStatus === 'PENDING_VERIFICATION' ? 'Proof Uploaded - Verify' : 'Waiting for Payment')}
                       </span></p>
                       {isSearchResult && <p className={styles.searchLabel}>Found via search — in-person payment</p>}
+                      <p><strong>Status:</strong> <span style={{ color: statusColor, fontWeight: 600 }}>{statusLabel}</span></p>
                     </div>
                   </div>
                 );
@@ -305,7 +316,18 @@ const RentalPaymentVerification = () => {
 
               <div className={styles.actionForm}>
                 <h4>Finance Officer Action:</h4>
-                {Number(selectedOrder.refundAmount) > 0 ? (
+                {selectedOrder.paymentStatus === 'PAYMENT_REJECTED' ? (
+                  <div style={{ 
+                    padding: '1rem', background: '#fef2f2', border: '1px solid #fecaca',
+                    borderRadius: '8px', color: '#dc2626', textAlign: 'center'
+                  }}>
+                    <strong>Payment was rejected.</strong><br />
+                    Waiting for the customer to upload a new proof of payment.<br />
+                    <em style={{ fontSize: '0.85rem', color: '#7f1d1d' }}>
+                      Finance notes: {selectedOrder.financeNotes || '—'}
+                    </em>
+                  </div>
+                ) : Number(selectedOrder.refundAmount) > 0 ? (
                   <>
                     <div className={styles.formGroup}>
                       <label>Notes (e.g., Transfer reference for refund):</label>

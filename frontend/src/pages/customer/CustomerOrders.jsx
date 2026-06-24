@@ -35,6 +35,21 @@ const CustomerOrders = () => {
       const normalizedOrders = (data.orders || []).map(o => ({
       const response = await customerService.getAllOrders();
       setOrders(response.data || []);
+        id: o.id,
+        orderNumber: o.order_number,
+        productType: o.product_type || o.productType,
+        quantity: o.quantity,
+        totalAmount: o.total_price || o.totalAmount,
+        dueDate: o.due_date || o.dueDate,
+        status: o.status,
+        phone: o.customer_phone
+      }));
+      setOrders(normalizedOrders);
+      setPagination({
+        page: data.pagination?.page || 1,
+        totalPages: data.pagination?.totalPages || 1,
+        total: data.pagination?.total || 0,
+      });
     } catch (err) {
       console.error('Failed to fetch orders:', err);
     } finally {
@@ -131,6 +146,88 @@ const CustomerOrders = () => {
       )) : (
         <div style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>
           No orders match your search or filter.
+    <div className={styles.container}>
+      <div className={styles.header}>
+        <div>
+          <h1 className={styles.title}>My Orders</h1>
+          <p className={styles.subtitle}>{pagination.total} total orders</p>
+        </div>
+        <div className={styles.actions}>
+          <select
+            className={styles.filterSelect}
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value)}
+          >
+            <option value="">All Statuses</option>
+            {['Received', 'In Progress', 'Quality Check', 'Ready', 'Delivered'].map((s) => (
+              <option key={s} value={s}>{s}</option>
+            ))}
+          </select>
+          <button
+            id="place-order-btn"
+            className={styles.btnPrimary}
+            onClick={() => navigate('/customer/new-order')}
+          >
+            + Place New Order
+          </button>
+        </div>
+      </div>
+      {loading ? (
+        <div className={styles.loadingState}>Loading your orders...</div>
+      ) : orders.length === 0 ? (
+        <div className={styles.emptyState}>
+          <p>No orders found.</p>
+          <button className={styles.btnPrimary} onClick={() => navigate('/customer/new-order')}>
+            Place Your First Order
+          </button>
+        </div>
+      ) : (
+        <div className={styles.tableWrapper}>
+          <table className={styles.table}>
+            <thead>
+              <tr>
+                <th>Order #</th>
+                <th>Product Type</th>
+                <th>Qty</th>
+                <th>Amount</th>
+                <th>Phone</th>
+                <th>Due Date</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {orders.map((order) => {
+                const sc = STATUS_COLORS[order.status] || { bg: '#f3f4f6', text: '#374151' };
+                return (
+                  <tr key={order.id} className={styles.row}>
+                    <td className={styles.orderId}>#{order.id}</td>
+                    <td>{order.productType}</td>
+                    <td>{order.quantity}</td>
+                    <td>{formatCurrency(order.totalAmount)}</td>
+                    <td>{order.phone || '-'}</td>
+                    <td>{formatDate(order.dueDate)}</td>
+                    <td>
+                      <span
+                        className={styles.badge}
+                        style={{ backgroundColor: sc.bg, color: sc.text }}
+                      >
+                        {order.status}
+                      </span>
+                    </td>
+                    <td>
+                      <button
+                        className={styles.btnTrack}
+                        onClick={() => navigate(`/customer/orders/${order.id}/track`)}
+                      >
+                        Track
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       )}
 

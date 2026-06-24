@@ -129,6 +129,24 @@
   border: 1px solid transparent;
 }
 
+.btnSecondary {
+  background: transparent;
+  color: #ef4444;
+  border: 1px solid #fca5a5;
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btnSecondary:hover {
+  background: #fef2f2;
+  border-color: #ef4444;
+}
+.btnSecondary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
 .loading {
   display: flex;
   justify-content: center;

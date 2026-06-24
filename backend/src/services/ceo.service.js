@@ -920,6 +920,61 @@ const generateExecutiveReport = async (startDate, endDate) => {
     generatedAt: new Date().toISOString()
   };
 };
+const getActivityLog = async (limit = 10) => {
+  const logs = await db('audit_logs')
+    .leftJoin('users', 'audit_logs.user_id', 'users.id')
+    .select(
+      'audit_logs.id', 'audit_logs.action', 'audit_logs.resource',
+      'audit_logs.resource_id', 'audit_logs.status', 'audit_logs.created_at',
+      'users.full_name as user_name'
+    )
+    .orderBy('audit_logs.created_at', 'desc')
+    .limit(limit);
+  return logs.map(log => ({
+    id: log.id,
+    action: log.action,
+    user: log.user_name || 'System',
+    description: formatActivityDescription(log),
+    createdAt: log.created_at
+  }));
+};
+const formatActivityDescription = (log) => {
+  switch (log.action) {
+    case 'PURCHASE_ORDER_CREATED': return `Purchase Order #${log.resource_id || ''} created`;
+    case 'PURCHASE_ORDER_APPROVED': return `Purchase Order #${log.resource_id || ''} ${log.status === 'success' ? 'approved' : 'rejected'}`;
+    case 'PURCHASE_ORDER_RECEIVED': return `Purchase Order #${log.resource_id || ''} received`;
+    case 'SALE_COMPLETED': return `Sale #${log.resource_id || ''} completed`;
+    case 'EXPENSE_APPROVED': return `Expense #${log.resource_id || ''} approved`;
+    case 'EXPENSE_REJECTED': return `Expense #${log.resource_id || ''} rejected`;
+    case 'USER_CREATED': return `New user registered`;
+    case 'USER_LOGIN': return `User logged in`;
+    case 'INVENTORY_ADJUSTMENT': return `Inventory adjusted`;
+    case 'TARGET_UPDATED': return `KPI targets updated`;
+    case 'PRINTING_ORDER_CREATED': return `Printing order #${log.resource_id || ''} placed`;
+    case 'PRINTING_ORDER_DELIVERED': return `Printing order #${log.resource_id || ''} delivered`;
+    default: return `${log.action.replace(/_/g, ' ').toLowerCase()} - ${log.resource || ''} #${log.resource_id || ''}`;
+  }
+};
+const getPendingPOApprovals = async () => {
+  const pendingStatus = await db('po_statuses').where('status_code', 'pending').first();
+  if (!pendingStatus) return [];
+  const orders = await db('purchase_orders as po')
+    .leftJoin('suppliers as s', 'po.supplier_id', 's.id')
+    .leftJoin('users as u', 'po.created_by', 'u.id')
+    .leftJoin('sectors as sec', 'po.sector_id', 'sec.id')
+    .select(
+      'po.id', 'po.po_number', 'po.total_amount', 'po.created_at',
+      's.name as supplier_name', 'u.full_name as created_by_name', 'sec.name as sector_name'
+    )
+    .where('po.status_id', pendingStatus.id)
+    .whereNull('po.deleted_at')
+    .orderBy('po.created_at', 'asc');
+  return orders.map(o => ({
+    ...o,
+    total_amount: parseFloat(o.total_amount),
+    created_at: o.created_at
+  }));
+};
 module.exports = {
   getDashboardOverview,
   getRevenueMetrics,
@@ -940,5 +995,7 @@ module.exports = {
   compareSectors,
   getMonthlyReport,
   getQuarterlyReport,
-  getYearlyReport
+  getYearlyReport,
+  getActivityLog,
+  getPendingPOApprovals
 };

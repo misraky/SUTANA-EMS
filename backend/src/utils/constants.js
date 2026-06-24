@@ -39,6 +39,8 @@ const USER_ROLES = {
   CEO: 'CEO',
   FINANCE: 'Finance',
   PRINTING_SUPERVISOR: 'Printing Supervisor',
+  PRINTING_WORKER: 'Printing Worker',
+  PHARMACY_WORKER: 'Pharmacy Worker',
   PURCHASE: 'Purchase',
   STORE_WORKER: 'Store Worker',
   SALES_CASHIER: 'Sales/Cashier',

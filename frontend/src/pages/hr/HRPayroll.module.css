@@ -1,0 +1,225 @@
+.container {
+  font-family: 'Inter', sans-serif;
+  color: #1e293b;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.5rem;
+}
+.pageTitle {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 0.5rem;
+  letter-spacing: -0.025em;
+}
+.pageSubtitle {
+  font-size: 1rem;
+  color: #64748b;
+  margin: 0;
+}
+.headerActions {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+.monthInput {
+  padding: 0.6rem 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 0.9rem;
+}
+.monthInput:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+}
+.calcBtn {
+  padding: 0.6rem 1.25rem;
+  border: none;
+  border-radius: 8px;
+  background: #3b82f6;
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.calcBtn:hover:not(:disabled) {
+  background: #2563eb;
+}
+.calcBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.loading {
+  text-align: center;
+  padding: 3rem;
+  color: #64748b;
+}
+.errorState {
+  text-align: center;
+  padding: 3rem;
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  color: #64748b;
+}
+.demoNotice {
+  background: #fffbeb;
+  border: 1px solid #f59e0b;
+  color: #92400e;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+.statusBar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.statusLabel {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #64748b;
+}
+.statusBadge {
+  padding: 0.3rem 0.8rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+.draft {
+  background: #f1f5f9;
+  color: #475569;
+}
+.sent {
+  background: #dbeafe;
+  color: #2563eb;
+}
+.approved {
+  background: #d1fae5;
+  color: #059669;
+}
+.paid {
+  background: #d1fae5;
+  color: #059669;
+}
+.summaryGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+.summaryCard {
+  background: #fff;
+  border-radius: 12px;
+  padding: 1.25rem;
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+  border: 1px solid #e2e8f0;
+}
+.summaryLabel {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  margin-bottom: 0.5rem;
+}
+.summaryValue {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+.tableWrapper {
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+  overflow-x: auto;
+}
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+.table th {
+  text-align: left;
+  padding: 0.75rem 1rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  border-bottom: 2px solid #e2e8f0;
+  background: #f8fafc;
+}
+.table td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #f1f5f9;
+  color: #1e293b;
+}
+.table tbody tr:hover {
+  background: #f8fafc;
+}
+.nameCell {
+  font-weight: 600;
+}
+.daysCell {
+  text-align: center;
+  font-weight: 600;
+}
+.netCell {
+  font-weight: 700;
+  color: #0f172a;
+}
+.emptyCell {
+  text-align: center;
+  color: #94a3b8;
+  padding: 2rem !important;
+}
+.actionBar {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  align-items: center;
+}
+.actionBtn {
+  padding: 0.6rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  background: #059669;
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+.actionBtn:hover:not(:disabled) {
+  background: #047857;
+}
+.actionBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.payAction {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+.payMethodSelect {
+  padding: 0.6rem 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 0.9rem;
+}
+.paidNotice {
+  font-size: 0.95rem;
+  color: #059669;
+  font-weight: 600;
+  padding: 0.5rem 1rem;
+  background: #f0fdf4;
+  border-radius: 8px;
+}

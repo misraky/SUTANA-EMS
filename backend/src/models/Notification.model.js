@@ -7,6 +7,7 @@ class Notification {
     this.message = data.message || '';
     this.isRead = data.is_read || data.isRead || false;
     this.createdAt = data.created_at || data.createdAt || null;
+    this.type = data.type || 'general';
   }
 
   toJSON() {
@@ -17,7 +18,8 @@ class Notification {
       title: this.title,
       message: this.message,
       isRead: !!this.isRead,
-      createdAt: this.createdAt
+      createdAt: this.createdAt,
+      type: this.type
     };
   }
 

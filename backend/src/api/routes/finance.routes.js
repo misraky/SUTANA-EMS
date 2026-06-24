@@ -11,7 +11,7 @@ const CloseProcessController = require('../controllers/close-process.controller'
 const ReportSubmissionController = require('../controllers/reportSubmission.controller');
 const TaxService = require('../../services/tax.service');
 const { validate } = require('../middleware/validate.middleware');
-const { authenticate, authorize } = require('../middleware/auth.middleware');
+const { authenticate, authorize, authorizeRoles } = require('../middleware/auth.middleware');
 const { uploads, handleUploadError } = require('../../config/multer');
 const { limiters } = require('../../config/rateLimit');
 
@@ -231,3 +231,8 @@ router.post('/tax/declare/:expenseId', authenticate, authorize(['tax:declare']),
 }));
 
 module.exports = router;
+
+// --- Cash Handovers (Unified) ---
+router.get('/cash-handovers', authenticate, authorizeRoles(['Finance', 'Admin', 'CEO']), FinanceController.getCashHandovers);
+router.post('/cash-handovers/:id/approve', authenticate, authorizeRoles(['CEO']), FinanceController.approveCashHandover);
+router.post('/cash-handovers/:id/reject', authenticate, authorizeRoles(['CEO']), FinanceController.rejectCashHandover);

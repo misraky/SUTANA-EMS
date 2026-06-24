@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import FleetManager from './FleetManager';
 import RentalOrdersManager from './RentalOrdersManager';
+import RentalPOS from './RentalPOS';
 import carService from '../../services/carService';
 import { Bell, Mail, CheckCircle, Clock, LayoutDashboard, Car, FileText } from 'lucide-react';
 
@@ -121,20 +122,22 @@ Sutana ERP`;
 
 const CarRentingDashboard = () => {
   const menuItems = [
-    { label: 'Overview', path: '/car-renting/overview', icon: 'dashboard' },
-    { label: 'Fleet Management', path: '/car-renting/fleet', icon: 'inventory' },
-    { label: 'Rental Orders', path: '/car-renting/orders', icon: 'list' },
+    { label: 'POS / Pickups',    path: '/car-renting/pos',      icon: 'cart' },
+    { label: 'Overview',         path: '/car-renting/overview', icon: 'dashboard' },
+    { label: 'Fleet Management', path: '/car-renting/fleet',    icon: 'inventory' },
+    { label: 'Rental Orders',    path: '/car-renting/orders',   icon: 'list' },
   ];
 
   return (
     <div>
-      <DashboardLayout menuItems={menuItems}>
+      <DashboardLayout menuItems={menuItems} title="Rental Sales">
         <div>
           <Routes>
+            <Route path="pos"      element={<RentalPOS />} />
             <Route path="overview" element={<CarRentingOverview />} />
-            <Route path="fleet" element={<FleetManager />} />
-            <Route path="orders" element={<RentalOrdersManager />} />
-            <Route path="/" element={<Navigate to="fleet" replace />} />
+            <Route path="fleet"    element={<FleetManager />} />
+            <Route path="orders"   element={<RentalOrdersManager />} />
+            <Route path="/"        element={<Navigate to="pos" replace />} />
           </Routes>
         </div>
       </DashboardLayout>

@@ -141,6 +141,18 @@ class CronService {
       }
 
       logger.info('Auto-cleanup job completed.');
+          // 5. Auto-close expired tenders
+      const expiredTenders = await db('tenders')
+        .where('status', 'open')
+        .where('deadline', '<', now);
+      for (const tender of expiredTenders) {
+        await db('tenders').where('id', tender.id).update({ status: 'closed', updated_at: now });
+        logger.info(`Auto-closed tender #${tender.id} (${tender.reference_number}) — deadline passed`);
+      }
+      if (expiredTenders.length) {
+        logger.info(`Auto-closed ${expiredTenders.length} expired tender(s)`);
+      }
+
     } catch (error) {
       logger.error('Error during auto-cleanup:', error);
     }

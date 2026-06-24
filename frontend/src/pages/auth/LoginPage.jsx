@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import authService from '../../services/authService';
 import styles from './LoginPage.module.css';
 const LoginPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const location = useLocation();
   const [formData, setFormData] = useState({ username: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
@@ -24,17 +26,32 @@ const LoginPage = () => {
         navigate(redirect);
         return;
       }
+      
+      const from = location.state?.from?.pathname || location.state?.from;
+      if (from) {
+        navigate(from, { state: location.state });
+        return;
+      }
+
       // Determine dashboard based on role — no forced password change redirect
       if (user.roles?.includes('Admin')) navigate('/admin');
       else if (user.roles?.includes('CEO')) navigate('/ceo');
       else if (user.roles?.includes('Finance')) navigate('/finance');
       else if (user.roles?.includes('Purchase')) navigate('/purchase');
       else if (user.roles?.includes('Store Worker') || user.roles?.includes('Store Manager')) navigate('/store');
+      else if (user.roles?.includes('Store Manager')) navigate('/store');
       else if (user.roles?.includes('Sales/Cashier')) navigate('/sales');
-      else if (user.roles?.includes('Printing Supervisor')) navigate('/printing');
-      else if (user.roles?.includes('Farming Manager')) navigate('/farming');
+      else if (user.roles?.includes('Printing Supervisor')) navigate('/printing-manager');
+      else if (user.roles?.includes('Printing Worker')) navigate('/printing-worker');
+      else if (user.roles?.includes('Farming Manager')) navigate('/farming-manager');
+      else if (user.roles?.includes('Farming Worker')) navigate('/farming-worker');
       else if (user.roles?.includes('Pharmacist')) navigate('/pharmacy');
+      else if (user.roles?.includes('Pharmacy Worker')) navigate('/pharmacy-worker');
       else if (user.roles?.includes('Car Renting Manager')) navigate('/car-renting');
+      else if (user.roles?.includes('Market Research')) navigate('/market');
+      else if (user.roles?.includes('Sales Manager')) navigate('/tenders/manage');
+      else if (user.roles?.includes('HR Manager')) navigate('/hr');
+      else if (user.roles?.includes('Employee')) navigate('/hr/portal');
       else navigate('/customer');
     } catch (err) {
       setError(err.message || 'Invalid credentials. Please try again.');

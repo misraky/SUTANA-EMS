@@ -3,6 +3,95 @@ const { audit } = require('../../config/logger');
 const AppError = require('../../utils/AppError');
 const { catchAsync } = require('../../utils/catchAsync');
 const { sendEmail } = require('../../services/email.service');
+const HrService = require('../../services/hr.service');
+exports.getActivityLog = catchAsync(async (req, res) => {
+  const limit = parseInt(req.query.limit) || 10;
+  const activities = await getActivityLogData(limit);
+  res.json({ status: 'success', data: { activities } });
+});
+exports.getPendingPOApprovals = catchAsync(async (req, res) => {
+  const orders = await getPendingPOApprovalsData();
+  res.json({ status: 'success', data: { orders } });
+});
+exports.approvePO = catchAsync(async (req, res) => {
+  const { id } = req.params;
+  const { rejectionReason } = req.body;
+  const userId = req.user.id;
+  const ip = req.ip;
+  const po = await db('purchase_orders as po')
+    .leftJoin('po_statuses as ps', 'po.status_id', 'ps.id')
+    .select('po.*', 'ps.status_code')
+    .where('po.id', id)
+    .whereNull('po.deleted_at')
+    .first();
+  if (!po) throw new AppError('Purchase order not found', 404);
+  if (po.status_code !== 'pending') throw new AppError('Only pending orders can be approved', 400);
+  const approvedStatus = await db('po_statuses').where('status_code', 'approved').first();
+  await db('purchase_orders').where('id', id).update({
+    status_id: approvedStatus.id,
+    approved_by: userId,
+    approved_at: db.fn.now(),
+    updated_at: db.fn.now()
+  });
+  await audit('PURCHASE_ORDER_APPROVED', userId, {
+    ip, resource: 'PURCHASE_ORDER', resourceId: id,
+    details: { action: 'approved' }
+  });
+  res.json({ status: 'success', message: 'Purchase order approved' });
+});
+exports.rejectPO = catchAsync(async (req, res) => {
+  const { id } = req.params;
+  const { rejectionReason } = req.body;
+  const userId = req.user.id;
+  const ip = req.ip;
+  if (!rejectionReason) throw new AppError('Rejection reason is required', 400);
+  const po = await db('purchase_orders as po')
+    .leftJoin('po_statuses as ps', 'po.status_id', 'ps.id')
+    .select('po.*', 'ps.status_code')
+    .where('po.id', id)
+    .whereNull('po.deleted_at')
+    .first();
+  if (!po) throw new AppError('Purchase order not found', 404);
+  if (po.status_code !== 'pending') throw new AppError('Only pending orders can be rejected', 400);
+  const rejectedStatus = await db('po_statuses').where('status_code', 'rejected').first();
+  await db('purchase_orders').where('id', id).update({
+    status_id: rejectedStatus.id,
+    rejection_reason: rejectionReason,
+    approved_by: userId,
+    approved_at: db.fn.now(),
+    updated_at: db.fn.now()
+  });
+  await audit('PURCHASE_ORDER_REJECTED', userId, {
+    ip, resource: 'PURCHASE_ORDER', resourceId: id,
+    details: { action: 'rejected', reason: rejectionReason }
+  });
+  res.json({ status: 'success', message: 'Purchase order rejected' });
+});
+exports.getPendingApprovalsCount = catchAsync(async (req, res) => {
+  const pendingStatus = await db('po_statuses').where('status_code', 'pending').first();
+  const count = pendingStatus ? (await db('purchase_orders').where('status_id', pendingStatus.id).whereNull('deleted_at').count('id as total').first()).total : 0;
+  res.json({ status: 'success', data: { count: parseInt(count) } });
+});
+exports.getHRSummary = catchAsync(async (req, res) => {
+  const summary = await HrService.getHRSummary();
+  const report = await HrService.getManagerAccuracyReport();
+  const avgSalary = summary.activeEmployees > 0 ? Math.round(summary.totalMonthlySalary / summary.activeEmployees) : 0;
+  res.json({
+    status: 'success',
+    data: {
+      totalEmployees: summary.totalEmployees,
+      activeEmployees: summary.activeEmployees,
+      onLeaveCount: summary.onLeaveCount,
+      inactiveCount: summary.inactiveCount,
+      departmentBreakdown: summary.departmentBreakdown,
+      totalMonthlySalary: summary.totalMonthlySalary,
+      averageSalary: avgSalary,
+      presentToday: summary.presentToday,
+      pendingLeaves: summary.pendingLeaves,
+      managerAccuracy: report
+    }
+  });
+});
 exports.getDashboardOverview = catchAsync(async (req, res) => {
   const cacheKey = 'ceo:dashboard:overview';
   const [revenue, profit, cashFlow, kpis, alerts] = await Promise.all([
@@ -1492,3 +1581,132 @@ async function getAlertHistoryFromDB(days, limit, offset) {
   };
 }
 module.exports = exports;
+async function getActivityLogData(limit) {
+  const logs = await db('audit_logs')
+    .leftJoin('users', 'audit_logs.user_id', 'users.id')
+    .select(
+      'audit_logs.id', 'audit_logs.action', 'audit_logs.resource',
+      'audit_logs.resource_id', 'audit_logs.status', 'audit_logs.created_at',
+      'users.full_name as user_name'
+    )
+    .orderBy('audit_logs.created_at', 'desc')
+    .limit(limit);
+  return logs.map(log => ({
+    id: log.id,
+    action: log.action,
+    user: log.user_name || 'System',
+    description: formatActivityDesc(log),
+    createdAt: log.created_at
+  }));
+}
+function formatActivityDesc(log) {
+  const rid = log.resource_id || '';
+  switch (log.action) {
+    case 'PURCHASE_ORDER_CREATED': return `Purchase Order #${rid} created by ${log.user_name || 'System'}`;
+    case 'PURCHASE_ORDER_APPROVED': return `Purchase Order #${rid} approved`;
+    case 'PURCHASE_ORDER_REJECTED': return `Purchase Order #${rid} rejected`;
+    case 'PURCHASE_ORDER_RECEIVED': return `Purchase Order #${rid} received`;
+    case 'SALE_COMPLETED': return `Sale #${rid} completed`;
+    case 'EXPENSE_APPROVED': return `Expense #${rid} approved`;
+    case 'EXPENSE_REJECTED': return `Expense #${rid} rejected`;
+    case 'USER_CREATED': return `New user registered`;
+    case 'USER_LOGIN': return `User logged in`;
+    case 'INVENTORY_ADJUSTMENT': return `Inventory adjusted`;
+    case 'TARGET_UPDATED': return `KPI targets updated`;
+    case 'PRINTING_ORDER_CREATED': return `Printing order #${rid} placed`;
+    case 'PRINTING_ORDER_DELIVERED': return `Printing order #${rid} delivered`;
+    default: return `${log.action.replace(/_/g, ' ').toLowerCase()}`;
+  }
+}
+async function getPendingPOApprovalsData() {
+  const pendingStatus = await db('po_statuses').where('status_code', 'pending').first();
+  if (!pendingStatus) return [];
+  const orders = await db('purchase_orders as po')
+    .leftJoin('suppliers as s', 'po.supplier_id', 's.id')
+    .leftJoin('users as u', 'po.created_by', 'u.id')
+    .leftJoin('sectors as sec', 'po.sector_id', 'sec.id')
+    .select(
+      'po.id', 'po.po_number', 'po.total_amount', 'po.created_at',
+      's.name as supplier_name', 'u.full_name as created_by_name', 'sec.name as sector_name'
+    )
+    .where('po.status_id', pendingStatus.id)
+    .whereNull('po.deleted_at')
+    .orderBy('po.created_at', 'asc');
+  return orders.map(o => ({ ...o, total_amount: parseFloat(o.total_amount) }));
+}
+console.log('[CEO_CTRL] About to register getDailyEmployees...');
+console.log('[CEO_CTRL] catchAsync type:', typeof catchAsync);
+// â”€â”€ CEO-only: Daily employees + attendance (bypasses HR permissions) â”€â”€
+module.exports.getDailyEmployees = catchAsync(async (req, res) => {
+  const today = new Date().toISOString().split('T')[0];
+
+  // 1. All active employees
+  const employees = await db('employees')
+    .where('status', 'Active')
+    .orderBy('full_name', 'asc');
+
+  // 2. Attendance records for today
+  const attendanceRaw = await db.raw(`
+    SELECT
+      a.employee_id,
+      e.full_name AS employee_name,
+      e.position,
+      e.department,
+      a.work_date,
+      a.status,
+      MAX(CASE WHEN a.action IN ('CLOCK_IN', 'MANAGER_MARK') THEN a.timestamp END) AS clock_in,
+      MAX(CASE WHEN a.action = 'CLOCK_OUT' THEN a.timestamp END) AS clock_out
+    FROM attendance_records a
+    LEFT JOIN employees e ON a.employee_id = e.employee_id
+    WHERE a.work_date = ?
+    GROUP BY a.employee_id, a.work_date, e.full_name, e.position, e.department, a.status
+  `, [today]);
+
+  const farmingShiftsRaw = await db.raw(`
+    SELECT fs.id as shift_id, fs.worker_id, fs.opened_at, fs.closed_at, fs.status as shift_status, u.full_name, e.employee_id
+    FROM farming_shifts fs
+    LEFT JOIN users u ON fs.worker_id = u.id
+    LEFT JOIN employees e ON u.id = e.user_id
+    WHERE DATE(fs.opened_at) = ? OR fs.status = 'OPEN'
+  `, [today]);
+
+  res.json({
+    status: 'success',
+    data: { 
+      employees, 
+      attendance: attendanceRaw[0] || [], 
+      farmingShifts: farmingShiftsRaw[0] || [] 
+    }
+  });
+});
+
+// â”€â”€ CEO-only: Monthly attendance for an employee â”€â”€
+module.exports.getEmployeeMonthlyAttendance = catchAsync(async (req, res) => {
+  const { employeeId } = req.params;
+  const month = req.query.month || new Date().toISOString().slice(0, 7);
+  const year = parseInt(month);
+  const mon = parseInt(month.split('-')[1]);
+  const daysInMonth = new Date(year, mon, 0).getDate();
+  const startDate = `${month}-01`;
+  const endDate = `${month}-${daysInMonth}`;
+  
+  const recordsRaw = await db.raw(`
+    SELECT
+      a.employee_id,
+      a.work_date,
+      a.status,
+      MAX(CASE WHEN a.action IN ('CLOCK_IN', 'MANAGER_MARK') THEN a.timestamp END) AS clock_in,
+      MAX(CASE WHEN a.action = 'CLOCK_OUT' THEN a.timestamp END) AS clock_out,
+      TIMESTAMPDIFF(MINUTE,
+        MAX(CASE WHEN a.action IN ('CLOCK_IN', 'MANAGER_MARK') THEN a.timestamp END),
+        MAX(CASE WHEN a.action = 'CLOCK_OUT' THEN a.timestamp END)
+      ) AS duration_minutes
+    FROM attendance_records a
+    WHERE a.employee_id = ? AND a.work_date >= ? AND a.work_date <= ?
+    GROUP BY a.employee_id, a.work_date, a.status
+    ORDER BY a.work_date
+  `, [employeeId, startDate, endDate]);
+
+  const records = recordsRaw[0] || [];
+  res.json({ status: 'success', data: { records } });
+});

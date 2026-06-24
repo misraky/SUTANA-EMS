@@ -9,6 +9,7 @@ const purchaseService = require('../../services/purchase.service');
 let formatCurrency;
 try { formatCurrency = require('../../utils/formatters').formatCurrency; } catch (_) {}
 if (!formatCurrency) formatCurrency = (v) => `ETB ${parseFloat(v || 0).toLocaleString()}`;
+const notificationRepository = require('../../repositories/notification.repository');
 exports.getSuppliers = catchAsync(async (req, res) => {
   const { page = 1, limit = 25, search, isActive } = req.query;
   const offset = (page - 1) * limit;
@@ -680,6 +681,36 @@ exports.submitForApproval = catchAsync(async (req, res) => {
         approvalUrl: `${process.env.FRONTEND_URL}/ceo/purchases`
       }
     }).catch(err => console.error('Failed to send approval email:', err.message));
+  const approvers = await db('users')
+    .leftJoin('user_roles', 'users.id', 'user_roles.user_id')
+    .leftJoin('roles', 'user_roles.role_id', 'roles.id')
+    .where('roles.name', 'CEO')
+    .select('users.id', 'users.email', 'users.full_name');
+  for (const approver of approvers) {
+    // If it's for Farming, maybe use in-system notifications instead. 
+    // We'll use both or let the client decide, but requirements state "no emails" for farming.
+    if (purchaseOrder.sector_name === 'Farming') {
+      await notificationRepository.create({
+        userId: approver.id || null, // Assuming approver has id
+        roleTarget: 'CEO',
+        title: 'New Purchase Order Approval',
+        message: `PO ${purchaseOrder.po_number} requires your approval.`
+      });
+    } else {
+      await sendEmail({
+        to: approver.email,
+        subject: `Purchase Order Approval Required: ${purchaseOrder.po_number}`,
+        template: 'po-approval-request',
+        data: {
+          approverName: approver.full_name,
+          poNumber: purchaseOrder.po_number,
+          totalAmount: purchaseOrder.total_amount,
+          supplierName: purchaseOrder.supplier_name,
+          requesterName: req.user.full_name,
+          approvalUrl: `${process.env.FRONTEND_URL}/purchase/orders/${id}/approve`
+        }
+      }).catch(err => console.error('Failed to send approval email:', err.message));
+    }
   }
   await audit('PURCHASE_ORDER_SUBMITTED', id, {
     ip,
@@ -712,21 +743,13 @@ exports.approvePurchaseOrder = catchAsync(async (req, res) => {
   if (purchaseOrder.current_status !== 'pending') {
     throw new AppError('Only pending purchase orders can be approved/rejected', 400);
   }
-  const config = require('../../config/env');
-  let requiresHigherApproval = false;
-  const highValueThreshold = (config.businessRules && config.businessRules.highValuePoThreshold) ? config.businessRules.highValuePoThreshold : 50000;
-  if (purchaseOrder.total_amount > highValueThreshold) {
-    const userRoles = await db('user_roles')
-      .leftJoin('roles', 'user_roles.role_id', 'roles.id')
-      .where('user_roles.user_id', userId)
-      .select('roles.name');
-    const hasCeoRole = userRoles.some(r => r.name === 'CEO');
-    if (!hasCeoRole) {
-      requiresHigherApproval = true;
-    }
-  }
-  if (requiresHigherApproval) {
-    throw new AppError('This purchase order requires CEO approval due to high value', 403);
+  const userRoles = await db('user_roles')
+    .leftJoin('roles', 'user_roles.role_id', 'roles.id')
+    .where('user_roles.user_id', userId)
+    .select('roles.name');
+  const hasCeoRole = userRoles.some(r => r.name === 'CEO');
+  if (!hasCeoRole) {
+    throw new AppError('Only the CEO can approve purchase orders', 403);
   }
   const newStatus = approved ? 'approved' : 'rejected';
   const statusRecord = await db('po_statuses').where('status_code', newStatus).first();
@@ -756,6 +779,26 @@ exports.approvePurchaseOrder = catchAsync(async (req, res) => {
 
       // 2. Email Notification
       if (requester.email) {
+    const sector = await db('sectors').where('id', purchaseOrder.sector_id).first();
+    const isFarming = sector && sector.name === 'Farming';
+
+    if (requester) {
+      if (isFarming) {
+        await notificationRepository.create({
+          userId: requester.id,
+          title: `Purchase Order ${approved ? 'Approved' : 'Rejected'}`,
+          message: `PO ${purchaseOrder.po_number} was ${approved ? 'approved' : 'rejected'}.`
+        });
+        
+        if (approved) {
+          // Notify Finance to prepare money
+          await notificationRepository.create({
+            roleTarget: 'FINANCE',
+            title: 'Purchase Order Approved',
+            message: `PO ${purchaseOrder.po_number} was approved. Please prepare payment.`
+          });
+        }
+      } else if (requester.email) {
         await sendEmail({
           to: requester.email,
           subject: `Purchase Order ${purchaseOrder.po_number} - ${approved ? 'Approved' : 'Rejected'}`,

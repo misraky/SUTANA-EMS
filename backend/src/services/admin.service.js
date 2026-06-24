@@ -108,13 +108,25 @@ const getSettingsByCategory = async (category) => {
 const updateSettings = async (settings, userId) => {
   let updated = 0;
   for (const setting of settings) {
-    await db('settings')
-      .where('setting_key', setting.key)
-      .update({
+    const existing = await db('settings').where('setting_key', setting.key).first();
+    if (existing) {
+      await db('settings')
+        .where('setting_key', setting.key)
+        .update({
+          setting_value: setting.value,
+          updated_by: userId,
+          updated_at: db.fn.now()
+        });
+    } else {
+      await db('settings').insert({
+        setting_key: setting.key,
         setting_value: setting.value,
+        category: setting.category || 'General',
         updated_by: userId,
+        created_at: db.fn.now(),
         updated_at: db.fn.now()
       });
+    }
     updated++;
   }
   return updated;

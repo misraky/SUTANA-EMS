@@ -1,0 +1,1 @@
+const {db} = require('./src/config/database'); async function test() { await db.raw('ALTER TABLE pos_items ADD COLUMN source VARCHAR(50) DEFAULT \'retail\''); console.log('success'); process.exit(); } test();
