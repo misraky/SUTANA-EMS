@@ -325,6 +325,7 @@ exports.updateStock = catchAsync(async (req, res) => {
   else newQty = parseInt(quantity);
 
   await db('retail_products').where({ id }).update({ stock_quantity: newQty, updated_at: db.fn.now() });
+  await db('products').where({ sku: product.sku, business_unit: 'retail' }).update({ stock_quantity: newQty });
   res.json({ status: 'success', message: `Stock updated to ${newQty}`, data: { id, new_quantity: newQty, previous: product.stock_quantity } });
 });
 
@@ -340,12 +341,26 @@ exports.createProduct = catchAsync(async (req, res) => {
     product_image: imgUrl(req.file), is_active: true,
     created_at: db.fn.now(), updated_at: db.fn.now()
   });
+  // Sync to global products table (optional — skip if it fails due to schema constraints)
+  try {
+    const syncData = {
+      name, sku, description: description || null,
+      selling_price: parseFloat(price), unit_id: 1,
+      stock_quantity: parseInt(stock_quantity || 0), reorder_level: parseInt(reorder_level || 10),
+      product_image: imgUrl(req.file), business_unit: 'retail', is_active: true,
+      created_at: db.fn.now()
+    };
+    if (category_id) syncData.category_id = category_id;
+    await db('products').insert(syncData);
+  } catch (_) { /* sync is best-effort */ }
   const product = await db('retail_products').where({ id }).first();
   res.status(201).json({ status: 'success', message: 'Product created', data: product });
 });
 
 exports.updateProduct = catchAsync(async (req, res) => {
   const { id } = req.params;
+  const product = await db('retail_products').where({ id }).first();
+  if (!product) throw new AppError('Product not found', 404);
   const updates = {};
   ['name', 'sku', 'category_id', 'description', 'price', 'cost_price', 'reorder_level', 'is_active'].forEach(k => {
     if (req.body[k] !== undefined) updates[k] = req.body[k];
@@ -354,8 +369,31 @@ exports.updateProduct = catchAsync(async (req, res) => {
   if (Object.keys(updates).length === 0) throw new AppError('No fields to update', 400);
   updates.updated_at = db.fn.now();
   await db('retail_products').where({ id }).update(updates);
+  const prodUpdates = {};
+  if (updates.name !== undefined) prodUpdates.name = updates.name;
+  if (updates.sku !== undefined) prodUpdates.sku = updates.sku;
+  if (updates.category_id !== undefined) prodUpdates.category_id = updates.category_id;
+  if (updates.description !== undefined) prodUpdates.description = updates.description;
+  if (updates.price !== undefined) prodUpdates.selling_price = parseFloat(updates.price);
+  if (updates.reorder_level !== undefined) prodUpdates.reorder_level = updates.reorder_level;
+  if (updates.is_active !== undefined) prodUpdates.is_active = updates.is_active;
+  if (req.file) prodUpdates.product_image = imgUrl(req.file);
+  if (Object.keys(prodUpdates).length > 0) {
+    try {
+      await db('products').where({ sku: product.sku, business_unit: 'retail' }).update(prodUpdates);
+    } catch (_) {}
+  }
+  const updated = await db('retail_products').where({ id }).first();
+  res.json({ status: 'success', message: 'Product updated', data: updated });
+});
+
+exports.deleteProduct = catchAsync(async (req, res) => {
+  const { id } = req.params;
   const product = await db('retail_products').where({ id }).first();
-  res.json({ status: 'success', message: 'Product updated', data: product });
+  if (!product) throw new AppError('Product not found', 404);
+  await db('retail_products').where({ id }).del();
+  try { await db('products').where({ sku: product.sku, business_unit: 'retail' }).del(); } catch (_) {}
+  res.json({ status: 'success', message: 'Product deleted' });
 });
 
 // =============================================================
