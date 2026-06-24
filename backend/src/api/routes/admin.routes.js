@@ -222,4 +222,14 @@ router.post(
   AdminController.dismissAlert
 );
 
+// ── Social Links ──────────────────────────────────────────────
+router.put(
+  '/social-links',
+  authenticate,
+  authorize(['admin:settings']),
+  body('links').isArray(),
+  validate,
+  AdminController.updateSocialLinks
+);
+
 module.exports = router;

@@ -4,8 +4,8 @@ const retailController = require('../controllers/retail.controller');
 const { authenticate, authorizeRoles, optionalAuthenticate } = require('../middleware/auth.middleware');
 const { uploads, handleUploadError } = require('../../config/multer');
 
-const managerRoles = ['CEO', 'Admin'];
-const cashierRoles = ['Store Keeper', 'Admin', 'CEO'];
+const managerRoles = ['CEO', 'Admin', 'Sales Manager'];
+const cashierRoles = ['Admin', 'CEO', 'Sales/Cashier', 'Sales Manager'];
 
 // ── Public (no login required) ──────────────────────────────────
 router.get('/categories', retailController.getCategories);
@@ -24,8 +24,8 @@ router.delete('/cart', retailController.clearCart);
 router.post('/orders/place', authenticate, retailController.placeOrder);
 router.get('/orders/my-orders', authenticate, retailController.getMyOrders);
 
-// ── Cashier (Store Keeper, Admin, CEO) ──────────────────────────
-const cashierAuth = [authenticate, authorizeRoles(...cashierRoles)];
+// ── Cashier (Admin, CEO) ───────────────────────────────────────
+const cashierAuth = [authenticate, authorizeRoles(cashierRoles)];
 
 router.post('/shifts/open', ...cashierAuth, retailController.openShift);
 router.get('/shifts/current', ...cashierAuth, retailController.getCurrentShift);
@@ -35,17 +35,17 @@ router.post('/shifts/close', ...cashierAuth, retailController.closeShift);
 router.post('/pos/checkout', ...cashierAuth, retailController.posCheckout);
 router.get('/pos/transactions', ...cashierAuth, retailController.getTransactions);
 
-// Product management (Store Keeper & up)
+// Product management
 router.put('/products/:id/stock', ...cashierAuth, retailController.updateStock);
 router.post('/products', ...cashierAuth, uploads.singleProductImage.single('product_image'), retailController.createProduct);
 router.put('/products/:id', ...cashierAuth, uploads.singleProductImage.single('product_image'), retailController.updateProduct);
+router.delete('/products/:id', ...cashierAuth, retailController.deleteProduct);
 
-// ── Store Keeper (inventory) ──────────────────────────────────
-const keeperAuth = [authenticate, authorizeRoles('Store Keeper', ...cashierRoles)];
-router.get('/inventory', ...keeperAuth, retailController.getInventory);
+// ── Inventory (Admin, CEO) ────────────────────────────────────
+router.get('/inventory', ...cashierAuth, retailController.getInventory);
 
 // ── Manager (Admin, CEO) ──────────────────────────────────────
-const managerAuth = [authenticate, authorizeRoles(...managerRoles)];
+const managerAuth = [authenticate, authorizeRoles(managerRoles)];
 
 router.get('/manager/dashboard', ...managerAuth, retailController.getManagerDashboard);
 router.get('/manager/sales-trends', ...managerAuth, retailController.getSalesTrends);
