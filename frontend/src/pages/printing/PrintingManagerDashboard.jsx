@@ -7,16 +7,16 @@ import PrintingCreateOrder from './PrintingCreateOrder';
 import PrintingOrderDetail from './PrintingOrderDetail';
 import PrintingTaxReceipts from './PrintingTaxReceipts';
 
-const PrintingDashboard = () => {
+const PrintingManagerDashboard = () => {
   const menuItems = [
-    { label: 'Overview',         path: '/printing/overview',     icon: 'bar-chart' },
-    { label: 'All Orders',       path: '/printing/orders',       icon: 'list' },
-    { label: 'New Order',        path: '/printing/create-order', icon: 'file-plus' },
-    { label: 'Tax Receipts',     path: '/printing/tax-receipts', icon: 'receipt' },
+    { label: 'Overview',         path: '/printing-manager/overview',     icon: 'bar-chart' },
+    { label: 'All Orders',       path: '/printing-manager/orders',       icon: 'list' },
+    { label: 'New Order',        path: '/printing-manager/create-order', icon: 'file-plus' },
+    { label: 'Tax Receipts',     path: '/printing-manager/tax-receipts', icon: 'receipt' },
   ];
 
   return (
-    <DashboardLayout menuItems={menuItems}>
+    <DashboardLayout menuItems={menuItems} title="Printing Sales">
       <Routes>
         <Route path="overview"        element={<PrintingOverview />} />
         <Route path="orders"          element={<PrintingOrders />} />
@@ -29,4 +29,4 @@ const PrintingDashboard = () => {
   );
 };
 
-export default PrintingDashboard;
+export default PrintingManagerDashboard;

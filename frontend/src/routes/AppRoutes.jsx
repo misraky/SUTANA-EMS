@@ -6,13 +6,15 @@ import RoleBasedRoute from './RoleBasedRoute';
 const LandingPage      = lazy(() => import('../pages/LandingPage/LandingPage'));
 const ServicesPage     = lazy(() => import('../pages/LandingPage/ServicesPage'));
 const FleetGalleryPage = lazy(() => import('../pages/LandingPage/FleetGalleryPage'));
+const NewsPage          = lazy(() => import('../pages/LandingPage/NewsPage'));
 const AboutPage        = lazy(() => import('../pages/LandingPage/AboutPage'));
-const ContactPage      = lazy(() => import('../pages/LandingPage/ContactPage'));
+const GlobalChatPage   = lazy(() => import('../pages/LandingPage/GlobalChatPage'));
 const PharmacyHealthPage = lazy(() => import('../pages/LandingPage/PharmacyHealthPage'));
 const FarmingServicePage = lazy(() => import('../pages/LandingPage/FarmingServicePage'));
 const PrintingServicePage = lazy(() => import('../pages/LandingPage/PrintingServicePage'));
 const RetailStorePage = lazy(() => import('../pages/LandingPage/RetailStorePage'));
 const GalleryPage        = lazy(() => import('../pages/LandingPage/GalleryPage'));
+const TrackOrderPage     = lazy(() => import('../pages/LandingPage/TrackOrderPage'));
 const LoginPage          = lazy(() => import('../pages/auth/LoginPage'));
 const RegisterPage       = lazy(() => import('../pages/auth/RegisterPage'));
 const ForgotPasswordPage = lazy(() => import('../pages/auth/ForgotPasswordPage'));
@@ -23,15 +25,26 @@ const CEODashboard      = lazy(() => import('../pages/ceo/CEODashboard'));
 const FinanceDashboard  = lazy(() => import('../pages/finance/FinanceDashboard'));
 const PurchaseDashboard = lazy(() => import('../pages/purchase/PurchaseDashboard'));
 const StoreDashboard    = lazy(() => import('../pages/store/StoreDashboard'));
-const SalesDashboard    = lazy(() => import('../pages/sales/SalesDashboard'));
-const PrintingDashboard = lazy(() => import('../pages/printing/PrintingDashboard'));
+const PrintingManagerDashboard = lazy(() => import('../pages/printing/PrintingManagerDashboard'));
+const PrintingWorkerDashboard = lazy(() => import('../pages/printing/PrintingWorkerDashboard'));
 const CustomerDashboard = lazy(() => import('../pages/customer/CustomerPortal'));
-const FarmingDashboard  = lazy(() => import('../pages/farming/FarmingDashboard'));
+const FarmingManagerDashboard = lazy(() => import('../pages/farming/FarmingManagerDashboard'));
+const FarmingWorkerDashboard = lazy(() => import('../pages/farming/FarmingWorkerDashboard'));
+const MarketDashboard = lazy(() => import('../pages/market/MarketDashboard'));
 const PharmacyDashboard = lazy(() => import('../pages/pharmacy/PharmacyDashboard'));
-const RetailDashboard = lazy(() => import('../pages/retail/RetailDashboard'));
+const PharmacyWorkerDashboard = lazy(() => import('../pages/pharmacy/PharmacyWorkerDashboard'));
 const CarRentingDashboard = lazy(() => import('../pages/car-renting/CarRentingDashboard'));
-const ReportsIndex    = lazy(() => import('../pages/reports/ReportsIndex'));
+const ReportsIndex     = lazy(() => import('../pages/reports/ReportsIndex'));
+const HRDashboard      = lazy(() => import('../pages/hr/HRDashboard'));
+const NotificationsPage = lazy(() => import('../pages/employee/NotificationsPage'));
 const PrescriptionViewer = lazy(() => import('../pages/shared/PrescriptionViewer'));
+const PublicTendersPage = lazy(() => import('../pages/LandingPage/PublicTendersPage'));
+const TenderDetailPage = lazy(() => import('../pages/LandingPage/TenderDetailPage'));
+const TenderManagePage = lazy(() => import('../pages/admin/TenderManagePage'));
+const SearchResultsPage = lazy(() => import('../pages/LandingPage/SearchResultsPage'));
+const RegularMarketPage = lazy(() => import('../pages/LandingPage/RegularMarketPage'));
+const SalesDashboard = lazy(() => import('../pages/sales/SalesDashboard'));
+const UnauthorizedPage  = lazy(() => import('../pages/auth/Unauthorized'));
 const Loader = () => (
   <div style={{
     display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -53,13 +66,21 @@ const AppRoutes = () => {
         <Route path="/services/farming" element={<FarmingServicePage />} />
         <Route path="/services/printing" element={<PrintingServicePage />} />
         <Route path="/services/retail" element={<RetailStorePage />} />
+        <Route path="/marketplace/regular" element={<RegularMarketPage />} />
         <Route path="/gallery" element={<GalleryPage />} />
+        <Route path="/track-order" element={<TrackOrderPage />} />
+        <Route path="/news" element={<NewsPage />} />
+        <Route path="/news/:type" element={<NewsPage />} />
+        <Route path="/tenders" element={<PublicTendersPage />} />
+        <Route path="/tenders/:id" element={<TenderDetailPage />} />
         <Route path="/prescription-viewer" element={<PrescriptionViewer />} />
         <Route path="/fleet-gallery" element={<FleetGalleryPage />} />
         <Route path="/about"    element={<PublicRoute><AboutPage /></PublicRoute>} />
-        <Route path="/contact"  element={<PublicRoute><ContactPage /></PublicRoute>} />
+        <Route path="/chat"     element={<GlobalChatPage />} />
+        <Route path="/search" element={<SearchResultsPage />} />
         {}
         <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
+        <Route path="/unauthorized" element={<UnauthorizedPage />} />
         <Route path="/auth/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
         <Route path="/auth/forgot-password" element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} />
         <Route path="/auth/reset-password" element={<PublicRoute><ResetPasswordPage /></PublicRoute>} />
@@ -94,16 +115,14 @@ const AppRoutes = () => {
             <StoreDashboard />
           </RoleBasedRoute>
         } />
-        {}
-        <Route path="/sales/*" element={
-          <RoleBasedRoute role="Sales/Cashier">
-            <SalesDashboard />
+        <Route path="/printing-worker/*" element={
+          <RoleBasedRoute role={['Printing Worker']}>
+            <PrintingWorkerDashboard />
           </RoleBasedRoute>
         } />
-        {}
-        <Route path="/printing/*" element={
-          <RoleBasedRoute role={['Printing Supervisor', 'Printing Worker', 'Printing Manager', 'Admin', 'CEO']}>
-            <PrintingDashboard />
+        <Route path="/printing-manager/*" element={
+          <RoleBasedRoute role={['Printing Supervisor', 'Printing Manager', 'Admin', 'CEO']}>
+            <PrintingManagerDashboard />
           </RoleBasedRoute>
         } />
         {}
@@ -113,15 +132,31 @@ const AppRoutes = () => {
           </PrivateRoute>
         } />
         {}
-        <Route path="/farming/*" element={
-          <RoleBasedRoute role="Farming Manager">
-            <FarmingDashboard />
+        <Route path="/farming-manager/*" element={
+          <RoleBasedRoute role={['Farming Manager', 'Admin', 'CEO']}>
+            <FarmingManagerDashboard />
+          </RoleBasedRoute>
+        } />
+        <Route path="/farming-worker/*" element={
+          <RoleBasedRoute role={['Farming Worker', 'Farming Manager', 'Admin']}>
+            <FarmingWorkerDashboard />
+          </RoleBasedRoute>
+        } />
+        {}
+        <Route path="/market/*" element={
+          <RoleBasedRoute role={['Admin', 'CEO', 'Market Research']}>
+            <MarketDashboard />
           </RoleBasedRoute>
         } />
         {}
         <Route path="/pharmacy/*" element={
           <RoleBasedRoute role="Pharmacist">
             <PharmacyDashboard />
+          </RoleBasedRoute>
+        } />
+        <Route path="/pharmacy-worker/*" element={
+          <RoleBasedRoute role={['Pharmacy Worker', 'Pharmacist', 'Admin', 'CEO']}>
+            <PharmacyWorkerDashboard />
           </RoleBasedRoute>
         } />
         {}
@@ -131,16 +166,31 @@ const AppRoutes = () => {
           </RoleBasedRoute>
         } />
         {}
-        <Route path="/retail/*" element={
-          <RoleBasedRoute role={['Store Keeper', 'Admin', 'CEO']}>
-            <RetailDashboard />
+        <Route path="/hr/*" element={
+          <RoleBasedRoute role={['HR Manager', 'Admin', 'CEO']}>
+            <HRDashboard />
           </RoleBasedRoute>
         } />
         {}
+        <Route path="/notifications" element={
+          <PrivateRoute>
+            <NotificationsPage />
+          </PrivateRoute>
+        } />
         <Route path="/reports/*" element={
           <PrivateRoute>
             <ReportsIndex />
           </PrivateRoute>
+        } />
+        <Route path="/sales/*" element={
+          <RoleBasedRoute role={['Sales/Cashier', 'Admin', 'CEO', 'Sales Manager']}>
+            <SalesDashboard />
+          </RoleBasedRoute>
+        } />
+        <Route path="/tenders/manage" element={
+          <RoleBasedRoute role={['Admin', 'CEO', 'Sales Manager']}>
+            <TenderManagePage />
+          </RoleBasedRoute>
         } />
         {}
         <Route path="*" element={<Navigate to="/" replace />} />

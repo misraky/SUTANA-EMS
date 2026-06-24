@@ -44,8 +44,8 @@ const AddUserModal = ({ isOpen, onClose, onSuccess, initialData = null }) => {
         apiClient.get('/users/departments'),
         apiClient.get('/users/roles')
       ]);
-      setDepartments(deptRes.data.departments || []);
-      setRolesList(deptRes.data.roles || roleRes.data.roles || []); 
+      setDepartments(deptRes.data?.departments || []);
+      setRolesList(roleRes.data?.roles || []); 
     } catch (err) {
       console.error('Failed to fetch departments/roles', err);
     }

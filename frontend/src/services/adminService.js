@@ -60,6 +60,12 @@ const adminService = {
   },
   deleteBackup: async (filename) => {
     return await apiClient.delete(`/admin/backups/${filename}`);
+  },
+  getSocialLinks: async () => {
+    return await apiClient.get('/public/social-links');
+  },
+  updateSocialLinks: async (links) => {
+    return await apiClient.put('/admin/social-links', { links });
   }
 };
 export default adminService;

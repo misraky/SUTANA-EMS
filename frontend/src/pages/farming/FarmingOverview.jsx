@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import axios from '../../services/apiClient';
-import { TrendingUp, Package, ShoppingBag, AlertTriangle, RefreshCw, ShoppingCart, ClipboardList, DollarSign, Send } from 'lucide-react';
+import { TrendingUp, Package, AlertTriangle, RefreshCw, ShoppingCart, ClipboardList, DollarSign, Users, Clock, PieChart, XCircle, Boxes, UserCog, FileText, Coins, CalendarDays, FileDown, Download, Truck } from 'lucide-react';
 
 const StatCard = ({ icon: Icon, label, value, color, sub }) => (
   <div style={{
@@ -20,9 +20,10 @@ const StatCard = ({ icon: Icon, label, value, color, sub }) => (
   </div>
 );
 
-const QuickAction = ({ icon: Icon, label, color, bg, onClick }) => (
+const QuickAction = ({ icon: Icon, label, color, bg, onClick, title }) => (
   <button
     onClick={onClick}
+    title={title}
     style={{
       display: 'flex', alignItems: 'center', gap: 10, background: bg, border: 'none',
       padding: '12px 18px', borderRadius: 10, cursor: 'pointer', color: color,
@@ -37,21 +38,48 @@ const QuickAction = ({ icon: Icon, label, color, bg, onClick }) => (
 
 const FarmingOverview = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const basePath = location.pathname.startsWith('/farming-manager') ? '/farming-manager' : '/farming';
   const [stats, setStats] = useState(null);
   const [shift, setShift] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [reorderLoading, setReorderLoading] = useState(null);
-  const [reorderMsg, setReorderMsg] = useState('');
+
+  const [showOpenForm, setShowOpenForm] = useState(false);
+  const [showCloseForm, setShowCloseForm] = useState(false);
+  const [openFloat, setOpenFloat] = useState('');
+  const [shiftType, setShiftType] = useState('morning');
+  const [cashCounted, setCashCounted] = useState('');
+  const [diffReason, setDiffReason] = useState('');
+  const [expensesTrans, setExpensesTrans] = useState('');
+  const [expensesLoad, setExpensesLoad] = useState('');
+  const [closeNotes, setCloseNotes] = useState('');
+  const [actionLoading, setActionLoading] = useState(false);
+  const [actionMsg, setActionMsg] = useState('');
+  const [quickActions, setQuickActions] = useState([]);
+
+  const ICON_MAP = {
+    'fa-boxes': Boxes,
+    'fa-users': UserCog,
+    'fa-file-alt': FileText,
+    'fa-coins': Coins,
+    'fa-cart-plus': ShoppingCart,
+    'fa-clock': Clock,
+    'fa-calendar-alt': CalendarDays,
+    'fa-file-export': FileDown,
+    'fa-truck': Truck,
+  };
 
   const load = async () => {
     try {
       setLoading(true);
-      const [statsRes, shiftRes] = await Promise.all([
+      const [statsRes, shiftRes, qaRes] = await Promise.all([
         axios.get('/farming/overview/stats'),
-        axios.get('/farming/shifts/current')
+        axios.get('/farming/shifts/current'),
+        axios.get('/farming/quick-actions')
       ]);
-      if (statsRes.status === 'success') setStats(statsRes.data);
-      if (shiftRes.status === 'success') setShift(shiftRes.data);
+      if (statsRes?.status === 'success') setStats(statsRes.data);
+      if (shiftRes?.status === 'success') setShift(shiftRes.data);
+      if (qaRes?.status === 'success') setQuickActions(qaRes.data || []);
     } catch (err) {
       console.error(err);
     } finally {
@@ -61,81 +89,172 @@ const FarmingOverview = () => {
 
   useEffect(() => { load(); }, []);
 
-  const handleRequestReorder = async (product) => {
-    setReorderLoading(product.id);
-    setReorderMsg('');
+  const handleOpenShift = async () => {
+    setActionLoading(true);
+    setActionMsg('');
     try {
-      await axios.post('/farming/reorder-requests', {
-        product_id: product.id,
-        quantity_requested: Math.max(product.reorder_level * 2, 10),
-        notes: `Auto request: current stock ${product.stock_quantity}, reorder at ${product.reorder_level}`
-      });
-      setReorderMsg(`${product.name} reorder request sent to Purchase Officer`);
+      const res = await axios.post('/farming/shifts/open', { opening_float: parseFloat(openFloat || 0), shift_type: shiftType });
+      if (res.status === 'success' || res.status === 201) {
+        setActionMsg('Shift opened successfully');
+        setShowOpenForm(false);
+        setOpenFloat('');
+        await load();
+      }
     } catch (err) {
-      setReorderMsg(err.response?.data?.message || 'Failed to send reorder request');
+      setActionMsg(err.response?.data?.message || 'Failed to open shift');
     } finally {
-      setReorderLoading(null);
-      setTimeout(() => setReorderMsg(''), 3000);
+      setActionLoading(false);
+      setTimeout(() => setActionMsg(''), 4000);
+    }
+  };
+
+  const handleCloseShift = async () => {
+    setActionLoading(true);
+    setActionMsg('');
+    try {
+      const res = await axios.post('/farming/shifts/close', {
+        physical_cash_counted: parseFloat(cashCounted || 0),
+        difference_reason: diffReason || undefined,
+        refunds_given: 0,
+        expenses_transport: parseFloat(expensesTrans || 0),
+        expenses_loading: parseFloat(expensesLoad || 0),
+        notes: closeNotes || undefined
+      });
+      if (res.status === 'success') {
+        setActionMsg('Shift closed successfully');
+        setShowCloseForm(false);
+        setCashCounted('');
+        setDiffReason('');
+        setExpensesTrans('');
+        setExpensesLoad('');
+        setCloseNotes('');
+        await load();
+      }
+    } catch (err) {
+      setActionMsg(err.response?.data?.message || 'Failed to close shift');
+    } finally {
+      setActionLoading(false);
+      setTimeout(() => setActionMsg(''), 4000);
     }
   };
 
   return (
     <div style={{ padding: '2rem' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
-        <div>
-          <h2 style={{ margin: 0, color: '#1e293b' }}>Farming Worker Dashboard</h2>
-          <p style={{ margin: '4px 0 0', color: '#64748b', fontSize: 14 }}>
-            {new Date().toLocaleDateString('en-ET', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-          </p>
-        </div>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <button
-            onClick={load}
-            style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#f1f5f9', border: 'none',
-              padding: '8px 14px', borderRadius: 8, cursor: 'pointer', color: '#475569', fontSize: 13 }}
-          >
-            <RefreshCw size={14} /> Refresh
-          </button>
-        </div>
+        <button
+          onClick={load}
+          style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#f1f5f9', border: 'none',
+            padding: '8px 14px', borderRadius: 8, cursor: 'pointer', color: '#475569', fontSize: 13 }}
+        >
+          <RefreshCw size={14} /> Refresh
+        </button>
       </div>
 
-      {/* Shift Status */}
       <div style={{
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
         padding: '12px 16px', borderRadius: 10, marginBottom: '1rem',
         background: shift ? '#f0fdf4' : '#fef2f2',
         border: `1px solid ${shift ? '#bbf7d0' : '#fecaca'}`
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13 }}>
-          {shift ? (
-            <><span style={{ fontWeight: 600, color: '#059669' }}>Shift Open</span>
-              <span style={{ color: '#64748b' }}>Float: {parseFloat(shift.opening_float).toFixed(2)} ETB</span>
-              <span style={{ color: '#64748b' }}>{shift.shift_type?.charAt(0).toUpperCase() + shift.shift_type?.slice(1)} Shift</span></>
-          ) : (
-            <><span style={{ fontWeight: 600, color: '#dc2626' }}>No Open Shift</span>
-              <span style={{ color: '#64748b' }}>Open a shift in POS to start selling</span></>
-          )}
-        </div>
-        <button onClick={() => navigate('/farming/pos')}
-          style={{
-            background: shift ? '#ef4444' : '#10b981', color: 'white',
-            border: 'none', padding: '8px 18px', borderRadius: 6, cursor: 'pointer',
-            fontWeight: 600, fontSize: 12
-          }}>
-          {shift ? 'Close Shift (POS)' : 'Open Shift (POS)'}
-        </button>
-      </div>
+        {actionMsg && (
+          <div style={{ marginBottom: 8, fontSize: 13, fontWeight: 600, color: actionMsg.includes('success') ? '#15803d' : '#dc2626' }}>{actionMsg}</div>
+        )}
 
-      {reorderMsg && (
-        <div style={{
-          padding: '10px 16px', borderRadius: 8, marginBottom: '1rem', fontSize: 13,
-          background: reorderMsg.includes('sent') ? '#f0fdf4' : '#fef2f2',
-          color: reorderMsg.includes('sent') ? '#15803d' : '#dc2626',
-          border: `1px solid ${reorderMsg.includes('sent') ? '#bbf7d0' : '#fecaca'}`
-        }}>
-          {reorderMsg}
-        </div>
-      )}
+        {shift && !showCloseForm && (
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13 }}>
+              <span style={{ fontWeight: 600, color: '#059669' }}>Shift Open</span>
+              <span style={{ color: '#64748b' }}>Float: {parseFloat(shift.opening_float).toFixed(2)} ETB</span>
+              <span style={{ color: '#64748b' }}>{shift.shift_type?.charAt(0).toUpperCase() + shift.shift_type?.slice(1)} Shift</span>
+            </div>
+            <button onClick={() => setShowCloseForm(true)}
+              style={{ background: '#ef4444', color: 'white', border: 'none', padding: '8px 18px', borderRadius: 6, cursor: 'pointer', fontWeight: 600, fontSize: 12 }}>Close Shift</button>
+          </div>
+        )}
+
+        {shift && showCloseForm && (
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10, fontSize: 13 }}>
+              <span style={{ fontWeight: 600, color: '#059669' }}>Close Shift</span>
+              <span style={{ color: '#64748b' }}>Float: {parseFloat(shift.opening_float).toFixed(2)} ETB</span>
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'flex-end' }}>
+              <div>
+                <label style={{ fontSize: 11, color: '#64748b', display: 'block', marginBottom: 2 }}>Cash Counted (ETB)</label>
+                <input type="number" step="0.01" value={cashCounted} onChange={e => setCashCounted(e.target.value)}
+                  style={{ width: 130, padding: '6px 10px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: 13 }} />
+              </div>
+              <div>
+                <label style={{ fontSize: 11, color: '#64748b', display: 'block', marginBottom: 2 }}>Transport</label>
+                <input type="number" step="0.01" value={expensesTrans} onChange={e => setExpensesTrans(e.target.value)}
+                  style={{ width: 100, padding: '6px 10px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: 13 }} />
+              </div>
+              <div>
+                <label style={{ fontSize: 11, color: '#64748b', display: 'block', marginBottom: 2 }}>Loading</label>
+                <input type="number" step="0.01" value={expensesLoad} onChange={e => setExpensesLoad(e.target.value)}
+                  style={{ width: 100, padding: '6px 10px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: 13 }} />
+              </div>
+              <div>
+                <label style={{ fontSize: 11, color: '#64748b', display: 'block', marginBottom: 2 }}>Reason (if diff)</label>
+                <input type="text" value={diffReason} onChange={e => setDiffReason(e.target.value)} placeholder="Discrepancy reason"
+                  style={{ width: 160, padding: '6px 10px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: 13 }} />
+              </div>
+              <div>
+                <label style={{ fontSize: 11, color: '#64748b', display: 'block', marginBottom: 2 }}>Notes</label>
+                <input type="text" value={closeNotes} onChange={e => setCloseNotes(e.target.value)} placeholder="Optional notes"
+                  style={{ width: 140, padding: '6px 10px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: 13 }} />
+              </div>
+              <button onClick={handleCloseShift} disabled={actionLoading}
+                style={{ background: actionLoading ? '#9ca3af' : '#ef4444', color: 'white', border: 'none', padding: '7px 18px', borderRadius: 6, cursor: 'pointer', fontWeight: 600, fontSize: 12 }}>
+                {actionLoading ? 'Closing...' : 'Confirm Close'}
+              </button>
+              <button onClick={() => setShowCloseForm(false)}
+                style={{ background: 'transparent', border: '1px solid #d1d5db', padding: '7px 12px', borderRadius: 6, cursor: 'pointer', fontSize: 12 }}>
+                <XCircle size={14} />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {!shift && !showOpenForm && (
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13 }}>
+              <span style={{ fontWeight: 600, color: '#dc2626' }}>No Open Shift</span>
+              <span style={{ color: '#64748b' }}>Open a shift to start recording sales</span>
+            </div>
+            <button onClick={() => setShowOpenForm(true)}
+              style={{ background: '#10b981', color: 'white', border: 'none', padding: '8px 18px', borderRadius: 6, cursor: 'pointer', fontWeight: 600, fontSize: 12 }}>Open Shift</button>
+          </div>
+        )}
+
+        {!shift && showOpenForm && (
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: '#1e293b', marginBottom: 8 }}>Open a New Shift</div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'flex-end' }}>
+              <div>
+                <label style={{ fontSize: 11, color: '#64748b', display: 'block', marginBottom: 2 }}>Opening Float (ETB)</label>
+                <input type="number" step="0.01" value={openFloat} onChange={e => setOpenFloat(e.target.value)}
+                  style={{ width: 130, padding: '6px 10px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: 13 }} />
+              </div>
+              <div>
+                <label style={{ fontSize: 11, color: '#64748b', display: 'block', marginBottom: 2 }}>Shift Type</label>
+                <select value={shiftType} onChange={e => setShiftType(e.target.value)}
+                  style={{ padding: '6px 10px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: 13, background: 'white' }}>
+                  <option value="morning">Morning</option>
+                  <option value="afternoon">Afternoon</option>
+                </select>
+              </div>
+              <button onClick={handleOpenShift} disabled={actionLoading}
+                style={{ background: actionLoading ? '#9ca3af' : '#10b981', color: 'white', border: 'none', padding: '7px 18px', borderRadius: 6, cursor: 'pointer', fontWeight: 600, fontSize: 12 }}>
+                {actionLoading ? 'Opening...' : 'Confirm Open'}
+              </button>
+              <button onClick={() => setShowOpenForm(false)}
+                style={{ background: 'transparent', border: '1px solid #d1d5db', padding: '7px 12px', borderRadius: 6, cursor: 'pointer', fontSize: 12 }}>
+                <XCircle size={14} />
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
 
       {loading ? (
         <p style={{ color: '#64748b' }}>Loading stats...</p>
@@ -143,24 +262,52 @@ const FarmingOverview = () => {
         <p style={{ color: '#ef4444' }}>Failed to load stats.</p>
       ) : (
         <>
-          {/* Quick Actions */}
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: '1.5rem' }}>
-            <QuickAction icon={ShoppingCart} label="+ New Sale (POS)" color="#10b981" bg="#ecfdf5" onClick={() => navigate('/farming/pos')} />
-            <QuickAction icon={Package} label="Receive Stock" color="#3b82f6" bg="#eff6ff" onClick={() => navigate('/farming/products')} />
-            <QuickAction icon={ClipboardList} label="Stock Count" color="#8b5cf6" bg="#f5f3ff" onClick={() => navigate('/farming/products')} />
-            <QuickAction icon={DollarSign} label="Daily Report" color="#f59e0b" bg="#fffbeb" onClick={() => navigate('/farming/finance-report')} />
-            <QuickAction icon={Send} label="Close Shift" color="#ef4444" bg="#fef2f2" onClick={() => navigate('/farming/pos')} />
+          {quickActions.length > 0 && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: '1.5rem' }}>
+              {quickActions.map((qa) => {
+                const IconComp = ICON_MAP[qa.icon_class] || Package;
+                const colors = [
+                  '#3b82f6', '#8b5cf6', '#10b981', '#f59e0b',
+                  '#ef4444', '#06b6d4', '#6366f1', '#ec4899'
+                ];
+                const color = colors[qa.sort_order % colors.length];
+                return (
+                  <QuickAction key={qa.id} icon={IconComp} label={qa.action_name} color={color}
+                    bg={color + '15'} title={qa.action_description}
+                    onClick={() => {
+                      if (qa.route_path === '/farming/export-reports') {
+                        const base = axios.defaults.baseURL;
+                        const w = window.open('', '_blank');
+                        w.document.write('<html><body style="font-family:sans-serif;padding:40px;text-align:center">' +
+                          '<h2>Export Reports</h2>' +
+                          '<p style="margin:20px 0;color:#555">Quick Links Report — all sections</p>' +
+                          '<div style="display:flex;justify-content:center;gap:16px;flex-wrap:wrap">' +
+                          '<a href="' + base + '/farming/export-report?format=excel" style="background:#166534;color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:600;display:inline-flex;align-items:center;gap:6px"> Download Excel</a>' +
+                          '<a href="' + base + '/farming/export-report?format=pdf" style="background:#b45309;color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:600;display:inline-flex;align-items:center;gap:6px"> Download PDF</a>' +
+                          '</div>' +
+                          '<p style="margin-top:40px;font-size:12px;color:#999">Click a format to download. Close this window when done.</p>' +
+                          '</body></html>');
+                        w.document.close();
+                      } else {
+                        navigate(qa.route_path.replace('/farming', basePath));
+                      }
+                    }} />
+                );
+              })}
+            </div>
+          )}
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
+            <StatCard icon={DollarSign} label="Today's Revenue" value={`${stats.todayRevenue.toLocaleString()} ETB`} color="#10b981" />
+            <StatCard icon={TrendingUp} label="Monthly Revenue" value={`${stats.monthlyRevenue.toLocaleString()} ETB`} color="#3b82f6" />
+            <StatCard icon={Users} label="Active Workers" value={stats.activeWorkers} color="#8b5cf6" sub="Clocked in" />
+            <StatCard icon={AlertTriangle} label="Low Stock Items" value={stats.lowStockCount} color="#f59e0b" sub="Need reorder" />
+            <StatCard icon={ClipboardList} label="Pending Reorders" value={stats.pendingReorders} color="#f97316" sub="Awaiting approval" />
+            <StatCard icon={Clock} label="Open Shifts" value={stats.openShifts} color="#06b6d4" sub="Currently active" />
+            <StatCard icon={ShoppingCart} label="Today's Orders" value={stats.todayOrders} color="#6366f1" sub="All statuses" />
+            <StatCard icon={PieChart} label="Budget Used" value={`${stats.budgetPercent}%`} color="#e11d48" sub={stats.monthlyBudget > 0 ? `${stats.monthlyExpenses.toLocaleString()} / ${stats.monthlyBudget.toLocaleString()} ETB` : 'No budget set'} />
           </div>
 
-          {/* Stats Cards */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
-            <StatCard icon={TrendingUp} label="Today's Sales" value={`${stats.todaySales.toLocaleString()} ETB`} color="#10b981" />
-            <StatCard icon={ShoppingBag} label="Pending Orders" value={stats.pendingOrders} color="#3b82f6" sub="Awaiting action" />
-            <StatCard icon={Package} label="Total Products" value={stats.totalProducts} color="#8b5cf6" sub="Active listings" />
-            <StatCard icon={AlertTriangle} label="Low Stock Items" value={stats.lowStockProducts.length} color="#f59e0b" sub="Need reorder" />
-          </div>
-
-          {/* Low Stock Alerts with Request Reorder */}
           {stats.lowStockProducts.length > 0 && (
             <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 10, padding: '1.25rem' }}>
               <h3 style={{ margin: '0 0 1rem', color: '#92400e', display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -176,17 +323,16 @@ const FarmingOverview = () => {
                       </div>
                     </div>
                     <button
-                      onClick={() => handleRequestReorder(p)}
-                      disabled={reorderLoading === p.id}
+                      onClick={() => navigate(basePath + '/store-request')}
                       style={{
-                        background: reorderLoading === p.id ? '#e2e8f0' : '#f59e0b',
-                        color: reorderLoading === p.id ? '#94a3b8' : 'white',
+                        background: '#166534',
+                        color: 'white',
                         border: 'none', padding: '6px 14px', borderRadius: 6,
-                        cursor: reorderLoading === p.id ? 'not-allowed' : 'pointer',
+                        cursor: 'pointer',
                         fontWeight: 600, fontSize: 12, whiteSpace: 'nowrap'
                       }}
                     >
-                      {reorderLoading === p.id ? 'Sending...' : 'Request Reorder'}
+                      Request from Store
                     </button>
                   </div>
                 ))}

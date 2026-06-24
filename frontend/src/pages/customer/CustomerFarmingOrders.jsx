@@ -95,6 +95,9 @@ const CustomerFarmingOrders = () => {
                   <strong>Total Amount:</strong> {order.total_amount} ETB
                 </div>
                 <div>
+                  <strong>Phone:</strong> {order.contact_phone || 'N/A'}
+                </div>
+                <div>
                   <strong>Delivery Type:</strong> <span style={{textTransform: 'capitalize'}}>{order.delivery_type}</span>
                 </div>
                 {order.delivery_address && (
@@ -108,7 +111,7 @@ const CustomerFarmingOrders = () => {
                 <h4>Items Ordered</h4>
                 <div className={styles.orderItemsList}>
                   {order.items?.map(item => (
-                    <div key={item.id} className={styles.orderItemRow}>
+                    <div key={item.id} className={styles.orderItemRow} style={{ borderBottom: '1px solid #e5e7eb', paddingBottom: 8, marginBottom: 8 }}>
                       <div className={styles.itemInfo}>
                         {item.product_image && (
                           <img 

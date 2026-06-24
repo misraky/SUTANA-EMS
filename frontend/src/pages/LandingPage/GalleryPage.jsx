@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import axios from '../../services/apiClient';
-import { X, Car, Users, PartyPopper, Package, MapPin, Calendar } from 'lucide-react';
+import { X, ArrowLeft, Car, Users, PartyPopper, Package, MapPin, Calendar } from 'lucide-react';
+import { PublicNav } from './PublicNavFooter';
 
 const CATEGORIES = [
   { key: 'cars', label: 'Cars & Fleet', icon: <Car size={20} /> },
@@ -25,6 +26,7 @@ const GALLERY = {
 
 export default () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const [images, setImages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
@@ -91,13 +93,22 @@ export default () => {
   });
 
   return (
+    <><PublicNav />
+    <div className="gallery-page-bg">
     <div style={{ maxWidth: '95vw', margin: '0 auto', padding: '40px 20px' }}>
-      <h1 style={{ fontSize: 32, fontWeight: 800, color: '#0f172a', margin: '0 0 8px', textAlign: 'center' }}>
-        GALLERY <span style={{ color: '#059669' }}>- SUTANA</span>
-      </h1>
-      <p style={{ textAlign: 'center', color: '#64748b', marginBottom: 32, fontSize: 14 }}>
-        Explore our fleet, workplace, events, and products
-      </p>
+      <div className="tip-wrap" style={{ marginBottom: 16 }}>
+        <span className="tip tip-right">Go back</span>
+        <button onClick={() => navigate(-1)} style={{
+          background: 'none', border: 'none', cursor: 'pointer', display: 'flex',
+          alignItems: 'center', gap: 4, color: '#10b981', fontWeight: 600, fontSize: 13,
+          padding: 0
+        }}>
+          <ArrowLeft size={16} /> Back
+        </button>
+      </div>
+      <div className="gallery-type-wrap">
+        <span className="gallery-type-text">SUTANA &mdash; Explore our fleet, workplace, events, and products</span>
+      </div>
 
       {/* Filter Bar */}
       <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginBottom: 32, flexWrap: 'wrap' }}>
@@ -221,5 +232,7 @@ export default () => {
         </div>
       )}
     </div>
+    </div>
+    </>
   );
 };

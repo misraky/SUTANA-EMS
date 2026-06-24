@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import apiClient from '../../services/apiClient';
 import customerService from '../../services/customerService';
 import { formatCurrency } from '../../utils/formatters';
-import { Printer, Sprout, ShoppingCart, Plus, Package } from 'lucide-react';
+import { ShoppingCart, Package } from 'lucide-react';
 import styles from './CustomerPortal.module.css';
 
 const statusIcons = { COMPLETED: '\u2705', DELIVERED: '\u2705', OUT_FOR_DELIVERY: '\uD83D\uDE9A', READY_FOR_PICKUP: '\uD83D\uDCE6', default: '\u23F3' };
@@ -17,21 +17,24 @@ const CustomerPortalHome = ({ onPlaceOrder }) => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [balRes, notifRes, farmRes, printRes, retailRes] = await Promise.all([
+        const [balRes, notifRes, farmRes, printRes, retailRes, rentalRes] = await Promise.all([
           customerService.getBalance(),
           customerService.getNotifications({ unreadOnly: true }),
           apiClient.get('/farming/orders/my-orders').catch(() => ({ status: 'error', data: [] })),
           apiClient.get('/printing/customer/orders').catch(() => ({ status: 'error', data: { orders: [] } })),
           apiClient.get('/retail/orders/my-orders').catch(() => ({ status: 'error', data: [] })),
+          apiClient.get('/rental-orders/my-orders').catch(() => ({ status: 'error', data: [] })),
         ]);
         setBalance(balRes?.data?.currentBalance || 0);
         setNotifications(notifRes?.data?.notifications || []);
         const farming = farmRes.status === 'success' ? farmRes.data.slice(0, 3) : [];
         const printing = printRes.status === 'success' ? (printRes.data?.orders || []).slice(0, 3) : [];
         const retail = retailRes.status === 'success' ? (retailRes.data || []).slice(0, 3) : [];
+        const rentals = rentalRes.status === 'success' ? (rentalRes.data || []).slice(0, 3) : [];
         const all = [...farming.map(o => ({ ...o, type: 'Farming', id: `farm-${o.id}` })),
                      ...printing.map(o => ({ ...o, type: 'Printing', id: `prt-${o.id}`, invoice_number: o.order_number })),
-                     ...retail.map(o => ({ ...o, type: 'Retail', id: `ret-${o.id}`, invoice_number: o.invoice_number, total_amount: o.total_amount }))];
+                     ...retail.map(o => ({ ...o, type: 'Retail', id: `ret-${o.id}`, invoice_number: o.invoice_number, total_amount: o.total_amount })),
+                     ...rentals.map(o => ({ ...o, type: 'Car Rental', id: `rent-${o.id}`, invoice_number: o.orderNumber, total_amount: o.totalAmount }))];
         setRecentOrders(all.slice(0, 6));
       } catch (error) {
         console.error('Failed to fetch portal data', error);
@@ -68,23 +71,11 @@ const CustomerPortalHome = ({ onPlaceOrder }) => {
           }}>
             <ShoppingCart size={18} /> Place New Order
           </button>
-          <button onClick={() => navigate('/customer/printing-orders')} style={{
-            display: 'flex', alignItems: 'center', gap: 8, background: '#eff6ff', color: '#3b82f6',
-            border: '1px solid #bfdbfe', padding: '12px 22px', borderRadius: 10, cursor: 'pointer', fontWeight: 600, fontSize: 13
+          <button onClick={() => navigate('/customer/all-orders')} style={{
+            display: 'flex', alignItems: 'center', gap: 8, background: '#f8fafc', color: '#475569',
+            border: '1px solid #e2e8f0', padding: '12px 22px', borderRadius: 10, cursor: 'pointer', fontWeight: 600, fontSize: 13
           }}>
-            <Printer size={18} /> My Printing Orders
-          </button>
-          <button onClick={() => navigate('/customer/farming-orders')} style={{
-            display: 'flex', alignItems: 'center', gap: 8, background: '#ecfdf5', color: '#059669',
-            border: '1px solid #a7f3d0', padding: '12px 22px', borderRadius: 10, cursor: 'pointer', fontWeight: 600, fontSize: 13
-          }}>
-            <Sprout size={18} /> My Farming Orders
-          </button>
-          <button onClick={() => navigate('/customer/retail-orders')} style={{
-            display: 'flex', alignItems: 'center', gap: 8, background: '#fffbeb', color: '#d97706',
-            border: '1px solid #fde68a', padding: '12px 22px', borderRadius: 10, cursor: 'pointer', fontWeight: 600, fontSize: 13
-          }}>
-            <Package size={18} /> My Retail Orders
+            <Package size={18} /> View All Orders
           </button>
         </div>
       </div>
@@ -93,6 +84,7 @@ const CustomerPortalHome = ({ onPlaceOrder }) => {
         <div className={styles.recentSection}>
           <div className={styles.sectionHeader}>
             <h2>Recent Orders</h2>
+            <button onClick={() => navigate('/customer/all-orders')} className={styles.viewAllBtn}>View All</button>
           </div>
           <div className={styles.ordersGrid}>
             {recentOrders.map(order => (

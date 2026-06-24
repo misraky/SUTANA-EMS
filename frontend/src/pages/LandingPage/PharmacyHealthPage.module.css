@@ -1,55 +1,28 @@
 .pageWrapper {
-  background-color: #f0fdf4;
+  background: linear-gradient(160deg, #f8fafc 0%, #f1f5f9 100%);
   min-height: 100vh;
   font-family: 'Inter', sans-serif;
-  padding-top: 80px;
   position: relative;
-  overflow: hidden;
 }
 
-/* Background Blobs for Glassmorphism */
-.blob1 {
-  position: absolute;
-  top: -100px;
-  left: -100px;
-  width: 500px;
-  height: 500px;
-  background: radial-gradient(circle, rgba(16, 185, 129, 0.4) 0%, rgba(255,255,255,0) 70%);
-  border-radius: 50%;
-  z-index: 0;
-  animation: float 8s ease-in-out infinite;
-}
-
-.blob2 {
-  position: absolute;
-  top: 40%;
-  right: -150px;
-  width: 600px;
-  height: 600px;
-  background: radial-gradient(circle, rgba(52, 211, 153, 0.3) 0%, rgba(255,255,255,0) 70%);
-  border-radius: 50%;
-  z-index: 0;
-  animation: float 12s ease-in-out infinite reverse;
-}
-
-@keyframes float {
-  0% { transform: translateY(0) scale(1); }
-  50% { transform: translateY(-30px) scale(1.05); }
-  100% { transform: translateY(0) scale(1); }
-}
-
-/* Hero Section */
+/* ── Hero Section ── */
 .heroSection {
-  background: linear-gradient(135deg, rgba(16, 185, 129, 0.9) 0%, rgba(5, 150, 105, 0.9) 100%);
+  background: linear-gradient(135deg, #1a2b4b 0%, #0D7C66 100%);
   color: white;
-  padding: 80px 20px;
+  padding: 120px 20px 80px;
   text-align: center;
   position: relative;
   overflow: hidden;
-  border-radius: 0 0 30px 30px;
-  margin-bottom: 20px;
-  box-shadow: 0 10px 30px rgba(16, 185, 129, 0.2);
-  z-index: 2;
+  margin-bottom: 40px;
+}
+
+.heroSection::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.04;
+  background-image: radial-gradient(circle at 25% 25%, #fff 1px, transparent 1px);
+  background-size: 40px 40px;
 }
 
 .heroContent {
@@ -70,7 +43,8 @@
   font-weight: 800;
   margin-bottom: 15px;
   letter-spacing: -0.02em;
-  text-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  color: #FFD700;
+  text-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
 }
 
 .heroSubtitle {

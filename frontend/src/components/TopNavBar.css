@@ -1,0 +1,317 @@
+/* ════════════════════════════════════════════════════════
+   SUTANA EMS — TopNavBar
+   ════════════════════════════════════════════════════════ */
+
+/* ── Root ── */
+.tnb-root {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  width: 100%;
+  height: 64px;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.tnb-inner {
+  max-width: 1440px;
+  margin: 0 auto;
+  height: 100%;
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  gap: 32px;
+}
+
+/* ── Brand ── */
+.tnb-brand {
+  text-decoration: none;
+  flex-shrink: 0;
+  transition: opacity 0.2s;
+}
+.tnb-brand:hover { opacity: 0.8; }
+
+.tnb-wordmark {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #1a2b4b;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+}
+
+/* ── Nav Links ── */
+.tnb-nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+  justify-content: center;
+}
+
+.tnb-link {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #6B7280;
+  transition: color 0.2s, background 0.2s;
+  border-bottom: 2px solid transparent;
+}
+.tnb-link:hover {
+  color: #1a2b4b;
+  background: #F3F4F6;
+}
+.tnb-link--active {
+  color: #1a2b4b;
+  font-weight: 600;
+  border-bottom-color: #1a2b4b;
+}
+
+/* ── Right Actions ── */
+.tnb-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+/* ── Icon Buttons ── */
+.tnb-icon-btn {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  border: none;
+  background: transparent;
+  color: #6B7280;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s, background 0.2s, transform 0.2s;
+}
+.tnb-icon-btn:hover {
+  color: #1a2b4b;
+  background: #F3F4F6;
+  transform: scale(1.05);
+}
+
+/* ── Badge ── */
+.tnb-badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  background: #EF4444;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  min-width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  padding: 0 4px;
+  line-height: 1;
+}
+
+/* ── Search ── */
+.tnb-search-form {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #F3F4F6;
+  border: 1px solid #E5E7EB;
+  border-radius: 10px;
+  padding: 0 12px;
+  height: 40px;
+  width: 280px;
+  transition: border-color 0.2s;
+}
+.tnb-search-form:focus-within {
+  border-color: #1a2b4b;
+}
+.tnb-search-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 0.85rem;
+  color: #111827;
+  font-family: inherit;
+}
+.tnb-search-input::placeholder { color: #9CA3AF; }
+
+/* ── Profile Button ── */
+.tnb-profile-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px 4px 4px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+}
+.tnb-profile-btn:hover {
+  background: #F3F4F6;
+  border-color: #E5E7EB;
+}
+
+.tnb-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #1a2b4b;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  flex-shrink: 0;
+}
+.tnb-avatar--lg {
+  width: 40px;
+  height: 40px;
+  font-size: 0.9rem;
+}
+
+.tnb-chevron {
+  color: #9CA3AF;
+  transition: transform 0.25s;
+}
+.tnb-chevron--open {
+  transform: rotate(180deg);
+}
+
+/* ── Dropdowns ── */
+.tnb-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.12);
+  border: 1px solid #E5E7EB;
+  z-index: 1100;
+  overflow: hidden;
+  min-width: 280px;
+}
+.tnb-dropdown--profile { min-width: 220px; }
+
+.tnb-dropdown-header {
+  padding: 14px 18px;
+  border-bottom: 1px solid #F3F4F6;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.tnb-dropdown-title {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: #111827;
+}
+.tnb-dropdown-sub {
+  font-size: 0.75rem;
+  color: #6B7280;
+}
+
+.tnb-dropdown-body {
+  max-height: 340px;
+  overflow-y: auto;
+}
+.tnb-dropdown-empty {
+  padding: 32px;
+  text-align: center;
+  color: #9CA3AF;
+  font-size: 0.85rem;
+}
+
+.tnb-notif-item {
+  padding: 12px 18px;
+  border-bottom: 1px solid #F9FAFB;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.tnb-notif-item:hover { background: #F9FAFB; }
+.tnb-notif-title {
+  margin: 0 0 2px 0;
+  font-weight: 600;
+  font-size: 0.8rem;
+  color: #111827;
+}
+.tnb-notif-msg {
+  margin: 0;
+  font-size: 0.75rem;
+  color: #6B7280;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tnb-dropdown-footer {
+  padding: 10px 18px;
+  border-top: 1px solid #F3F4F6;
+  text-align: center;
+}
+.tnb-dropdown-link {
+  background: none;
+  border: none;
+  font-size: 0.8rem;
+  color: #059669;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.2s;
+}
+.tnb-dropdown-link:hover { color: #047857; }
+
+/* ── Profile Dropdown ── */
+.tnb-dropdown-user {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 18px;
+}
+.tnb-user-name {
+  margin: 0;
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: #111827;
+}
+.tnb-user-role {
+  margin: 2px 0 0 0;
+  font-size: 0.75rem;
+  color: #6B7280;
+}
+
+.tnb-dropdown-divider {
+  height: 1px;
+  background: #F3F4F6;
+  margin: 0;
+}
+
+.tnb-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 18px;
+  border: none;
+  background: none;
+  font-size: 0.85rem;
+  color: #374151;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s;
+}
+.tnb-dropdown-item:hover { background: #F9FAFB; }
+.tnb-dropdown-item--danger { color: #EF4444; }

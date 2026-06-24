@@ -31,12 +31,19 @@ const LoginPage = () => {
       else if (user.roles?.includes('CEO')) navigate('/ceo');
       else if (user.roles?.includes('Finance')) navigate('/finance');
       else if (user.roles?.includes('Purchase')) navigate('/purchase');
-      else if (user.roles?.includes('Store Worker')) navigate('/store');
+      else if (user.roles?.includes('Store Manager')) navigate('/store');
       else if (user.roles?.includes('Sales/Cashier')) navigate('/sales');
-      else if (user.roles?.includes('Printing Supervisor')) navigate('/printing');
-      else if (user.roles?.includes('Farming Manager')) navigate('/farming');
+      else if (user.roles?.includes('Printing Supervisor')) navigate('/printing-manager');
+      else if (user.roles?.includes('Printing Worker')) navigate('/printing-worker');
+      else if (user.roles?.includes('Farming Manager')) navigate('/farming-manager');
+      else if (user.roles?.includes('Farming Worker')) navigate('/farming-worker');
       else if (user.roles?.includes('Pharmacist')) navigate('/pharmacy');
+      else if (user.roles?.includes('Pharmacy Worker')) navigate('/pharmacy-worker');
       else if (user.roles?.includes('Car Renting Manager')) navigate('/car-renting');
+      else if (user.roles?.includes('Market Research')) navigate('/market');
+      else if (user.roles?.includes('Sales Manager')) navigate('/tenders/manage');
+      else if (user.roles?.includes('HR Manager')) navigate('/hr');
+      else if (user.roles?.includes('Employee')) navigate('/hr/portal');
       else navigate('/customer');
     } catch (err) {
       setError(err.message || 'Invalid credentials. Please try again.');

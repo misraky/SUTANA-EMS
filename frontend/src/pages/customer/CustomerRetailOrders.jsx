@@ -86,7 +86,7 @@ export default () => {
               )}
 
               <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #e2e8f0', paddingTop: 10, fontSize: 13, color: '#64748b' }}>
-                <span>Status: <strong>{order.payment_status}</strong></span>
+                <span>Phone: <strong>{order.customer_phone || 'N/A'}</strong></span>
                 <span>Total: <strong style={{ color: '#059669', fontSize: 16 }}>{parseFloat(order.total_amount).toFixed(2)} ETB</strong></span>
               </div>
             </div>

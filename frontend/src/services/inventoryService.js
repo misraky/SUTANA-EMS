@@ -56,6 +56,9 @@ const inventoryService = {
   getCategories: async () => {
     return await apiClient.get('/inventory/categories');
   },
+  addCategory: async (data) => {
+    return await apiClient.post('/inventory/categories', data);
+  },
   getUnits: async () => {
     return await apiClient.get('/inventory/units');
   },

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import axios from '../../services/apiClient';
-import { Plus, Edit2, TrendingUp, Package, X, Upload, CheckCircle, AlertCircle, Image } from 'lucide-react';
+import authService from '../../services/authService';
+import { Plus, Edit2, TrendingUp, Package, X, Upload, CheckCircle, AlertCircle, Image, ToggleLeft, ToggleRight, Trash2 } from 'lucide-react';
 
 const CATEGORY_TYPES = [
   { value: 'seeds', label: 'Seeds', icon: '🌱' },
@@ -61,6 +62,13 @@ function resolveImg(url) {
 
 const typeInfo = (t) => CATEGORY_TYPES.find(ct => ct.value === t) || CATEGORY_TYPES[CATEGORY_TYPES.length - 1];
 
+const SummaryBox = ({ label, value, color }) => (
+  <div style={{ background: 'white', borderRadius: 12, padding: '16px 18px', border: '1.5px solid #e2e8f0' }}>
+    <div style={{ fontSize: 12, color: '#64748b', marginBottom: 4, fontWeight: 500 }}>{label}</div>
+    <div style={{ fontSize: 22, fontWeight: 700, color }}>{value}</div>
+  </div>
+);
+
 const FarmingProducts = () => {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -69,8 +77,14 @@ const FarmingProducts = () => {
   const [showCategoryForm, setShowCategoryForm] = useState(false);
   const [showStockModal, setShowStockModal] = useState(null);
   const [editProduct, setEditProduct] = useState(null);
+  const [editCategory, setEditCategory] = useState(null);
+  const [confirmDelete, setConfirmDelete] = useState(null);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState(null);
+  const [workerCanAdd, setWorkerCanAdd] = useState(true);
+  const user = authService.getCurrentUser() || {};
+  const isManager = (user.roles || []).some(r => ['Farming Manager', 'Admin', 'CEO'].includes(r));
+  const canEdit = isManager || workerCanAdd;
 
   const [productForm, setProductForm] = useState({
     name: '', category_id: '', description: '', usage_instructions: '',
@@ -93,12 +107,14 @@ const FarmingProducts = () => {
   const load = useCallback(async () => {
     try {
       setLoading(true);
-      const [prodRes, catRes] = await Promise.all([
+      const [prodRes, catRes, permRes] = await Promise.all([
         axios.get('/farming/admin/products?include_inactive=true'),
-        axios.get('/farming/categories')
+        axios.get('/farming/categories'),
+        axios.get('/farming/admin/worker-can-add-products')
       ]);
       if (prodRes.status === 'success') setProducts(prodRes.data);
       if (catRes.status === 'success') setCategories(catRes.data);
+      if (permRes.status === 'success') setWorkerCanAdd(permRes.data?.enabled !== false);
     } catch (err) {
       notify(err.message || 'Failed to load data', 'error');
     } finally {
@@ -107,6 +123,18 @@ const FarmingProducts = () => {
   }, [notify]);
 
   useEffect(() => { load(); }, [load]);
+
+  const openEditCategory = (category) => {
+    setEditCategory(category);
+    setCategoryForm({
+      name: category.name,
+      description: category.description || '',
+      type: category.type || 'general'
+    });
+    setCategoryImageFile(null);
+    setCategoryImagePreview(category.cover_image ? resolveImg(category.cover_image) : null);
+    setShowCategoryForm(true);
+  };
 
   const openEdit = (product) => {
     setEditProduct(product);
@@ -161,15 +189,53 @@ const FarmingProducts = () => {
     setSaving(true);
     try {
       const fd = buildFormData(categoryForm, categoryImageFile, 'cover_image');
-      await axios.post('/farming/admin/categories', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
-      notify('Category created successfully');
+      if (editCategory) {
+        await axios.put(`/farming/admin/categories/${editCategory.id}`, fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+        notify('Category updated successfully');
+      } else {
+        await axios.post('/farming/admin/categories', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+        notify('Category created successfully');
+      }
       setShowCategoryForm(false);
+      setEditCategory(null);
       setCategoryForm({ name: '', description: '', type: 'general' });
       setCategoryImageFile(null);
       setCategoryImagePreview(null);
       await load();
     } catch (err) {
       notify(err?.response?.data?.message || err.message || 'Failed to save category', 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleCategoryDelete = async () => {
+    if (!confirmDelete || confirmDelete.type !== 'category') return;
+    setSaving(true);
+    try {
+      await axios.delete(`/farming/admin/categories/${confirmDelete.id}`);
+      notify('Category deleted successfully');
+      setConfirmDelete(null);
+      await load();
+    } catch (err) {
+      notify(err?.response?.data?.message || err.message || 'Failed to delete category', 'error');
+      setConfirmDelete(null);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleProductDelete = async () => {
+    if (!confirmDelete || confirmDelete.type !== 'product') return;
+    setSaving(true);
+    try {
+      await axios.delete(`/farming/admin/products/${confirmDelete.id}`);
+      notify('Product deleted successfully');
+      setConfirmDelete(null);
+      await load();
+    } catch (err) {
+      notify(err?.response?.data?.message || err.message || 'Failed to delete product', 'error');
+      setConfirmDelete(null);
     } finally {
       setSaving(false);
     }
@@ -204,21 +270,50 @@ const FarmingProducts = () => {
   const clearProdImage = () => { setProductImageFile(null); setProductImagePreview(null); if (prodImgRef.current) prodImgRef.current.value = ''; };
   const clearCatImage = () => { setCategoryImageFile(null); setCategoryImagePreview(null); if (catImgRef.current) catImgRef.current.value = ''; };
 
+  const toggleWorkerAdd = async () => {
+    try {
+      const res = await axios.patch('/farming/admin/worker-can-add-products', { enabled: !workerCanAdd });
+      if (res.status === 'success') setWorkerCanAdd(res.data?.enabled !== false);
+    } catch (err) {
+      notify(err?.response?.data?.message || 'Failed to update permission', 'error');
+    }
+  };
+
   return (
     <div style={{ padding: '2rem' }}>
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
 
       <style>{`@keyframes slideIn { from { opacity: 0; transform: translateX(40px); } to { opacity: 1; transform: translateX(0); } }`}</style>
 
+      {/* Summary Stats */}
+      <div style={{
+        display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '0.75rem',
+        marginBottom: '1.5rem'
+      }}>
+        <SummaryBox label="Total Categories" value={categories.length} color="#3b82f6" />
+        <SummaryBox label="Total Product Types" value={products.length} color="#10b981" />
+        <SummaryBox label="Stock Value" value={`${products.reduce((s, p) => s + (parseFloat(p.price || 0) * (p.stock_quantity || 0)), 0).toLocaleString('en-ET', { minimumFractionDigits: 2 })} ETB`} color="#8b5cf6" />
+      </div>
+
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: 10 }}>
         <h2 style={{ margin: 0, fontSize: 20 }}>🌱 Products & Stock</h2>
-        <div style={{ display: 'flex', gap: 10 }}>
-          <button onClick={() => { setShowCategoryForm(true); }} style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#f1f5f9', border: 'none', padding: '9px 18px', borderRadius: 8, cursor: 'pointer', fontSize: 13, color: '#475569', fontWeight: 600 }}>
-            <Plus size={15} /> Add Category
-          </button>
-          <button onClick={() => { setEditProduct(null); setProductForm({ name: '', category_id: '', description: '', usage_instructions: '', price: '', stock_quantity: '', reorder_level: '10' }); setProductImageFile(null); setProductImagePreview(null); setShowProductForm(true); }} style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#10b981', border: 'none', padding: '9px 18px', borderRadius: 8, cursor: 'pointer', fontSize: 13, color: 'white', fontWeight: 600 }}>
-            <Plus size={15} /> Add Product
-          </button>
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+          {isManager && (
+            <button onClick={toggleWorkerAdd} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'transparent', border: '1.5px solid #e2e8f0', padding: '9px 14px', borderRadius: 8, cursor: 'pointer', fontSize: 12, color: workerCanAdd ? '#10b981' : '#ef4444', fontWeight: 600 }}>
+              {workerCanAdd ? <ToggleRight size={16} /> : <ToggleLeft size={16} />}
+              Workers {workerCanAdd ? 'Can' : "Can't"} Add
+            </button>
+          )}
+          {canEdit && (
+            <>
+              <button onClick={() => { setEditCategory(null); setCategoryForm({ name: '', description: '', type: 'general' }); setCategoryImageFile(null); setCategoryImagePreview(null); setShowCategoryForm(true); }} style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#f1f5f9', border: 'none', padding: '9px 18px', borderRadius: 8, cursor: 'pointer', fontSize: 13, color: '#475569', fontWeight: 600 }}>
+                <Plus size={15} /> Add Category
+              </button>
+              <button onClick={() => { setEditProduct(null); setProductForm({ name: '', category_id: '', description: '', usage_instructions: '', price: '', stock_quantity: '', reorder_level: '10' }); setProductImageFile(null); setProductImagePreview(null); setShowProductForm(true); }} style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#10b981', border: 'none', padding: '9px 18px', borderRadius: 8, cursor: 'pointer', fontSize: 13, color: 'white', fontWeight: 600 }}>
+                <Plus size={15} /> Add Product
+              </button>
+            </>
+          )}
         </div>
       </div>
 
@@ -227,7 +322,7 @@ const FarmingProducts = () => {
         <div style={{ marginBottom: '2rem' }}>
           <h3 style={{ fontSize: 14, fontWeight: 600, color: '#64748b', margin: '0 0 10px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Categories</h3>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 12 }}>
-            {categories.map(c => {
+              {categories.map(c => {
               const ti = typeInfo(c.type);
               return (
                 <div key={c.id} style={{ background: 'white', borderRadius: 10, overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', border: '1px solid #e2e8f0', transition: 'box-shadow 0.2s', cursor: 'default' }}>
@@ -244,6 +339,16 @@ const FarmingProducts = () => {
                       <span style={{ fontWeight: 600, fontSize: 13, color: '#1e293b' }}>{c.name}</span>
                     </div>
                     <span style={{ fontSize: 11, color: '#94a3b8' }}>{products.filter(p => p.category_id === c.id).length} products</span>
+                    {canEdit && (
+                      <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+                        <button onClick={() => openEditCategory(c)} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, background: '#f1f5f9', border: 'none', padding: '5px 0', borderRadius: 6, cursor: 'pointer', fontSize: 11, color: '#475569' }}>
+                          <Edit2 size={11} /> Edit
+                        </button>
+                        <button onClick={() => setConfirmDelete({ type: 'category', id: c.id, name: c.name })} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, background: '#fef2f2', border: 'none', padding: '5px 0', borderRadius: 6, cursor: 'pointer', fontSize: 11, color: '#ef4444' }}>
+                          <Trash2 size={11} /> Delete
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               );
@@ -259,7 +364,7 @@ const FarmingProducts = () => {
             <div style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8', background: 'white', borderRadius: 12, border: '2px dashed #e2e8f0' }}>
               <Package size={40} style={{ marginBottom: 12, color: '#cbd5e1' }} />
               <p style={{ fontWeight: 600, color: '#64748b' }}>No products yet</p>
-              <p style={{ fontSize: 13 }}>Click "Add Product" to create your first product.</p>
+              {canEdit && <p style={{ fontSize: 13 }}>Click "Add Product" to create your first product.</p>}
             </div>
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1rem' }}>
@@ -299,14 +404,19 @@ const FarmingProducts = () => {
                         </div>
                       </div>
                       {p.description && <p style={{ margin: '0 0 12px', fontSize: 12, color: '#64748b', lineHeight: 1.4 }}>{p.description.substring(0, 80)}{p.description.length > 80 ? '...' : ''}</p>}
-                      <div style={{ display: 'flex', gap: 8 }}>
-                        <button onClick={() => openEdit(p)} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, background: '#f1f5f9', border: 'none', padding: '8px', borderRadius: 6, cursor: 'pointer', fontSize: 12, color: '#475569' }}>
-                          <Edit2 size={13} /> Edit
-                        </button>
-                        <button onClick={() => { setShowStockModal(p); setStockForm({ quantity: '', operation: 'add', notes: '' }); }} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, background: '#eff6ff', border: 'none', padding: '8px', borderRadius: 6, cursor: 'pointer', fontSize: 12, color: '#1d4ed8' }}>
-                          <TrendingUp size={13} /> Update Stock
-                        </button>
-                      </div>
+                      {canEdit && (
+                        <div style={{ display: 'flex', gap: 8 }}>
+                          <button onClick={() => openEdit(p)} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, background: '#f1f5f9', border: 'none', padding: '8px', borderRadius: 6, cursor: 'pointer', fontSize: 12, color: '#475569' }}>
+                            <Edit2 size={13} /> Edit
+                          </button>
+                          <button onClick={() => { setShowStockModal(p); setStockForm({ quantity: '', operation: 'add', notes: '' }); }} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, background: '#eff6ff', border: 'none', padding: '8px', borderRadius: 6, cursor: 'pointer', fontSize: 12, color: '#1d4ed8' }}>
+                            <TrendingUp size={13} /> Stock
+                          </button>
+                          <button onClick={() => setConfirmDelete({ type: 'product', id: p.id, name: p.name })} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, background: '#fef2f2', border: 'none', padding: '8px', borderRadius: 6, cursor: 'pointer', fontSize: 12, color: '#ef4444' }}>
+                            <Trash2 size={13} />
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 );
@@ -379,7 +489,7 @@ const FarmingProducts = () => {
 
       {/* ─── Category Form Modal ─── */}
       {showCategoryForm && (
-        <Modal title="Add New Category" onClose={() => setShowCategoryForm(false)} wide>
+        <Modal title={editCategory ? 'Edit Category' : 'Add New Category'} onClose={() => { setShowCategoryForm(false); setEditCategory(null); }} wide>
           <form onSubmit={handleCategorySubmit} encType="multipart/form-data">
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }}>
               <Field label="Category Name *">
@@ -405,12 +515,27 @@ const FarmingProducts = () => {
               </Field>
             </div>
             <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 8 }}>
-              <button type="button" onClick={() => setShowCategoryForm(false)} style={{ background: '#f1f5f9', border: 'none', padding: '10px 20px', borderRadius: 8, fontWeight: 600, color: '#64748b', cursor: 'pointer', fontSize: 13 }}>Cancel</button>
+              <button type="button" onClick={() => { setShowCategoryForm(false); setEditCategory(null); }} style={{ background: '#f1f5f9', border: 'none', padding: '10px 20px', borderRadius: 8, fontWeight: 600, color: '#64748b', cursor: 'pointer', fontSize: 13 }}>Cancel</button>
               <button type="submit" disabled={saving} style={{ background: '#10b981', color: 'white', border: 'none', padding: '10px 24px', borderRadius: 8, fontWeight: 700, cursor: saving ? 'wait' : 'pointer', fontSize: 13, opacity: saving ? 0.7 : 1 }}>
-                {saving ? 'Creating...' : 'Create Category'}
+                {saving ? 'Saving...' : (editCategory ? 'Save Changes' : 'Create Category')}
               </button>
             </div>
           </form>
+        </Modal>
+      )}
+
+      {/* ─── Confirm Delete Modal ─── */}
+      {confirmDelete && (
+        <Modal title="Confirm Delete" onClose={() => setConfirmDelete(null)}>
+          <p style={{ color: '#475569', margin: '0 0 1.25rem', fontSize: 14, lineHeight: 1.5 }}>
+            Are you sure you want to delete <strong>"{confirmDelete.name}"</strong>? {confirmDelete.type === 'category' && 'Products in this category will become uncategorized.'} This action cannot be undone.
+          </p>
+          <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+            <button type="button" onClick={() => setConfirmDelete(null)} style={{ background: '#f1f5f9', border: 'none', padding: '10px 20px', borderRadius: 8, fontWeight: 600, color: '#64748b', cursor: 'pointer', fontSize: 13 }}>Cancel</button>
+            <button type="button" disabled={saving} onClick={confirmDelete.type === 'category' ? handleCategoryDelete : handleProductDelete} style={{ background: '#ef4444', color: 'white', border: 'none', padding: '10px 24px', borderRadius: 8, fontWeight: 700, cursor: saving ? 'wait' : 'pointer', fontSize: 13, opacity: saving ? 0.7 : 1 }}>
+              {saving ? 'Deleting...' : 'Delete'}
+            </button>
+          </div>
         </Modal>
       )}
 

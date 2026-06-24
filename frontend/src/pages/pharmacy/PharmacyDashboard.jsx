@@ -7,27 +7,30 @@ import PharmacyProducts from './PharmacyProducts';
 import PharmacyCategories from './PharmacyCategories';
 import PharmacyBranches from './PharmacyBranches';
 import PharmacyRequests from './PharmacyRequests';
+import CashierAuditLog from '../sales/CashierAuditLog';
 
 const PharmacyDashboard = () => {
   const menuItems = [
-    { label: 'POS & Overview', path: '/pharmacy/overview', icon: 'dashboard' },
-    { label: 'Requests', path: '/pharmacy/requests', icon: 'clipboard' },
-    { label: 'Products', path: '/pharmacy/products', icon: 'inventory' },
-    { label: 'Categories', path: '/pharmacy/categories', icon: 'category' },
-    { label: 'Branches', path: '/pharmacy/branches', icon: 'store' },
+    { label: 'Overview',  path: '/pharmacy/overview',  icon: 'dashboard' },
+    { label: 'Requests',  path: '/pharmacy/requests',  icon: 'clipboard' },
+    { label: 'Products',  path: '/pharmacy/products',  icon: 'inventory' },
+    { label: 'Categories',path: '/pharmacy/categories',icon: 'category' },
+    { label: 'Branches',  path: '/pharmacy/branches',  icon: 'store' },
+    { label: 'Audit Log', path: '/pharmacy/audit',     icon: 'archive' },
   ];
 
   return (
     <div>
-      <DashboardLayout menuItems={menuItems} title={"Pharmacy\nManagement\nDashboard"}>
+      <DashboardLayout menuItems={menuItems} title="Pharmacy Manager">
         <div>
           <Routes>
-            <Route path="overview" element={<PharmacyOverview />} />
-            <Route path="requests" element={<PharmacyRequests />} />
-            <Route path="products" element={<PharmacyProducts />} />
+            <Route path="overview"   element={<PharmacyOverview />} />
+            <Route path="requests"   element={<PharmacyRequests />} />
+            <Route path="products"   element={<PharmacyProducts />} />
             <Route path="categories" element={<PharmacyCategories />} />
-            <Route path="branches" element={<PharmacyBranches />} />
-            <Route path="/" element={<Navigate to="overview" replace />} />
+            <Route path="branches"   element={<PharmacyBranches />} />
+            <Route path="audit"      element={<CashierAuditLog source="pharmacy" />} />
+            <Route path="/"          element={<Navigate to="overview" replace />} />
           </Routes>
         </div>
       </DashboardLayout>

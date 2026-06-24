@@ -84,7 +84,8 @@ const PrintingOrders = () => {
                   <th style={{ padding: '12px 14px', textAlign: 'left', color: '#64748b', fontWeight: 600 }}>Qty</th>
                   <th style={{ padding: '12px 14px', textAlign: 'left', color: '#64748b', fontWeight: 600 }}>Total</th>
                   <th style={{ padding: '12px 14px', textAlign: 'left', color: '#64748b', fontWeight: 600 }}>Status</th>
-                  <th style={{ padding: '12px 14px', textAlign: 'left', color: '#64748b', fontWeight: 600 }}>Date</th>
+                  <th style={{ padding: '12px 14px', textAlign: 'left', color: '#64748b', fontWeight: 600 }}>Due Date</th>
+                  <th style={{ padding: '12px 14px', textAlign: 'left', color: '#64748b', fontWeight: 600 }}>Created</th>
                 </tr>
               </thead>
               <tbody>
@@ -102,6 +103,7 @@ const PrintingOrders = () => {
                         {o.status_name}
                       </span>
                     </td>
+                    <td style={{ padding: '12px 14px', color: o.due_date && new Date(o.due_date) < new Date() ? '#dc2626' : '#64748b', fontSize: 12, fontWeight: o.due_date && new Date(o.due_date) < new Date() ? 600 : 400 }}>{o.due_date ? new Date(o.due_date).toLocaleDateString() : '-'}</td>
                     <td style={{ padding: '12px 14px', color: '#64748b', fontSize: 12 }}>{new Date(o.created_at).toLocaleDateString()}</td>
                   </tr>
                 ))}

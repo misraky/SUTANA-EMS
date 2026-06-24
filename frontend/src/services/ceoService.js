@@ -36,6 +36,33 @@ const ceoService = {
   },
   dismissAlert: async (alertId) => {
     return await apiClient.post(`/ceo/alerts/${alertId}/dismiss`);
+  },
+  getActivityLog: async (limit = 10) => {
+    return await apiClient.get('/ceo/activity', { params: { limit } });
+  },
+  getPendingPOApprovals: async () => {
+    return await apiClient.get('/ceo/pending-approvals');
+  },
+  approvePO: async (id) => {
+    return await apiClient.post(`/ceo/approve/${id}`);
+  },
+  rejectPO: async (id, rejectionReason) => {
+    return await apiClient.post(`/ceo/reject/${id}`, { rejectionReason });
+  },
+  getPendingApprovalsCount: async () => {
+    return await apiClient.get('/ceo/pending-approvals-count');
+  },
+  getHRSummary: async () => {
+    return await apiClient.get('/ceo/hr-summary');
+  },
+  getFarmingAttendance: async () => {
+    return await apiClient.get('/farming/attendance/today');
+  },
+  getDailyEmployees: async () => {
+    return await apiClient.get('/ceo/daily-employees');
+  },
+  getEmployeeMonthlyAttendance: async (employeeId, month) => {
+    return await apiClient.get(`/ceo/employee-attendance/${employeeId}`, { params: { month } });
   }
 };
 export default ceoService;

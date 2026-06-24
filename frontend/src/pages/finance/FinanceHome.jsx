@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import financeService from '../../services/financeService';
 import {
   TrendingUp, TrendingDown, AlertTriangle, RefreshCw,
   CheckCircle2, XCircle, Clock, DollarSign, FileText,
@@ -116,7 +117,7 @@ const VerificationSection = ({ items, onUpdate }) => {
   };
 
   const handleReject = (id) => {
-    onUpdate(id, 'REJECTED');
+    onUpdate(id, 'REJECTED', rejectReason);
     setRejectOpen(null);
     setRejectReason('');
   };
@@ -460,64 +461,122 @@ const TransactionLedger = ({ transactions }) => {
 // ─── Main FinanceHome ─────────────────────────────────────────────────────────
 
 const FinanceHome = () => {
-  const [verifications, setVerifications] = useState(MOCK_VERIFICATIONS);
-  const [refunds, setRefunds] = useState(MOCK_REFUNDS);
-  const [transactions, setTransactions] = useState(MOCK_TRANSACTIONS);
+  const [verifications, setVerifications] = useState([]);
+  const [refunds, setRefunds] = useState([]);
+  const [transactions, setTransactions] = useState([]);
   const [toast, setToast] = useState(null);
+
+  const fetchPending = async () => {
+    try {
+      const res = await financeService.getPendingRentalPayments();
+      if (res.status === 'success') {
+        const orders = res.data;
+        const verif = [];
+        const refs = [];
+        orders.forEach(o => {
+          if (o.paymentStatus === 'PENDING_VERIFICATION') {
+            verif.push({
+              id: o.id,
+              orderId: o.orderNumber,
+              module: 'Rental',
+              customer: o.customerName,
+              amount: o.additionalOwed > 0 ? o.additionalOwed : o.totalAmount,
+              method: o.paymentMethod,
+              reference: 'Check Proof',
+              submittedAt: new Date(o.updatedAt).toLocaleString(),
+              proofFile: o.paymentProofUrl || 'No file',
+              status: 'PENDING'
+            });
+          }
+          if (Number(o.refundAmount) > 0) {
+            refs.push({
+              id: o.id,
+              orderId: o.orderNumber,
+              module: 'Rental',
+              customer: o.customerName,
+              originalAmount: o.totalAmount,
+              cancellationFee: 0,
+              refundAmount: o.refundAmount,
+              reason: 'Refund requested',
+              originalMethod: o.paymentMethod,
+              status: 'PENDING'
+            });
+          }
+        });
+        setVerifications(verif);
+        setRefunds(refs);
+      }
+    } catch(err) {
+      console.error(err);
+    }
+  };
+
+  const fetchLedger = async () => {
+    try {
+      const res = await financeService.getPayments({ limit: 50 });
+      if (res.data && res.data.data && res.data.data.payments) {
+         const pays = res.data.data.payments.map(p => ({
+            id: p.id,
+            time: new Date(p.processedAt || p.createdAt).toLocaleTimeString(),
+            module: p.referenceType,
+            type: 'PAYMENT',
+            amount: p.amount,
+            method: p.paymentMethod || 'System',
+            invoice: p.referenceNumber,
+            status: p.status === 'Paid' ? 'VERIFIED' : 'PENDING'
+         }));
+         setTransactions(pays);
+      }
+    } catch(err) {
+      console.error(err);
+    }
+  };
+
+  useEffect(() => {
+    fetchPending();
+    fetchLedger();
+  }, []);
 
   const showToast = (msg) => {
     setToast(msg);
     setTimeout(() => setToast(null), 4000);
   };
 
-  const handleVerificationUpdate = (id, status) => {
-    setVerifications(v => v.map(i => i.id === id ? { ...i, status } : i));
-    if (status === 'APPROVED') {
-      const item = verifications.find(i => i.id === id);
-      setTransactions(prev => [{
-        id: `TX-${Date.now()}`,
-        time: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-        module: item.module,
-        type: 'PAYMENT',
-        amount: item.amount,
-        method: item.method,
-        invoice: item.orderId,
-        status: 'VERIFIED',
-      }, ...prev]);
-      showToast(`✅ Payment for ${item.orderId} verified and recorded.`);
-    } else {
-      showToast(`❌ Payment rejected. Customer has been notified.`);
+  const handleVerificationUpdate = async (id, status, rejectReason) => {
+    const item = verifications.find(i => i.id === id);
+    if (!item) return;
+    try {
+       await financeService.verifyRentalPayment(id, {
+         isVerified: status === 'APPROVED',
+         verifiedAmount: item.amount,
+         referenceNumber: item.reference || 'SYSTEM_VERIFIED',
+         notes: rejectReason || 'Verified via Finance Dashboard'
+       });
+       showToast(status === 'APPROVED' ? `✅ Payment for ${item.orderId} verified.` : `❌ Payment rejected.`);
+       fetchPending();
+       fetchLedger();
+    } catch(e) {
+       console.error(e);
+       showToast('Error processing verification');
     }
   };
 
-  const handleRefundUpdate = (id, status) => {
-    setRefunds(r => r.map(i => i.id === id ? { ...i, status } : i));
-    if (status === 'APPROVED') {
-      const item = refunds.find(i => i.id === id);
-      const newTxs = [{
-        id: `TX-RF-${Date.now()}`,
-        time: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-        module: item.module,
-        type: 'REFUND',
-        amount: -item.refundAmount,
-        method: 'Processed',
-        invoice: item.id,
-        status: 'VERIFIED',
-      }];
-      if (item.cancellationFee > 0) {
-        newTxs.push({
-          id: `TX-FEE-${Date.now()}`,
-          time: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-          module: item.module,
-          type: 'FEE',
-          amount: item.cancellationFee,
-          method: 'Retained',
-          invoice: item.id,
-          status: 'VERIFIED',
-        });
-      }
-      setTransactions(prev => [...newTxs, ...prev]);
-      showToast(`🔄 Refund of ${item.refundAmount.toLocaleString()} ETB approved and recorded.`);
+  const handleRefundUpdate = async (id, status) => {
+    const item = refunds.find(i => i.id === id);
+    if (!item) return;
+    try {
+       await financeService.verifyRentalPayment(id, {
+         isVerified: status === 'APPROVED',
+         verifiedAmount: 0,
+         referenceNumber: 'REFUND_PROCESSED',
+         notes: 'Refund processed via Finance Dashboard'
+       });
+       showToast(status === 'APPROVED' ? `🔄 Refund of ${item.refundAmount} ETB approved.` : `Refund rejected.`);
+       fetchPending();
+       fetchLedger();
+    } catch(e) {
+       console.error(e);
+       showToast('Error processing refund');
     }
   };
 

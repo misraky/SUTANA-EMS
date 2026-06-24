@@ -9,7 +9,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 2.5rem;
+  margin-bottom: 0.5rem;
 }
 .pageTitle {
   font-size: 2rem;
@@ -56,48 +56,44 @@
   color: #64748b;
   font-size: 1.1rem;
 }
-.kpiGrid {
+
+.revenueMetricsRow {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
 }
-.kpiCard {
+.metricCard {
   background: #ffffff;
   border-radius: 12px;
-  padding: 1.5rem;
+  padding: 1.25rem 1.5rem;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
   border: 1px solid #e2e8f0;
-  transition: transform 0.2s, box-shadow 0.2s;
 }
-.kpiCard:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-}
-.kpiLabel {
-  font-size: 0.875rem;
+.metricLabel {
+  font-size: 0.8rem;
   font-weight: 600;
   color: #64748b;
   text-transform: uppercase;
-  margin-bottom: 0.5rem;
   letter-spacing: 0.05em;
+  margin-bottom: 0.25rem;
 }
-.kpiValue {
-  font-size: 2rem;
+.metricValue {
+  font-size: 1.75rem;
   font-weight: 700;
   color: #0f172a;
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.5rem;
 }
-.kpiValue.loss {
+.metricValue.loss {
   color: #dc2626;
 }
 .lossLabel {
-  font-size: 0.875rem;
+  font-size: 0.8rem;
   color: #dc2626;
   margin-left: 0.5rem;
   font-weight: normal;
 }
-.kpiTrend {
-  font-size: 0.875rem;
+.metricTrend {
+  font-size: 0.8rem;
   font-weight: 500;
   display: flex;
   align-items: center;
@@ -120,72 +116,149 @@
 }
 @media (min-width: 1024px) {
   .mainGrid {
-    grid-template-columns: 2fr 1fr;
+    grid-template-columns: 1.6fr 1fr;
   }
 }
 
-.chartsGrid {
-  display: grid;
-  grid-template-columns: 1fr;
+.leftColumn {
+  display: flex;
+  flex-direction: column;
   gap: 1.5rem;
 }
-
-.chartCard {
-  background: #ffffff;
-  border-radius: 12px;
-  padding: 1.5rem;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-  border: 1px solid #e2e8f0;
-}
-.chartTitle {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: #1e293b;
-  margin: 0 0 1.5rem;
-}
-.chartWrapper {
-  height: 300px;
-  width: 100%;
-}
-
-.sidePanel {
+.rightColumn {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
 }
 
-.alertsCard {
+.card {
   background: #ffffff;
   border-radius: 12px;
   padding: 1.5rem;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
   border: 1px solid #e2e8f0;
 }
+.cardTitle {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0 0 1rem;
+}
+.chartWrapper {
+  height: 260px;
+  width: 100%;
+}
+.emptyChart {
+  display: flex;
+  height: 200px;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+.cashFlowMetrics {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+.cfMetric {
+  display: flex;
+  flex-direction: column;
+}
+.cfLabel {
+  font-size: 0.7rem;
+  color: #64748b;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+.cfValue {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+.cfValue.in { color: #16a34a; }
+.cfValue.out { color: #dc2626; }
+.cfValue.net.positive { color: #16a34a; }
+.cfValue.net.negative { color: #dc2626; }
+
+.profitTable {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.profitHeader {
+  display: grid;
+  grid-template-columns: 2fr 1.5fr 1.5fr 1fr;
+  padding: 0.5rem 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  border-bottom: 1px solid #e2e8f0;
+}
+.profitRow {
+  display: grid;
+  grid-template-columns: 2fr 1.5fr 1.5fr 1fr;
+  padding: 0.6rem 0;
+  font-size: 0.875rem;
+  border-bottom: 1px solid #f1f5f9;
+}
+.profitRow:last-child {
+  border-bottom: none;
+}
+.profitCol {
+  display: flex;
+  align-items: center;
+}
+
+.kpiWidgetsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+  gap: 0.75rem;
+}
+.circularWidget {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 1rem 0.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+}
+.widgetLabel {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #64748b;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
 .alertsHeader {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1.5rem;
-}
-.alertsTitle {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: #1e293b;
-  margin: 0;
+  margin-bottom: 0;
 }
 .alertsBadge {
   background: #dc2626;
   color: white;
-  padding: 0.25rem 0.5rem;
+  padding: 0.2rem 0.6rem;
   border-radius: 999px;
   font-size: 0.75rem;
   font-weight: 700;
 }
-
+.alertsList {
+  margin-top: 0.75rem;
+}
 .alertItem {
-  padding: 1rem;
+  padding: 0.75rem;
   border-radius: 8px;
-  margin-bottom: 1rem;
+  margin-bottom: 0.75rem;
   border-left: 4px solid transparent;
   background: #f8fafc;
 }
@@ -201,42 +274,38 @@
   border-left-color: #3b82f6;
   background: #eff6ff;
 }
-
 .alertHeader {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.3rem;
 }
 .alertTitle {
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   color: #0f172a;
 }
 .alertTime {
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   color: #64748b;
 }
 .alertMessage {
-  font-size: 0.875rem;
+  font-size: 0.8rem;
   color: #475569;
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.5rem;
 }
 .alertActions {
   display: flex;
   gap: 1rem;
 }
 .alertActionLink {
-  font-size: 0.875rem;
+  font-size: 0.8rem;
   color: #2563eb;
   text-decoration: none;
   font-weight: 500;
 }
-.alertActionLink:hover {
-  text-decoration: underline;
-}
 .alertDismiss {
-  font-size: 0.875rem;
+  font-size: 0.8rem;
   color: #64748b;
   background: none;
   border: none;
@@ -244,45 +313,60 @@
   padding: 0;
   font-weight: 500;
 }
-.alertDismiss:hover {
-  color: #0f172a;
-}
 .noAlerts {
   text-align: center;
   color: #64748b;
-  padding: 2rem 0;
-  font-size: 0.875rem;
+  padding: 1.5rem 0;
+  font-size: 0.85rem;
 }
 
-.cashFlowCard {
-  background: #ffffff;
-  border-radius: 12px;
-  padding: 1.5rem;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-  border: 1px solid #e2e8f0;
-}
-.cashFlowMetrics {
+.activityHeader {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 1.5rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid #e2e8f0;
+  align-items: center;
 }
-.cfMetric {
+.activityBadge {
+  background: #3b82f6;
+  color: white;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+.activityList {
   display: flex;
   flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
 }
-.cfLabel {
+.activityItem {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+.activityItem:last-child {
+  border-bottom: none;
+}
+.activityDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #3b82f6;
+  margin-top: 6px;
+  flex-shrink: 0;
+}
+.activityDesc {
+  font-size: 0.85rem;
+  color: #1e293b;
+  font-weight: 500;
+}
+.activityMeta {
+  display: flex;
+  gap: 0.75rem;
   font-size: 0.75rem;
-  color: #64748b;
-  text-transform: uppercase;
-  font-weight: 600;
+  color: #94a3b8;
+  margin-top: 0.15rem;
 }
-.cfValue {
-  font-size: 1.25rem;
-  font-weight: 700;
-}
-.cfValue.in { color: #16a34a; }
-.cfValue.out { color: #dc2626; }
-.cfValue.net.positive { color: #16a34a; }
-.cfValue.net.negative { color: #dc2626; }

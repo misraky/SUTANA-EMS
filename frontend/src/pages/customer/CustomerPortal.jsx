@@ -14,13 +14,16 @@ import CustomerFarmingOrders from './CustomerFarmingOrders';
 import CustomerPrintingOrders from './CustomerPrintingOrders';
 import CustomerRetailOrders from './CustomerRetailOrders';
 import CustomerPortalHome from './CustomerPortalHome';
-import { Printer, Sprout, Pill, Package, X } from 'lucide-react';
+import CustomerBids from './CustomerBids';
+import CustomerAllOrders from './CustomerAllOrders';
+import { Printer, Sprout, Pill, Package, Car, X } from 'lucide-react';
 
 const OPTIONS = [
-  { label: 'Printing Order', desc: 'Books, Modules, Exams, Brochures, Tax Receipts', icon: <Printer size={28} />, color: '#3b82f6', bg: '#eff6ff', path: '/printing/create-order' },
+  { label: 'Printing Order', desc: 'Books, Modules, Exams, Brochures, Tax Receipts', icon: <Printer size={28} />, color: '#3b82f6', bg: '#eff6ff', path: '/services/printing' },
   { label: 'Farming Order', desc: 'Seeds, Fertilizers, Tools, Pesticides', icon: <Sprout size={28} />, color: '#059669', bg: '#ecfdf5', path: '/services/farming' },
-  { label: 'Pharmacy Order', desc: 'Medicines, Prescriptions, Health Products', icon: <Pill size={28} />, color: '#8b5cf6', bg: '#f5f3ff', path: '/customer/prescriptions' },
-  { label: 'Retail Order', desc: 'Stationery, Electronics, Office Supplies & more', icon: <Package size={28} />, color: '#d97706', bg: '#fffbeb', path: '/customer/retail-orders' },
+  { label: 'Car Rental', desc: 'Vehicle rental, fleet management & short/long term', icon: <Car size={28} />, color: '#8b5cf6', bg: '#f5f3ff', path: '/fleet-gallery' },
+  { label: 'Pharmacy Order', desc: 'Medicines, Prescriptions, Health Products', icon: <Pill size={28} />, color: '#ec4899', bg: '#fdf2f8', path: '/services/pharmacy' },
+  { label: 'Retail Order', desc: 'Stationery, Electronics, Office Supplies & more', icon: <Package size={28} />, color: '#d97706', bg: '#fffbeb', path: '/services/retail' },
 ];
 
 export const PlaceOrderModal = ({ open, onClose }) => {
@@ -73,12 +76,10 @@ const CustomerPortal = () => {
   const menuItems = [
     { label: 'Portal Home',    path: '/customer/portal',          icon: 'home' },
     { label: 'New Order',      path: '/customer/new-order',       icon: 'plus-circle' },
-    { label: 'My Pharmacy',    path: '/customer/prescriptions',   icon: 'pill' },
-    { label: 'Farming Orders', path: '/customer/farming-orders',  icon: 'sprout' },
-    { label: 'Printing Orders',path: '/customer/printing-orders', icon: 'printer' },
-    { label: 'Retail Orders',   path: '/customer/retail-orders',  icon: 'package' },
+    { label: 'All Orders',     path: '/customer/all-orders',      icon: 'list' },
     { label: 'Receipts',       path: '/customer/receipts',       icon: 'receipt' },
     { label: 'Invoices',       path: '/customer/invoices',       icon: 'file-text' },
+    { label: 'My Bids',        path: '/customer/bids',           icon: 'clipboard' },
     { label: 'Support',        path: '/customer/support',        icon: 'message-circle' },
   ];
 
@@ -90,6 +91,7 @@ const CustomerPortal = () => {
           <Route path="orders" element={<CustomerOrders />} />
           <Route path="orders/:id/track" element={<OrderTracking />} />
           <Route path="new-order" element={<NewOrderPage />} />
+          <Route path="new-printing-order" element={<CustomerOrderForm />} />
           <Route path="receipts" element={<CustomerReceipts />} />
           <Route path="invoices" element={<CustomerInvoices />} />
           <Route path="prescriptions" element={<CustomerPrescriptions />} />
@@ -98,7 +100,9 @@ const CustomerPortal = () => {
           <Route path="retail-orders" element={<CustomerRetailOrders />} />
           <Route path="support" element={<SupportTickets />} />
           <Route path="profile" element={<CustomerProfile />} />
+          <Route path="all-orders" element={<CustomerAllOrders />} />
           <Route path="rentals" element={<CustomerRentals />} />
+          <Route path="bids" element={<CustomerBids />} />
           <Route path="/" element={<Navigate to="portal" replace />} />
         </Routes>
       </DashboardLayout>

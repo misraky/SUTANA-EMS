@@ -64,6 +64,7 @@ const CustomerPrintingOrders = () => {
                 <div><strong>Binding:</strong> {order.binding_type || 'None'}</div>
                 <div><strong>Total:</strong> {parseFloat(order.total_price).toLocaleString()} ETB</div>
                 {order.due_date && <div><strong>Due:</strong> {new Date(order.due_date).toLocaleDateString()}</div>}
+                <div><strong>Phone:</strong> {order.customer_phone || 'N/A'}</div>
               </div>
             </div>
           ))}

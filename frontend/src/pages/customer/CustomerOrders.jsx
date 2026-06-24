@@ -34,7 +34,8 @@ const CustomerOrders = () => {
         quantity: o.quantity,
         totalAmount: o.total_price || o.totalAmount,
         dueDate: o.due_date || o.dueDate,
-        status: o.status
+        status: o.status,
+        phone: o.customer_phone
       }));
       setOrders(normalizedOrders);
       setPagination({
@@ -97,6 +98,7 @@ const CustomerOrders = () => {
                 <th>Product Type</th>
                 <th>Qty</th>
                 <th>Amount</th>
+                <th>Phone</th>
                 <th>Due Date</th>
                 <th>Status</th>
                 <th>Actions</th>
@@ -111,6 +113,7 @@ const CustomerOrders = () => {
                     <td>{order.productType}</td>
                     <td>{order.quantity}</td>
                     <td>{formatCurrency(order.totalAmount)}</td>
+                    <td>{order.phone || '-'}</td>
                     <td>{formatDate(order.dueDate)}</td>
                     <td>
                       <span

@@ -1,0 +1,494 @@
+/* ── Design Tokens ── */
+:root {
+  --clr-primary: #0D7C66;
+  --clr-primary-light: #1A8F7A;
+  --clr-accent: #10B981;
+  --clr-gold: #d4a017;
+  --clr-dark: #0f1420;
+  --clr-dark-2: #1a1f2e;
+  --clr-bg: #f8fafc;
+  --clr-card: #ffffff;
+  --clr-text: #1e293b;
+  --clr-text-light: #64748b;
+  --radius-card: 16px;
+  --radius-container: 24px;
+  --shadow-card: 0 4px 20px rgba(0,0,0,0.08);
+  --shadow-hover: 0 12px 40px rgba(0,0,0,0.15);
+  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ── Animations ── */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.9); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(13,124,102,0.3); }
+  50%      { box-shadow: 0 0 20px 4px rgba(13,124,102,0.15); }
+}
+
+.anim-fade-up { animation: fadeInUp 0.6s ease forwards; }
+.anim-scale   { animation: scaleIn 0.5s ease forwards; }
+
+/* ── Scroll‑triggered visibility (set by JS) ── */
+.inview-fade-up {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+.inview-fade-up.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ── Modern Card ── */
+.modern-card {
+  background: var(--clr-card);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  border: 1px solid rgba(0,0,0,0.04);
+  transition: var(--transition);
+  position: relative;
+  overflow: hidden;
+}
+.modern-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: 2px solid transparent;
+  transition: var(--transition);
+  pointer-events: none;
+}
+.modern-card:hover {
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: var(--shadow-hover);
+}
+.modern-card:hover::before {
+  border-color: var(--clr-primary);
+}
+
+/* ── Glass Card ── */
+.glass-card {
+  background: rgba(255,255,255,0.06);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: var(--radius-card);
+  transition: var(--transition);
+}
+.glass-card:hover {
+  transform: translateY(-6px) scale(1.01);
+  background: rgba(255,255,255,0.1);
+  border-color: rgba(13,124,102,0.3);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.3);
+}
+
+/* ── Icon hover ── */
+.icon-hover {
+  transition: var(--transition);
+  display: inline-flex;
+}
+.modern-card:hover .icon-hover,
+.glass-card:hover .icon-hover {
+  transform: scale(1.15) rotate(-4deg);
+  color: var(--clr-primary) !important;
+}
+
+/* ── Section spacing ── */
+.modern-section {
+  padding: 80px 40px;
+}
+.modern-section--alt {
+  background: var(--clr-bg);
+}
+.modern-section--dark {
+  background: var(--clr-dark);
+  color: #e2e8f0;
+}
+.modern-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* ── Section header ── */
+.section-header {
+  text-align: center;
+  margin-bottom: 56px;
+}
+.section-header h2 {
+  font-size: clamp(1.8rem, 3.5vw, 2.6rem);
+  font-weight: 800;
+  color: var(--clr-text);
+  margin-bottom: 12px;
+  letter-spacing: -0.5px;
+}
+.section-header--dark h2 {
+  color: #f1f5f9;
+}
+.section-header p {
+  font-size: 1.05rem;
+  color: var(--clr-text-light);
+  max-width: 680px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+.section-header--dark p {
+  color: #94a3b8;
+}
+
+/* ── Staggered delays ── */
+.stagger > *:nth-child(1) { transition-delay: 0s; }
+.stagger > *:nth-child(2) { transition-delay: 0.1s; }
+.stagger > *:nth-child(3) { transition-delay: 0.2s; }
+.stagger > *:nth-child(4) { transition-delay: 0.3s; }
+.stagger > *:nth-child(5) { transition-delay: 0.4s; }
+.stagger > *:nth-child(6) { transition-delay: 0.5s; }
+
+/* ── Square Cards ── */
+.cap-card {
+  width: 260px;
+  height: 260px;
+}
+.cap-para {
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  word-break: break-word;
+}
+@media (max-width: 1024px) {
+  .cap-card { width: 220px; height: 220px; }
+}
+@media (max-width: 640px) {
+  .cap-card { width: 190px; height: 190px; }
+  .cap-para { -webkit-line-clamp: 3; }
+}
+
+/* ── Infinite Scroll ── */
+.scroll-track-wrap {
+  overflow: hidden;
+  mask-image: linear-gradient(90deg, transparent 0%, #000 4%, #000 96%, transparent 100%);
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 4%, #000 96%, transparent 100%);
+}
+.scroll-track {
+  display: flex;
+  width: fit-content;
+  animation-duration: 40s;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+.scroll-track:hover {
+  animation-play-state: paused;
+}
+.scroll-right {
+  animation-name: marqueeRight;
+}
+.scroll-left {
+  animation-name: marqueeLeft;
+}
+@keyframes marqueeRight {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+@keyframes marqueeLeft {
+  0%   { transform: translateX(-50%); }
+  100% { transform: translateX(0); }
+}
+
+/* ── Card hover effects ── */
+.cap-card:hover {
+  transform: translateY(-6px) !important;
+  box-shadow: 0 14px 45px rgba(0,0,0,0.18) !important;
+}
+.cap-card:hover .icon-hover {
+  transform: scale(1.25);
+}
+.icon-hover {
+  transition: transform 0.3s ease;
+}
+
+/* ── happy1 float on hover ── */
+.hover-float {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.hover-float:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 30px 60px rgba(0,0,0,0.2);
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .modern-section { padding: 50px 20px; }
+  .section-header { margin-bottom: 36px; }
+  .section-header h2 { font-size: 1.5rem; }
+  .stack-mobile { flex-direction: column !important; }
+  .stack-mobile > * { flex: 0 0 100% !important; max-width: 100% !important; }
+}
+
+/* ── Smart Footer ── */
+.smart-footer {
+  background: #111827;
+  color: #9CA3AF;
+  padding: 60px 40px 20px;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.smart-footer-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 30% 20% 20% 20%;
+  gap: 40px;
+}
+@media (max-width: 1024px) {
+  .smart-footer-inner {
+    grid-template-columns: 1fr 1fr;
+    gap: 36px;
+  }
+}
+@media (max-width: 768px) {
+  .smart-footer-inner {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+  .smart-footer { padding: 40px 20px 20px; }
+}
+
+/* Brand column */
+.smart-footer-brand {
+  max-width: 320px;
+}
+.footer-brand-name {
+  font-size: 22px;
+  font-weight: 800;
+  color: #10B981;
+  margin-bottom: 12px;
+  letter-spacing: -0.3px;
+  animation: pulseGlow 3s ease-in-out infinite;
+}
+.footer-brand-desc {
+  font-size: 14px;
+  color: #9CA3AF;
+  margin: 0;
+  line-height: 1.7;
+}
+
+/* Column headings */
+.footer-col-heading {
+  font-size: 16px;
+  font-weight: 600;
+  color: #FFFFFF;
+  margin: 0 0 16px;
+  letter-spacing: 0.3px;
+}
+
+/* Link lists */
+.footer-col-links {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Individual link */
+.footer-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: #9CA3AF;
+  text-decoration: none;
+  font-size: 14px;
+  position: relative;
+  width: fit-content;
+  transition: color 0.3s ease;
+}
+.footer-link::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: -2px;
+  width: 0;
+  height: 2px;
+  background: #10B981;
+  transition: width 0.3s ease;
+  border-radius: 2px;
+}
+.footer-link:hover {
+  color: #FFFFFF;
+}
+.footer-link:hover::after {
+  width: 100%;
+}
+
+/* Link icon */
+.footer-link-icon {
+  color: #10B981;
+  flex-shrink: 0;
+  transition: transform 0.3s ease, color 0.3s ease;
+}
+.footer-link:hover .footer-link-icon {
+  transform: scale(1.2) rotate(-5deg);
+  color: #10B981;
+}
+
+/* Divider */
+.smart-footer-divider {
+  max-width: 1200px;
+  margin: 30px auto;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #374151, transparent);
+}
+
+/* Bottom bar */
+.smart-footer-bottom {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  color: #6B7280;
+  padding-top: 4px;
+  border-top: 1px solid transparent;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.footer-location {
+  color: #6B7280;
+}
+@media (max-width: 480px) {
+  .smart-footer-bottom {
+    flex-direction: column;
+    text-align: center;
+    gap: 4px;
+  }
+}
+
+/* ── Mobile Navbar Enhancements ── */
+.pub-mobile-toggle {
+  display: none;
+  background: transparent;
+  border: none;
+  color: var(--clr-text);
+  cursor: pointer;
+  padding: 8px;
+}
+body.dark-theme .pub-mobile-toggle {
+  color: #f1f5f9;
+}
+
+@media (max-width: 1024px) {
+  .pub-mobile-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .pub-nav-center-modern {
+    position: absolute;
+    top: 64px;
+    left: 0;
+    width: 100%;
+    background: var(--clr-card);
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    gap: 16px;
+    clip-path: polygon(0 0, 100% 0, 100% 0, 0 0);
+    transition: clip-path 0.3s ease;
+    margin-left: 0;
+  }
+  body.dark-theme .pub-nav-center-modern {
+    background: var(--clr-dark-2);
+  }
+  
+  .pub-nav-center-modern.pub-nav-mobile-open {
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+  }
+
+  .pub-dropdown-grid {
+    position: static;
+    box-shadow: none;
+    border: none;
+    background: transparent;
+    padding: 10px 0 0 16px;
+    display: none;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .pub-dropdown-wrapper:hover .pub-dropdown-grid,
+  .pub-dropdown-wrapper.active .pub-dropdown-grid {
+    display: flex;
+  }
+
+  /* Hide Logo text on small screens */
+  .pub-logo-text {
+    display: none;
+  }
+  
+  .pub-nav-search-container {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    padding: 0 12px;
+  }
+  
+  .pub-nav-search-container > div {
+    width: 100%;
+    max-width: 300px;
+  }
+}
+
+/* ── Mobile Layout Fixes ── */
+@media (max-width: 768px) {
+  .stack-mobile {
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 32px !important;
+  }
+  .stack-mobile > div {
+    flex: 0 0 100% !important;
+    width: 100% !important;
+  }
+}
+
+/* ── Mobile Footer Enhancements ── */
+@media (max-width: 768px) {
+  .smart-footer {
+    padding: 60px 24px 30px;
+  }
+  .smart-footer-inner {
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+    text-align: center;
+  }
+  .smart-footer-brand {
+    max-width: 100%;
+    margin-bottom: 10px;
+  }
+  .footer-brand-name {
+    justify-content: center;
+    font-size: 28px;
+  }
+  .footer-col-links {
+    align-items: center;
+  }
+  .smart-footer-bottom {
+    flex-direction: column;
+    gap: 20px;
+    text-align: center;
+    padding-top: 24px;
+  }
+}

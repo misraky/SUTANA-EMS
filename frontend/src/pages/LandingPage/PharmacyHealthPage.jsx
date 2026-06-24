@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { PublicNav, PublicFooter } from './PublicNavFooter';
+import { PublicNav } from './PublicNavFooter';
 import authService from '../../services/authService';
 import pharmacyService from '../../services/pharmacyService';
 import axios from '../../services/apiClient';
 import { Search, Pill, XCircle, AlertTriangle, CheckCircle2, MapPin, Package, UploadCloud, X, ChevronRight } from 'lucide-react';
 import styles from './PharmacyHealthPage.module.css';
+import pharmacyHero from '../../assets/hero-section/pharmacy.jpg';
 
 const PharmacyHealthPage = () => {
   const navigate = useNavigate();
@@ -163,12 +164,9 @@ const PharmacyHealthPage = () => {
     <>
       <PublicNav />
       <div className={styles.pageWrapper}>
-        {/* Background Blobs for Glassmorphism */}
-        <div className={styles.blob1}></div>
-        <div className={styles.blob2}></div>
       
       {/* Hero Section */}
-      <section className={styles.heroSection}>
+      <section className={styles.heroSection} style={{ background: `linear-gradient(rgba(26,43,75,0.55), rgba(13,124,102,0.5)), url(${pharmacyHero}) center/cover` }}>
         <div className={styles.heroContent}>
           <h1 className={styles.heroTitle}>Sutana Pharmacy & Health</h1>
           <p className={styles.heroSubtitle}>
@@ -390,8 +388,6 @@ const PharmacyHealthPage = () => {
           </div>
         )}
       </section>
-
-      <PublicFooter />
 
       {/* Refill Modal */}
       {isModalOpen && selectedMedicine && (
