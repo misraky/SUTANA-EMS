@@ -87,7 +87,8 @@ const buildStages = (stages, currentIdx) =>
   stages.map((label, i) => ({ label, completed: i <= currentIdx, current: i === currentIdx }));
 
 const getModuleFromInvoice = (invoice) => {
-  const prefix = (invoice || '').split('-')[0];
+  const clean = (invoice || '').replace(/^[#\s]+/, '').trim();
+  const prefix = clean.split('-')[0];
   return MODULE_PREFIXES[prefix] || null;
 };
 
@@ -107,13 +108,13 @@ exports.trackOrder = catchAsync(async (req, res) => {
   if (moduleType === 'PRINTING') {
     row = await db('printing_orders as po')
       .join('customers as c', 'po.customer_id', 'c.id')
+      .leftJoin('users as u', 'c.user_id', 'u.id')
       .where('po.order_number', invoice)
       .where('po.deleted_at', null)
-      .select('po.*', 'c.phone as customer_phone')
+      .select('po.*', 'c.phone as customer_phone', 'u.phone as user_phone')
       .first();
     if (!row) return sendNotFound(res);
-    matchedPhone = row.customer_phone;
-    if (!phonesMatch(phoneClean, matchedPhone)) return sendNotFound(res);
+    if (!phonesMatch(phoneClean, row.customer_phone) && !phonesMatch(phoneClean, row.user_phone)) return sendNotFound(res);
 
     const statusRow = await db('order_statuses').where('id', row.status_id).first();
     const statusKey = (statusRow?.name || 'received').toLowerCase().replace(/ /g, '_');
@@ -210,11 +211,10 @@ exports.trackOrder = catchAsync(async (req, res) => {
     row = await db('farming_orders as fo')
       .leftJoin('users', 'fo.customer_id', 'users.id')
       .where('fo.invoice_number', invoice)
-      .select('fo.*', 'users.phone as customer_phone')
+      .select('fo.*', 'users.phone as user_phone')
       .first();
     if (!row) return sendNotFound(res);
-    matchedPhone = row.customer_phone;
-    if (!phonesMatch(phoneClean, matchedPhone)) return sendNotFound(res);
+    if (!phonesMatch(phoneClean, row.user_phone) && !phonesMatch(phoneClean, row.contact_phone)) return sendNotFound(res);
 
     const items = await db('farming_order_items')
       .join('farming_products', 'farming_order_items.product_id', 'farming_products.id')
