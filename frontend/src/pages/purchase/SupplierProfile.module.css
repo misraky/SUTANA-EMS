@@ -1,5 +1,5 @@
 /* SupplierProfile.module.css */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+/* Google Fonts import removed (no internet access). System sans-serif used as fallback. */
 
 .container {
   padding: 2rem;
@@ -345,3 +345,29 @@
   font-size: 0.8rem;
 }
 .viewLink:hover { text-decoration: underline; }
+@media (max-width: 768px) {
+  .container { padding: 1rem; }
+  .header { gap: 1rem; }
+  .headerInfo { width: 100%; }
+  .avatarCircle { width: 44px; height: 44px; font-size: 1.2rem; }
+  .supplierName { font-size: 1.2rem; margin-bottom: 0.3rem; }
+  .btnCreatePO { padding: 0.5rem 1rem; font-size: 0.8rem; }
+  .infoGrid { grid-template-columns: repeat(2, 1fr); gap: 0.75rem; }
+  .insightGrid { grid-template-columns: 1fr; }
+  .tabBar { overflow-x: auto; flex-wrap: nowrap; gap: 0; }
+  .tab { padding: 0.5rem 0.75rem; font-size: 0.78rem; flex-shrink: 0; }
+  .panelToolbar { flex-direction: column; align-items: flex-start; }
+  .searchInput { width: 100%; max-width: 100%; }
+  .dataTable thead th, .dataTable tbody td { padding: 0.5rem; font-size: 0.75rem; }
+  .insightBanner { padding: 1rem; }
+  .loadingState { height: 250px; }
+  .errorState { padding: 2rem 1rem; }
+}
+@media (max-width: 480px) {
+  .container { padding: 0.75rem; }
+  .supplierName { font-size: 1rem; }
+  .infoGrid { grid-template-columns: 1fr; }
+  .header { flex-direction: column; align-items: stretch; }
+  .btnBack { align-self: flex-start; }
+  .avatarCircle { width: 36px; height: 36px; font-size: 1rem; border-radius: 10px; }
+}

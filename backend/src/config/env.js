@@ -107,7 +107,7 @@ const environment = {
     maxFailedAttempts: parseInt(process.env.MAX_FAILED_ATTEMPTS || '5', 10),
     lockoutMinutes: parseInt(process.env.LOCKOUT_MINUTES || '15', 10),
   },
-  business: {
+  businessRules: {
     taxRate: parseFloat(process.env.TAX_RATE || '15'),
     cashierMaxDiscount: parseFloat(process.env.CASHIER_MAX_DISCOUNT || '5'),
     managerMaxDiscount: parseFloat(process.env.MANAGER_MAX_DISCOUNT || '15'),

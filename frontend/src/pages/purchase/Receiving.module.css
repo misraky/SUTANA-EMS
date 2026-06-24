@@ -191,3 +191,26 @@
   color: #991b1b;
   border: 1px solid #fecaca;
 }
+.emptyIcon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+.formActions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1rem;
+}
+@media (max-width: 768px) {
+  .container { padding: 1rem; }
+  .title { font-size: 1.25rem; }
+  .header { padding-bottom: 1rem; margin-bottom: 1rem; }
+  .dataTable th, .dataTable td { padding: 0.5rem; font-size: 0.75rem; }
+  .itemsTable th, .itemsTable td { padding: 0.5rem; font-size: 0.75rem; }
+  .inputSmall { width: 60px; }
+  .formHeader { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+}
+@media (max-width: 480px) {
+  .container { padding: 0.75rem; }
+  .title { font-size: 1.125rem; }
+  .subtitle { font-size: 0.8rem; }
+}

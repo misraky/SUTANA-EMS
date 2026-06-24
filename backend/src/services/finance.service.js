@@ -2,7 +2,7 @@ const { db, transaction } = require('../config/database');
 const config = require('../config/env');
 const { audit } = require('../config/logger');
 const { sendEmail } = require('./email.service');
-const { AppError } = require('../utils/AppError');
+const AppError = require('../utils/AppError');
 const getExpenses = async (filters) => {
   const { page = 1, limit = 25, categoryId, startDate, endDate, status = 'all' } = filters;
   const offset = (page - 1) * limit;
@@ -294,6 +294,22 @@ const processInvoicePayment = async (saleId, amount, paymentMethodId, referenceN
         updated_at: db.fn.now()
       });
   });
+  try {
+    await db('bank_payments').insert({
+      payment_id: require('crypto').randomUUID(),
+      reference: referenceNumber || `INV-${sale.invoice_number}-${Date.now()}`,
+      amount,
+      customer_name: sale.customer_name,
+      customer_phone: null,
+      bank_code: 'CBE',
+      status: 'completed',
+      description: `Invoice payment - ${sale.invoice_number}`,
+      completed_at: db.fn.now(),
+      created_at: db.fn.now()
+    });
+  } catch (err) {
+    console.error('Failed to record invoice payment in bank_payments:', err.message);
+  }
   if (sale.customer_id) {
     const customer = await db('customers').where('id', sale.customer_id).first();
     if (customer.email) {
@@ -476,8 +492,8 @@ const getAccountsReceivable = async (asOfDate = new Date().toISOString().split('
   for (const customer of customers) {
     const invoices = await db('pos_sales')
       .where('customer_id', customer.id)
-      .where('payment_method', 'Credit')
-      .where('status', 'Completed')
+      .where('payment_method_id', 2)
+      .where('status_id', 1)
       .select('id', 'invoice_number', 'total_amount', 'sale_date')
       .orderBy('sale_date', 'asc');
     let paidAmount = 0;
@@ -658,6 +674,24 @@ const notifyExpenseApprovers = async (expenseId, expenseDetails, requesterId) =>
     }).catch(() => {});
   }
 };
+const createBankTransaction = async (data, userId) => {
+  const { bankCode, amount, reference, transactionDate, description, customerName, customerPhone } = data;
+  const paymentId = require('crypto').randomUUID();
+  const ref = reference || `MANUAL-${Date.now()}`;
+  const [id] = await db('bank_payments').insert({
+    payment_id: paymentId,
+    reference: ref,
+    amount,
+    bank_code: bankCode,
+    status: 'completed',
+    description: description || null,
+    customer_name: customerName || null,
+    customer_phone: customerPhone || null,
+    completed_at: transactionDate ? new Date(transactionDate) : db.fn.now(),
+    created_at: db.fn.now()
+  });
+  return { id, paymentId, reference: ref };
+};
 module.exports = {
   getExpenses,
   getExpenseById,
@@ -674,5 +708,6 @@ module.exports = {
   getAccountsPayable,
   getExpenseCategories,
   getPaymentMethods,
-  getFinanceStatistics
+  getFinanceStatistics,
+  createBankTransaction
 };

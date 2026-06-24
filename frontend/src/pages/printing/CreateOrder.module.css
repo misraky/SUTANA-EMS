@@ -264,3 +264,14 @@
   color: #64748b;
   margin: 0.5rem 0 0 0;
 }
+
+@media (max-width: 640px) {
+  .title { font-size: 1.35rem; }
+  .subtitle { font-size: 0.85rem; }
+  .optionsGrid { grid-template-columns: 1fr; padding: 0.75rem; }
+  .formContainer { padding: 1.25rem; }
+  .estimateCard { padding: 1.25rem; }
+  .priceValue { font-size: 2rem; }
+  .formActions { flex-direction: column-reverse; }
+  .formActions button { width: 100%; justify-content: center; }
+}

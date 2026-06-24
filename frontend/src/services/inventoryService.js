@@ -31,6 +31,7 @@ const inventoryService = {
     return await apiClient.post('/inventory/adjustments', {
       productId,
       quantityChange: quantity,
+      unitCost: unitCost || 0,
       reason: reason || 'Initial stock registration',
       referenceType: 'Adjustment',
     });
@@ -58,6 +59,9 @@ const inventoryService = {
   },
   getUnits: async () => {
     return await apiClient.get('/inventory/units');
+  },
+  recordCount: async (data) => {
+    return await apiClient.post('/inventory/count', data);
   },
 };
 export default inventoryService;

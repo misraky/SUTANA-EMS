@@ -106,8 +106,8 @@ const CustomerManagement = () => {
         </table>
       </div>
       {showModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div style={{ background: '#fff', padding: '24px', borderRadius: '8px', width: '400px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '16px' }}>
+          <div style={{ background: '#fff', padding: '24px', borderRadius: '8px', width: '100%', maxWidth: '420px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
             <h3 style={{ marginTop: 0, marginBottom: '16px' }}>New Customer</h3>
             {errorMsg && (
               <div style={{ padding: '10px', marginBottom: '16px', background: '#fee2e2', color: '#b91c1c', borderRadius: '4px', fontSize: '14px' }}>

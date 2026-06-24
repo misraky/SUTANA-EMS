@@ -28,7 +28,10 @@ const addToCartValidation = [
     .isInt().withMessage('Product ID must be a valid integer'),
   body('quantity')
     .notEmpty().withMessage('Quantity is required')
-    .isInt({ min: 1 }).withMessage('Quantity must be at least 1')
+    .isInt({ min: 1 }).withMessage('Quantity must be at least 1'),
+  body('customerId')
+    .optional()
+    .isInt().withMessage('Customer ID must be a valid integer')
 ];
 const updateCartItemValidation = [
   param('itemId')
@@ -155,6 +158,14 @@ router.delete(
   POSController.clearCart
 );
 router.put(
+  '/cart/customer',
+  authenticate,
+  authorize(['pos:update']),
+  body('customerId').optional({ nullable: true }).isInt(),
+  validate,
+  POSController.setCartCustomer
+);
+router.put(
   '/cart/discount',
   authenticate,
   authorize(['pos:update']),
@@ -196,6 +207,15 @@ router.post(
   body('email').optional().isEmail().withMessage('Must be a valid email'),
   validate,
   POSController.createCustomer
+);
+
+router.get(
+  '/customers/:customerId/profile',
+  authenticate,
+  authorize(['pos:read']),
+  param('customerId').isInt().toInt(),
+  validate,
+  POSController.getCustomerProfile
 );
 router.get(
   '/reports',
@@ -258,4 +278,56 @@ router.get(
   validate,
   POSController.validateDiscount
 );
+
+// === RETURN / REFUND ROUTES ===
+const returnValidation = [
+  body('saleId').notEmpty().isInt().withMessage('Sale ID is required'),
+  body('items').isArray({ min: 1 }).withMessage('At least one item is required for return'),
+  body('items.*.productId').isInt(),
+  body('items.*.quantity').isInt({ min: 1 }),
+  body('items.*.reasonCode').optional().isString(),
+  body('refundMethod').optional().isIn(['original', 'cash', 'store_credit']),
+  body('notes').optional().isString()
+];
+
+router.get(
+  '/sales/:saleId/items',
+  authenticate,
+  authorize(['pos:read']),
+  saleIdParamValidation,
+  validate,
+  POSController.getSaleItems
+);
+
+router.post(
+  '/returns',
+  authenticate,
+  authorize(['pos:create']),
+  returnValidation,
+  validate,
+  POSController.processReturn
+);
+
+router.get(
+  '/returns',
+  authenticate,
+  authorize(['pos:read']),
+  query('page').optional().isInt().toInt(),
+  query('limit').optional().isInt().toInt(),
+  query('startDate').optional().isISO8601(),
+  query('endDate').optional().isISO8601(),
+  validate,
+  POSController.getReturnHistory
+);
+
+// === Z-REPORT ROUTE ===
+router.get(
+  '/z-report',
+  authenticate,
+  authorize(['pos:read']),
+  query('date').optional().isISO8601(),
+  validate,
+  POSController.getZReport
+);
+
 module.exports = router;

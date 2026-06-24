@@ -21,6 +21,12 @@ const reportService = {
   getProfitAndLoss: async (params) => {
     return await apiClient.get('/reports/finance/pnl', { params });
   },
+  getBalanceSheet: async (params) => {
+    return await apiClient.get('/reports/finance/balance-sheet', { params });
+  },
+  getBankReconciliation: async (params) => {
+    return await apiClient.get('/reports/finance/bank-reconciliation', { params });
+  },
   getTaxSummary: async (params) => {
     return await apiClient.get('/reports/finance/tax', { params });
   },

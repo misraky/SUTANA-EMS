@@ -226,4 +226,29 @@ router.get(
   validate,
   PrintingController.calculatePrice
 );
+router.get(
+  '/product-types',
+  authenticate,
+  PrintingController.getProductTypes
+);
+router.get(
+  '/paper-types',
+  authenticate,
+  PrintingController.getPaperTypes
+);
+router.get(
+  '/binding-types',
+  authenticate,
+  PrintingController.getBindingTypes
+);
+router.get(
+  '/customer-types',
+  authenticate,
+  PrintingController.getCustomerTypes
+);
+router.get(
+  '/order-statuses',
+  authenticate,
+  PrintingController.getOrderStatuses
+);
 module.exports = router;

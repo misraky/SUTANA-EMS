@@ -1,0 +1,57 @@
+.container { padding: 1.5rem; max-width: 1400px; margin: 0 auto; }
+.header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem; }
+.title { font-size: 1.5rem; font-weight: 700; color: #0f172a; margin-bottom: 0.25rem; }
+.subtitle { color: #64748b; font-size: 0.875rem; }
+.btnPrimary { background: #111827; color: #fff; border: none; padding: 0.65rem 1.25rem; border-radius: 0.5rem; font-weight: 600; font-size: 0.875rem; cursor: pointer; transition: background 0.2s; }
+.btnPrimary:hover { background: #1f2937; }
+.btnPrimary:disabled { opacity: 0.6; cursor: not-allowed; }
+.btnOutline { background: transparent; color: #374151; border: 1px solid #d1d5db; padding: 0.65rem 1.25rem; border-radius: 0.5rem; font-weight: 600; font-size: 0.875rem; cursor: pointer; transition: all 0.15s; }
+.btnOutline:hover { background: #f9fafb; }
+.statRow { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; margin-bottom: 1.25rem; }
+.statBox { background: white; border: 1px solid #e2e8f0; border-radius: 0.75rem; padding: 1.25rem; display: flex; flex-direction: column; gap: 0.25rem; }
+.statNum { font-size: 1.75rem; font-weight: 700; color: #0f172a; }
+.statLabel { font-size: 0.8rem; color: #64748b; font-weight: 500; }
+.textDanger { color: #dc2626 !important; }
+.tabs { display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
+.tab { padding: 0.4rem 0.9rem; border-radius: 0.375rem; border: 1px solid #e2e8f0; background: white; font-size: 0.8rem; font-weight: 500; color: #64748b; cursor: pointer; transition: all 0.15s; }
+.tabActive { background: #111827; color: white; border-color: #111827; }
+.tableWrap { overflow-x: auto; background: white; border-radius: 0.75rem; border: 1px solid #e2e8f0; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+.table { width: 100%; border-collapse: collapse; }
+.table th { text-align: left; padding: 0.75rem 1rem; border-bottom: 1px solid #e2e8f0; color: #64748b; font-weight: 600; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; background: #f8fafc; }
+.table td { padding: 0.75rem 1rem; border-bottom: 1px solid #f1f5f9; font-size: 0.825rem; color: #334155; }
+.cellMono { font-family: 'Courier New', monospace; font-size: 0.8rem; color: #6366f1; font-weight: 600; }
+.emptyRow { text-align: center; padding: 2rem; color: #94a3b8; }
+.badgeGray { background: #f1f5f9; color: #475569; padding: 0.2rem 0.5rem; border-radius: 0.25rem; font-size: 0.7rem; font-weight: 600; }
+.statusBadge { display: inline-flex; padding: 0.2rem 0.5rem; border-radius: 1rem; font-size: 0.7rem; font-weight: 600; }
+.active { background: #f0fdf4; color: #16a34a; }
+.draft { background: #f8fafc; color: #64748b; border: 1px solid #e2e8f0; }
+.expired { background: #fef2f2; color: #dc2626; }
+.full { background: #fefce8; color: #ca8a04; }
+.consumedBar { display: flex; align-items: center; gap: 0.5rem; }
+.consumedFill { height: 6px; background: #2563eb; border-radius: 3px; min-width: 20px; max-width: 80px; }
+.actionLink { color: #2563eb; font-size: 0.8rem; font-weight: 500; text-decoration: none; }
+.actionLink:hover { text-decoration: underline; }
+.loading { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 300px; color: #64748b; }
+.spinner { width: 32px; height: 32px; border: 3px solid #e2e8f0; border-top-color: #3b82f6; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 1rem; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Modal ── */
+.modalOverlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 1rem; }
+.modal { background: white; border-radius: 1rem; width: 100%; max-width: 640px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.25); animation: slideUp 0.2s ease; }
+@keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+.modalHeader { display: flex; justify-content: space-between; align-items: center; padding: 1.25rem 1.5rem; border-bottom: 1px solid #e2e8f0; }
+.modalTitle { font-size: 1.125rem; font-weight: 700; color: #0f172a; margin: 0; }
+.modalClose { background: none; border: none; font-size: 1.1rem; color: #94a3b8; cursor: pointer; padding: 0.25rem; border-radius: 0.25rem; line-height: 1; transition: color 0.15s; }
+.modalClose:hover { color: #0f172a; }
+.modalForm { padding: 1.5rem; }
+.formGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.formGroup { display: flex; flex-direction: column; gap: 0.375rem; }
+.label { font-size: 0.8rem; font-weight: 600; color: #374151; }
+.input { width: 100%; padding: 0.6rem 0.75rem; border: 1px solid #d1d5db; border-radius: 0.5rem; font-size: 0.875rem; color: #0f172a; background: white; box-sizing: border-box; transition: border-color 0.15s; }
+.input:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
+.textarea { width: 100%; padding: 0.6rem 0.75rem; border: 1px solid #d1d5db; border-radius: 0.5rem; font-size: 0.875rem; color: #0f172a; background: white; box-sizing: border-box; resize: vertical; font-family: inherit; transition: border-color 0.15s; }
+.textarea:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
+.saveMsg { margin-top: 0.75rem; padding: 0.6rem 0.9rem; border-radius: 0.5rem; font-size: 0.85rem; font-weight: 500; background: #f0fdf4; color: #16a34a; }
+.modalFooter { display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #f1f5f9; }
+@media (max-width: 768px) { .container { padding: 1rem; } .header { flex-direction: column; align-items: flex-start; } .statRow { grid-template-columns: repeat(2, 1fr); } .tabs { overflow-x: auto; flex-wrap: nowrap; } .formGrid { grid-template-columns: 1fr; } }
+@media (max-width: 480px) { .container { padding: 0.75rem; } .title { font-size: 1.25rem; } .statRow { grid-template-columns: 1fr; } .statBox { padding: 1rem; } .statNum { font-size: 1.35rem; } .table th, .table td { padding: 0.5rem; font-size: 0.75rem; } }

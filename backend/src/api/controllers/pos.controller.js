@@ -1,11 +1,6 @@
-const { db, transaction } = require('../../config/database');
-const { audit } = require('../../config/logger');
-const AppError = require('../../utils/AppError');
+const { db } = require('../../config/database');
 const { catchAsync } = require('../../utils/catchAsync');
-const { generateOrderNumber } = require('../../utils/orderNumber');
-const { sendEmail } = require('../../services/email.service');
-const { sendSMS } = require('../../services/sms.service');
-const carts = new Map();
+const posService = require('../../services/pos.service');
 exports.getProducts = catchAsync(async (req, res) => {
   const { page = 1, limit = 50, categoryId } = req.query;
   const offset = (page - 1) * limit;
@@ -109,358 +104,56 @@ exports.getProductByBarcode = catchAsync(async (req, res) => {
   });
 });
 exports.getCart = catchAsync(async (req, res) => {
-  const userId = req.user.id;
-  const cart = carts.get(userId) || { items: [], discount: { type: null, value: 0 }, createdAt: new Date() };
-  let subtotal = 0;
-  for (const item of cart.items) {
-    item.total = item.quantity * item.unitPrice;
-    subtotal += item.total;
+  const cart = await posService.getCart(req.user.id);
+  let customerLoyalty = null;
+  if (cart.customerId) {
+    try { customerLoyalty = await posService.getCustomerLoyalty(cart.customerId); } catch (_) {}
   }
-  const taxRate = 0.15; 
-  let discountAmount = 0;
-  if (cart.discount.type === 'percentage') {
-    discountAmount = subtotal * (cart.discount.value / 100);
-  } else if (cart.discount.type === 'fixed') {
-    discountAmount = Math.min(cart.discount.value, subtotal);
-  }
-  const taxAmount = (subtotal - discountAmount) * taxRate;
-  const totalAmount = subtotal - discountAmount + taxAmount;
-  res.json({
-    status: 'success',
-    data: {
-      items: cart.items,
-      subtotal,
-      discountAmount,
-      taxAmount,
-      totalAmount,
-      discount: cart.discount,
-      itemCount: cart.items.length
-    }
-  });
+  res.json({ status: 'success', data: { ...cart, customerLoyalty } });
 });
 exports.addToCart = catchAsync(async (req, res) => {
-  const { productId, quantity } = req.body;
-  const userId = req.user.id;
-  const product = await db('products as p')
-    .leftJoin('inventory as i', 'p.id', 'i.product_id')
-    .select(
-      'p.id',
-      'p.name',
-      'p.selling_price',
-      db.raw('COALESCE(i.quantity, 0) as stock_quantity')
-    )
-    .where('p.id', productId)
-    .where('p.is_active', true)
-    .whereNull('p.deleted_at')
-    .first();
-  if (!product) {
-    throw new AppError('Product not found', 404);
-  }
-  if (product.stock_quantity < quantity) {
-    throw new AppError(`Insufficient stock. Available: ${product.stock_quantity}`, 400);
-  }
-  let cart = carts.get(userId);
-  if (!cart) {
-    cart = { items: [], discount: { type: null, value: 0 }, createdAt: new Date() };
-  }
-  const existingItem = cart.items.find(item => item.productId === productId);
-  if (existingItem) {
-    existingItem.quantity += quantity;
-    existingItem.total = existingItem.quantity * existingItem.unitPrice;
-  } else {
-    cart.items.push({
-      id: Date.now().toString(),
-      productId: product.id,
-      productName: product.name,
-      quantity,
-      unitPrice: parseFloat(product.selling_price),
-      total: quantity * parseFloat(product.selling_price)
-    });
-  }
-  carts.set(userId, cart);
+  const { productId, quantity, customerId } = req.body;
+  const result = await posService.addToCart(req.user.id, productId, quantity, customerId || null);
   res.json({
     status: 'success',
     message: 'Item added to cart',
-    data: { cartItem: cart.items[cart.items.length - 1] }
+    data: result
   });
 });
 exports.updateCartItem = catchAsync(async (req, res) => {
-  const { itemId } = req.params;
-  const { quantity } = req.body;
-  const userId = req.user.id;
-  const cart = carts.get(userId);
-  if (!cart) {
-    throw new AppError('Cart is empty', 400);
-  }
-  const item = cart.items.find(i => i.id === itemId);
-  if (!item) {
-    throw new AppError('Item not found in cart', 404);
-  }
-  const product = await db('products')
-    .leftJoin('inventory', 'products.id', 'inventory.product_id')
-    .select(db.raw('COALESCE(inventory.quantity, 0) as stock_quantity'))
-    .where('products.id', item.productId)
-    .first();
-  if (product && product.stock_quantity < quantity) {
-    throw new AppError(`Insufficient stock. Available: ${product.stock_quantity}`, 400);
-  }
-  item.quantity = quantity;
-  item.total = quantity * item.unitPrice;
-  carts.set(userId, cart);
-  res.json({
-    status: 'success',
-    message: 'Cart item updated'
-  });
+  await posService.updateCartItem(req.user.id, req.params.itemId, req.body.quantity);
+  res.json({ status: 'success', message: 'Cart item updated' });
 });
 exports.removeCartItem = catchAsync(async (req, res) => {
-  const { itemId } = req.params;
-  const userId = req.user.id;
-  const cart = carts.get(userId);
-  if (!cart) {
-    throw new AppError('Cart is empty', 400);
-  }
-  cart.items = cart.items.filter(i => i.id !== itemId);
-  carts.set(userId, cart);
-  res.json({
-    status: 'success',
-    message: 'Item removed from cart'
-  });
+  await posService.removeCartItem(req.user.id, req.params.itemId);
+  res.json({ status: 'success', message: 'Item removed from cart' });
 });
 exports.clearCart = catchAsync(async (req, res) => {
-  const userId = req.user.id;
-  carts.delete(userId);
-  res.json({
-    status: 'success',
-    message: 'Cart cleared'
-  });
+  await posService.clearCart(req.user.id);
+  res.json({ status: 'success', message: 'Cart cleared' });
 });
 exports.applyCartDiscount = catchAsync(async (req, res) => {
-  const { type, value, reason } = req.body;
-  const userId = req.user.id;
-  const userRole = req.user.roles || [];
-  const config = require('../../config/env');
-  let maxDiscount = config.businessRules.cashierMaxDiscount;
-  if (userRole.includes('CEO') || userRole.includes('Admin')) {
-    maxDiscount = config.businessRules.ceoMaxDiscount;
-  } else if (userRole.includes('Finance') || userRole.includes('Manager')) {
-    maxDiscount = config.businessRules.managerMaxDiscount;
-  }
-  if (type === 'percentage' && value > maxDiscount) {
-    throw new AppError(`Discount percentage exceeds your limit of ${maxDiscount}%`, 403);
-  }
-  const cart = carts.get(userId);
-  if (!cart || cart.items.length === 0) {
-    throw new AppError('Cart is empty', 400);
-  }
-  cart.discount = { type, value, reason: reason || null };
-  carts.set(userId, cart);
-  await audit('CART_DISCOUNT_APPLIED', userId, {
-    ip: req.ip,
-    details: { type, value, reason }
-  });
+  await posService.applyCartDiscount(req.user.id, req.body.type, req.body.value, req.body.reason, req.user.roles || [], req.ip);
   res.json({
     status: 'success',
-    message: `Discount of ${value}${type === 'percentage' ? '%' : ' ETB'} applied`
+    message: `Discount of ${req.body.value}${req.body.type === 'percentage' ? '%' : ' ETB'} applied`
   });
 });
 exports.removeCartDiscount = catchAsync(async (req, res) => {
-  const userId = req.user.id;
-  const cart = carts.get(userId);
-  if (cart) {
-    cart.discount = { type: null, value: 0 };
-    carts.set(userId, cart);
-  }
+  await posService.removeCartDiscount(req.user.id);
+  res.json({ status: 'success', message: 'Discount removed' });
+});
+exports.setCartCustomer = catchAsync(async (req, res) => {
+  await posService.setCartCustomer(req.user.id, req.body.customerId);
   res.json({
     status: 'success',
-    message: 'Discount removed'
+    message: req.body.customerId ? 'Customer assigned to cart' : 'Customer removed from cart'
   });
 });
-exports.checkout = catchAsync(async (req, res) => {
-  const {
-    customerId,
-    customer,
-    paymentMethod,
-    amountPaid,
-    paymentReference,
-    notes,
-    serials // Expected format: { [productId]: ['serial1', 'serial2'] }
-  } = req.body;
-  const userId = req.user.id;
-  const ip = req.ip;
-  const cart = carts.get(userId);
-  if (!cart || cart.items.length === 0) {
-    throw new AppError('Cart is empty', 400);
-  }
-  let subtotal = 0;
-  for (const item of cart.items) {
-    subtotal += item.quantity * item.unitPrice;
-  }
-  const taxRate = 0.15;
-  let discountAmount = 0;
-  if (cart.discount.type === 'percentage') {
-    discountAmount = subtotal * (cart.discount.value / 100);
-  } else if (cart.discount.type === 'fixed') {
-    discountAmount = Math.min(cart.discount.value, subtotal);
-  }
-  const taxAmount = (subtotal - discountAmount) * taxRate;
-  const totalAmount = subtotal - discountAmount + taxAmount;
-  if (paymentMethod === 'Cash' && amountPaid < totalAmount) {
-    throw new AppError(`Amount paid (${amountPaid} ETB) is less than total (${totalAmount} ETB)`, 400);
-  }
-  if (paymentMethod === 'Credit' && !customerId) {
-    throw new AppError('A customer must be selected for credit sales', 400);
-  }
-  // FR validation: paymentReference is mandatory for electronic/non-cash payment methods
-  const referencedMethods = ['Bank Transfer', 'Telebirr', 'Check'];
-  if (referencedMethods.includes(paymentMethod) && !paymentReference) {
-    throw new AppError(
-      `A payment reference number is required for ${paymentMethod} transactions.`,
-      400
-    );
-  }
-  const changeAmount = paymentMethod === 'Cash' ? amountPaid - totalAmount : 0;
-  let finalCustomerId = customerId;
-  if (!finalCustomerId && customer) {
-    const [newCustomerId] = await db('customers').insert({
-      name: customer.name,
-      phone: customer.phone,
-      email: customer.email || null,
-      customer_type_id: 5, 
-      created_by: userId,
-      created_at: db.fn.now()
-    });
-    finalCustomerId = newCustomerId;
-  }
-  const invoiceNumber = await generateOrderNumber('INV');
-  const saleStatusCode = paymentMethod === 'Credit' ? 'pending_payment' : 'completed';
-  let completedStatus = await db('sale_statuses').where('status_code', saleStatusCode).first();
-  if (!completedStatus) {
-    completedStatus = await db('sale_statuses').where('status_code', 'completed').first();
-  }
-  const paymentMethodRecord = await db('payment_methods').where('name', paymentMethod).first();
-  if (!paymentMethodRecord) {
-    throw new AppError(`Payment method '${paymentMethod}' is not configured in the database`, 400);
-  }
-  const result = await transaction(async (trx) => {
-    const [saleId] = await trx('pos_sales').insert({
-      invoice_number: invoiceNumber,
-      customer_id: finalCustomerId || null,
-      subtotal: subtotal,
-      tax_amount: taxAmount,
-      discount_amount: discountAmount,
-      total_amount: totalAmount,
-      payment_method_id: paymentMethodRecord.id,
-      payment_reference: paymentReference || null,
-      amount_paid: paymentMethod === 'Credit' ? 0 : amountPaid,
-      change_amount: changeAmount,
-      cashier_id: userId,
-      sale_date: db.fn.now(),
-      status_id: completedStatus.id,
-      notes: notes || null
-    });
-    if (paymentMethod === 'Credit' && finalCustomerId) {
-      await trx('customers')
-        .where('id', finalCustomerId)
-        .increment('current_balance', totalAmount);
-    }
-    for (const item of cart.items) {
-      await trx('pos_items').insert({
-        sale_id: saleId,
-        product_id: item.productId,
-        quantity: item.quantity,
-        unit_price: item.unitPrice,
-        discount_percent: 0,
-        subtotal: item.quantity * item.unitPrice,
-        total: item.quantity * item.unitPrice
-      });
-      
-      const product = await trx('products').where('id', item.productId).first();
-      if (product.requires_serial) {
-        const itemSerials = (serials && serials[item.productId]) || [];
-        if (itemSerials.length !== item.quantity) {
-          throw new AppError(`Product ${product.name} requires exactly ${item.quantity} serial numbers.`, 400);
-        }
-        
-        // Verify they are in stock and mark as sold
-        for (const serial of itemSerials) {
-          const serialRecord = await trx('inventory_serials')
-            .where('product_id', item.productId)
-            .where('serial_number', serial)
-            .where('status', 'In Stock')
-            .first();
-            
-          if (!serialRecord) {
-            throw new AppError(`Serial number ${serial} for ${product.name} is not in stock or invalid.`, 400);
-          }
-          
-          await trx('inventory_serials')
-            .where('id', serialRecord.id)
-            .update({
-              status: 'Sold',
-              reference_type: 'Sale',
-              reference_id: saleId
-            });
-        }
-      }
 
-      const currentStock = await trx('inventory')
-        .where('product_id', item.productId)
-        .first();
-      if (currentStock) {
-        const newQuantity = currentStock.quantity - item.quantity;
-        await trx('inventory')
-          .where('product_id', item.productId)
-          .update({
-            quantity: newQuantity,
-            last_updated: db.fn.now()
-          });
-        await trx('inventory_movements').insert({
-          product_id: item.productId,
-          transaction_type: 'Sale',
-          model_number: 20,
-          quantity_change: -item.quantity,
-          quantity_before: currentStock.quantity,
-          quantity_after: newQuantity,
-          reference_type: 'POS',
-          reference_id: saleId,
-          performed_by: userId,
-          created_at: db.fn.now()
-        });
-      }
-    }
-    return saleId;
-  });
-  carts.delete(userId);
-  await audit('SALE_COMPLETED', result, {
-    ip,
-    details: {
-      invoiceNumber,
-      totalAmount,
-      paymentMethod,
-      itemCount: cart.items.length
-    }
-  });
-  if (finalCustomerId) {
-    const customerRecord = await db('customers').where('id', finalCustomerId).first();
-    if (customerRecord && customerRecord.phone) {
-      await sendSMS({
-        to: customerRecord.phone,
-        message: `Receipt: ${invoiceNumber} | Amount: ${totalAmount} ETB | Thank you for your purchase!`
-      }).catch(err => console.error('Failed to send SMS receipt:', err.message));
-    }
-  }
-  res.status(201).json({
-    status: 'success',
-    message: 'Sale completed successfully',
-    data: {
-      saleId: result,
-      invoiceNumber,
-      totalAmount,
-      changeAmount,
-      paymentMethod,
-      itemsSold: cart.items.length
-    }
-  });
+exports.checkout = catchAsync(async (req, res) => {
+  const result = await posService.checkout(req.user.id, req.body, req.ip);
+  res.status(201).json({ status: 'success', message: 'Sale completed successfully', data: result });
 });
 exports.getSalesHistory = catchAsync(async (req, res) => {
   const {
@@ -555,6 +248,70 @@ exports.getCustomers = catchAsync(async (req, res) => {
     }
   });
 });
+exports.getCustomerProfile = catchAsync(async (req, res) => {
+  const { customerId } = req.params;
+  const customer = await db('customers')
+    .leftJoin('customer_types', 'customers.customer_type_id', 'customer_types.id')
+    .select('customers.*', 'customer_types.name as customer_type_name')
+    .where('customers.id', customerId)
+    .whereNull('customers.deleted_at')
+    .first();
+  if (!customer) throw new AppError('Customer not found', 404);
+  const sales = await db('pos_sales as ps')
+    .leftJoin('sale_statuses as ss', 'ps.status_id', 'ss.id')
+    .leftJoin('payment_methods as pm', 'ps.payment_method_id', 'pm.id')
+    .select(
+      'ps.id', 'ps.invoice_number', 'ps.total_amount', 'ps.sale_date',
+      'ss.status_name as status', 'pm.name as payment_method'
+    )
+    .where('ps.customer_id', customerId)
+    .orderBy('ps.sale_date', 'desc')
+    .limit(20);
+  const returns = await db('pos_returns')
+    .where('customer_id', customerId)
+    .select('id', 'return_number', 'total_refund', 'created_at')
+    .orderBy('created_at', 'desc')
+    .limit(10);
+  const stats = await db('pos_sales')
+    .where('customer_id', customerId)
+    .select(
+      db.raw('COUNT(*) as total_orders'),
+      db.raw('COALESCE(SUM(total_amount), 0) as total_spent'),
+      db.raw('COALESCE(AVG(total_amount), 0) as avg_order_value'),
+      db.raw('MAX(sale_date) as last_purchase_date'),
+      db.raw('MIN(sale_date) as first_purchase_date')
+    )
+    .first();
+  const totalReturns = await db('pos_returns')
+    .where('customer_id', customerId)
+    .select(
+      db.raw('COUNT(*) as return_count'),
+      db.raw('COALESCE(SUM(total_refund), 0) as total_refunded')
+    )
+    .first();
+  const daysSinceLastPurchase = stats.last_purchase_date
+    ? Math.floor((new Date() - new Date(stats.last_purchase_date)) / (1000 * 60 * 60 * 24))
+    : null;
+  res.json({
+    status: 'success',
+    data: {
+      customer: {
+        ...customer,
+        totalOrders: parseInt(stats.total_orders || 0),
+        totalSpent: parseFloat(stats.total_spent || 0),
+        avgOrderValue: parseFloat(stats.avg_order_value || 0),
+        lastPurchaseDate: stats.last_purchase_date,
+        firstPurchaseDate: stats.first_purchase_date,
+        daysSinceLastPurchase,
+        returnCount: parseInt(totalReturns.return_count || 0),
+        totalRefunded: parseFloat(totalReturns.total_refunded || 0)
+      },
+      recentSales: sales,
+      recentReturns: returns
+    }
+  });
+});
+
 exports.createCustomer = catchAsync(async (req, res) => {
   const { name, phone, email } = req.body;
   const userId = req.user.id;
@@ -809,6 +566,250 @@ exports.getDailyStatistics = catchAsync(async (req, res) => {
     }
   });
 });
+exports.getSaleItems = catchAsync(async (req, res) => {
+  const { saleId } = req.params;
+  const sale = await db('pos_sales as ps')
+    .leftJoin('sale_statuses as ss', 'ps.status_id', 'ss.id')
+    .select('ps.*', 'ss.status_name', 'ss.status_code')
+    .where('ps.id', saleId)
+    .first();
+  if (!sale) throw new AppError('Sale not found', 404);
+  const items = await db('pos_items as pi')
+    .leftJoin('products as p', 'pi.product_id', 'p.id')
+    .select(
+      'pi.*',
+      'p.name as product_name',
+      'p.sku',
+      db.raw('COALESCE(i.quantity, 0) as current_stock')
+    )
+    .leftJoin('inventory as i', 'pi.product_id', 'i.product_id')
+    .where('pi.sale_id', saleId);
+  const returnableItems = items.map(item => ({
+    ...item,
+    maxReturnQty: item.quantity,
+    returnable: item.quantity > 0
+  }));
+  res.json({
+    status: 'success',
+    data: { sale, items: returnableItems }
+  });
+});
+
+exports.processReturn = catchAsync(async (req, res) => {
+  const { saleId, items, refundMethod = 'original', notes } = req.body;
+  const userId = req.user.id;
+  const ip = req.ip;
+  const sale = await db('pos_sales').where('id', saleId).first();
+  if (!sale) throw new AppError('Sale not found', 404);
+  if (sale.status_id === 2) throw new AppError('Cannot return a voided sale', 400);
+  let totalRefund = 0;
+  const returnItems = [];
+  for (const returnItem of items) {
+    const originalItem = await db('pos_items')
+      .where('id', returnItem.itemId || 0)
+      .where('sale_id', saleId)
+      .first();
+    if (!originalItem) {
+      const productInSale = await db('pos_items')
+        .where('sale_id', saleId)
+        .where('product_id', returnItem.productId)
+        .first();
+      if (!productInSale) throw new AppError(`Product ${returnItem.productId} not found in sale ${saleId}`, 400);
+      const refundAmount = productInSale.unit_price * returnItem.quantity;
+      totalRefund += refundAmount;
+      returnItems.push({
+        product_id: productInSale.product_id,
+        quantity: returnItem.quantity,
+        unit_price: productInSale.unit_price,
+        refund_amount: refundAmount,
+        reason_code: returnItem.reasonCode || 'customer_return'
+      });
+    } else {
+      if (returnItem.quantity > originalItem.quantity) {
+        throw new AppError(`Return quantity exceeds original quantity for item`, 400);
+      }
+      const refundAmount = (originalItem.unit_price / originalItem.quantity) * returnItem.quantity;
+      totalRefund += refundAmount;
+      returnItems.push({
+        product_id: originalItem.product_id,
+        quantity: returnItem.quantity,
+        unit_price: originalItem.unit_price,
+        refund_amount: refundAmount,
+        reason_code: returnItem.reasonCode || 'customer_return'
+      });
+    }
+  }
+  const refundMethodResolved = refundMethod === 'original'
+    ? 'original'
+    : refundMethod;
+  const returnNumber = 'RET-' + Date.now();
+  const result = await transaction(async (trx) => {
+    const [returnId] = await trx('pos_returns').insert({
+      return_number: returnNumber,
+      sale_id: saleId,
+      customer_id: sale.customer_id,
+      total_refund: totalRefund,
+      refund_method: refundMethodResolved,
+      reason: notes || 'Customer return',
+      processed_by: userId,
+      status: 'completed',
+      created_at: trx.fn.now()
+    });
+    for (const ri of returnItems) {
+      await trx('pos_return_items').insert({
+        return_id: returnId,
+        product_id: ri.product_id,
+        quantity: ri.quantity,
+        unit_price: ri.unit_price,
+        refund_amount: ri.refund_amount,
+        reason_code: ri.reason_code
+      });
+      const currentStock = await trx('inventory')
+        .where('product_id', ri.product_id)
+        .first();
+      if (currentStock) {
+        const newQuantity = currentStock.quantity + ri.quantity;
+        await trx('inventory')
+          .where('product_id', ri.product_id)
+          .update({ quantity: newQuantity, last_updated: trx.fn.now() });
+        await trx('inventory_movements').insert({
+          product_id: ri.product_id,
+          transaction_type: 'Return',
+          quantity_change: ri.quantity,
+          quantity_before: currentStock.quantity,
+          quantity_after: newQuantity,
+          reference_type: 'Return',
+          reference_id: returnId,
+          reason: `Return from sale ${sale.invoice_number}: ${ri.reason_code}`,
+          performed_by: userId,
+          created_at: trx.fn.now()
+        });
+      }
+    }
+    const refundedStatus = await trx('sale_statuses').where('status_code', 'refunded').first();
+    if (refundedStatus) {
+      await trx('pos_sales').where('id', saleId).update({ status_id: refundedStatus.id });
+    }
+    return returnId;
+  });
+  await audit('RETURN_PROCESSED', result, {
+    ip, details: { returnNumber, saleId, totalRefund, itemsCount: items.length }
+  });
+  res.status(201).json({
+    status: 'success',
+    message: 'Return processed successfully',
+    data: { returnId: result, returnNumber, totalRefund }
+  });
+});
+
+exports.getReturnHistory = catchAsync(async (req, res) => {
+  const { page = 1, limit = 25, startDate, endDate } = req.query;
+  const offset = (page - 1) * limit;
+  let query = db('pos_returns as pr')
+    .leftJoin('pos_sales as ps', 'pr.sale_id', 'ps.id')
+    .leftJoin('customers as c', 'pr.customer_id', 'c.id')
+    .leftJoin('users as u', 'pr.processed_by', 'u.id')
+    .select(
+      'pr.*',
+      'ps.invoice_number',
+      'c.name as customer_name',
+      'u.full_name as processed_by_name'
+    );
+  if (startDate && endDate) {
+    query = query.whereBetween('pr.created_at', [startDate, endDate]);
+  }
+  const total = await query.clone().clearSelect().count('pr.id as total').first();
+  const returns = await query.orderBy('pr.created_at', 'desc').limit(limit).offset(offset);
+  res.json({
+    status: 'success',
+    data: {
+      returns,
+      pagination: {
+        page: parseInt(page), limit: parseInt(limit),
+        total: parseInt(total.total),
+        totalPages: Math.ceil(total.total / limit)
+      }
+    }
+  });
+});
+
+exports.getZReport = catchAsync(async (req, res) => {
+  const { date = new Date().toISOString().split('T')[0] } = req.query;
+  const completedStatus = await db('sale_statuses').where('status_code', 'completed').first();
+  const statusId = completedStatus ? completedStatus.id : 1;
+  const sales = await db('pos_sales')
+    .whereRaw('DATE(sale_date) = ?', [date])
+    .where('status_id', statusId);
+  const totalSales = sales.length;
+  const totalRevenue = sales.reduce((s, r) => s + parseFloat(r.total_amount || 0), 0);
+  const totalTax = sales.reduce((s, r) => s + parseFloat(r.tax_amount || 0), 0);
+  const totalDiscount = sales.reduce((s, r) => s + parseFloat(r.discount_amount || 0), 0);
+  const totalCash = sales.filter(r => r.payment_method_id === 1).reduce((s, r) => s + parseFloat(r.total_amount || 0), 0);
+  const totalCredit = sales.filter(r => r.payment_method_id === 2).reduce((s, r) => s + parseFloat(r.total_amount || 0), 0);
+  const totalTransfer = sales.filter(r => r.payment_method_id === 3).reduce((s, r) => s + parseFloat(r.total_amount || 0), 0);
+  const totalTelebirr = sales.filter(r => r.payment_method_id === 4).reduce((s, r) => s + parseFloat(r.total_amount || 0), 0);
+  const voidedSales = await db('pos_sales')
+    .whereRaw('DATE(sale_date) = ?', [date])
+    .where('status_id', 2)
+    .count('id as count').first();
+  const refunds = await db('pos_returns')
+    .whereRaw('DATE(created_at) = ?', [date])
+    .select(
+      db.raw('COUNT(*) as return_count'),
+      db.raw('COALESCE(SUM(total_refund), 0) as total_refund_amount')
+    ).first();
+  const cashierStats = await db('pos_sales')
+    .whereRaw('DATE(sale_date) = ?', [date])
+    .where('status_id', statusId)
+    .select(
+      'cashier_id',
+      db.raw('COUNT(*) as transaction_count'),
+      db.raw('SUM(total_amount) as total_amount')
+    )
+    .groupBy('cashier_id');
+  const cashierNames = await db('users')
+    .whereIn('id', cashierStats.map(c => c.cashier_id))
+    .select('id', 'full_name');
+  const cashierBreakdown = cashierStats.map(cs => ({
+    cashierId: cs.cashier_id,
+    cashierName: (cashierNames.find(n => n.id === cs.cashier_id) || {}).full_name || 'Unknown',
+    transactions: parseInt(cs.transaction_count),
+    total: parseFloat(cs.total_amount || 0)
+  }));
+  const paymentBreakdown = await db('pos_sales')
+    .leftJoin('payment_methods', 'pos_sales.payment_method_id', 'payment_methods.id')
+    .whereRaw('DATE(sale_date) = ?', [date])
+    .where('pos_sales.status_id', statusId)
+    .select(
+      'payment_methods.name as method',
+      db.raw('COUNT(*) as count'),
+      db.raw('SUM(total_amount) as amount')
+    )
+    .groupBy('pos_sales.payment_method_id', 'payment_methods.name');
+  res.json({
+    status: 'success',
+    data: {
+      date,
+      generatedAt: new Date().toISOString(),
+      summary: {
+        totalSales,
+        totalRevenue,
+        totalTax,
+        totalDiscount,
+        totalCash,
+        totalCredit,
+        totalTransfer,
+        totalTelebirr,
+        voidedCount: parseInt(voidedSales.count || 0),
+        returnCount: parseInt(refunds.return_count || 0),
+        totalRefundAmount: parseFloat(refunds.total_refund_amount || 0)
+      },
+      cashierBreakdown,
+      paymentBreakdown
+    }
+  });
+});
+
 exports.validateDiscount = catchAsync(async (req, res) => {
   const { discountPercent, subtotal } = req.query;
   const userRole = req.user.roles || [];

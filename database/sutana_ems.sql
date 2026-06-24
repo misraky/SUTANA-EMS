@@ -715,6 +715,83 @@ INSERT INTO `payment_terms` (`id`, `name`, `days_net`) VALUES
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `bank_payments`
+--
+
+CREATE TABLE `bank_payments` (
+  `id` int(11) NOT NULL,
+  `payment_id` varchar(36) NOT NULL,
+  `reference` varchar(50) NOT NULL,
+  `transaction_id` varchar(100) DEFAULT NULL,
+  `amount` decimal(15,2) NOT NULL,
+  `order_id` int(11) DEFAULT NULL,
+  `invoice_number` varchar(50) DEFAULT NULL,
+  `customer_name` varchar(255) DEFAULT NULL,
+  `customer_phone` varchar(20) DEFAULT NULL,
+  `customer_email` varchar(255) DEFAULT NULL,
+  `bank_code` varchar(20) NOT NULL,
+  `status` varchar(20) NOT NULL DEFAULT 'pending',
+  `response_data` text,
+  `description` text,
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  `expires_at` datetime DEFAULT NULL,
+  `completed_at` datetime DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Dumping data for table `bank_payments`
+--
+
+INSERT INTO `bank_payments` (`id`, `payment_id`, `reference`, `transaction_id`, `amount`, `order_id`, `invoice_number`, `customer_name`, `customer_phone`, `customer_email`, `bank_code`, `status`, `response_data`, `description`, `created_at`, `expires_at`, `completed_at`) VALUES
+(1, 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'MANUAL-20260601-001', NULL, '15000.00', NULL, NULL, 'Sample Customer', '0911000000', NULL, 'CBE', 'completed', NULL, 'Manual bank deposit', '2026-06-01 10:00:00', NULL, '2026-06-01 10:00:00');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `report_submissions`
+--
+
+CREATE TABLE `report_submissions` (
+  `id` int(11) NOT NULL,
+  `report_type` enum('income_statement','balance_sheet','bank_reconciliation') NOT NULL,
+  `period` varchar(7) NOT NULL,
+  `financial_year` varchar(9) DEFAULT NULL,
+  `title` varchar(200) DEFAULT NULL,
+  `notes` text,
+  `submitted_by` int(11) NOT NULL,
+  `status` enum('draft','submitted','ceo_approved','board_approved','rejected') DEFAULT 'draft',
+  `ceo_comment` text,
+  `board_comment` text,
+  `rejected_by` int(11) DEFAULT NULL,
+  `rejection_reason` text,
+  `ceo_actioned_by` int(11) DEFAULT NULL,
+  `board_actioned_by` int(11) DEFAULT NULL,
+  `ceo_actioned_at` datetime DEFAULT NULL,
+  `board_actioned_at` datetime DEFAULT NULL,
+  `rejected_at` datetime DEFAULT NULL,
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE `report_submissions`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `submitted_by` (`submitted_by`),
+  ADD KEY `ceo_actioned_by` (`ceo_actioned_by`),
+  ADD KEY `board_actioned_by` (`board_actioned_by`),
+  ADD KEY `rejected_by` (`rejected_by`);
+
+ALTER TABLE `report_submissions`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+ALTER TABLE `report_submissions`
+  ADD CONSTRAINT `report_submissions_ibfk_1` FOREIGN KEY (`submitted_by`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `report_submissions_ibfk_2` FOREIGN KEY (`ceo_actioned_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,
+  ADD CONSTRAINT `report_submissions_ibfk_3` FOREIGN KEY (`board_actioned_by`) REFERENCES `users` (`id`) ON DELETE SET NULL,
+  ADD CONSTRAINT `report_submissions_ibfk_4` FOREIGN KEY (`rejected_by`) REFERENCES `users` (`id`) ON DELETE SET NULL;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `pos_items`
 --
 
@@ -994,7 +1071,7 @@ CREATE TABLE `roles` (
 INSERT INTO `roles` (`id`, `name`, `description`, `permissions`, `created_at`) VALUES
 (1, 'Admin', 'Full system access', '{\"all\": [\"*\"]}', '2026-05-13 14:51:12'),
 (2, 'CEO', 'Strategic oversight', '{\"ceo\": [\"dashboard\", \"revenue\", \"profit\", \"cashflow\", \"kpis\", \"targets\", \"update_targets\", \"alerts\", \"reports\"], \"reports\": [\"read\", \"export\"], \"dashboard\": [\"read\"], \"receiving\": [\"read\", \"create\"], \"suppliers\": [\"read\"], \"purchase_orders\": [\"approve\", \"read\"]}', '2026-05-13 14:51:12'),
-(3, 'Finance', 'Financial operations', '{\"reports\": [\"read\"], \"expenses\": [\"create\", \"read\", \"update\", \"approve\"], \"payments\": [\"create\", \"read\"], \"tax_receipts\": [\"read\"]}', '2026-05-13 14:51:12'),
+(3, 'Finance', 'Financial operations', '{\"payments\": [\"create\", \"read\", \"update\", \"delete\", \"refund\"], \"expenses\": [\"create\", \"read\", \"update\", \"approve\", \"delete\"], \"reports\": [\"read\", \"export\"], \"budgets\": [\"create\", \"read\", \"update\", \"approve\"], \"petty_cash\": [\"create\", \"read\", \"update\"], \"coa\": [\"create\", \"read\", \"update\"], \"close\": [\"execute\", \"read\"], \"approvals\": [\"read\", \"approve\"], \"tax\": [\"read\", \"declare\"], \"payment_schedules\": [\"create\", \"read\", \"update\"], \"three_way_match\": [\"create\", \"read\", \"approve\"]}', '2026-05-13 14:51:12'),
 (4, 'Printing Supervisor', 'Printing order management', '{\"orders\": [\"create\", \"read\", \"update\"], \"reports\": [\"read\"], \"tax_receipts\": [\"read\", \"create\"]}', '2026-05-13 14:51:12'),
 (5, 'Purchase', 'Procurement management', '{\"reports\": [\"read\"], \"inventory\": [\"read\"], \"receiving\": [\"create\", \"read\"], \"suppliers\": [\"create\", \"read\", \"update\"], \"purchase_orders\": [\"create\", \"read\", \"update\"]}', '2026-05-13 14:51:12'),
 (6, 'Store Worker', 'Inventory management', '{\"reports\": [\"read\"], \"inventory\": [\"create\", \"read\", \"update\"], \"receiving\": [\"create\", \"read\"]}', '2026-05-13 14:51:12'),
@@ -1807,6 +1884,12 @@ ALTER TABLE `payment_statuses`
 --
 ALTER TABLE `payment_terms`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+
+--
+-- AUTO_INCREMENT for table `bank_payments`
+--
+ALTER TABLE `bank_payments`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT for table `pos_items`

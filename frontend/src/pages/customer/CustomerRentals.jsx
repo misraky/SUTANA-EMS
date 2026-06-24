@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Clock, CheckCircle2, XCircle, Car, Calendar, CreditCard, Upload, AlertTriangle } from 'lucide-react';
 import carService from '../../services/carService';
 import styles from './CustomerRentals.module.css';
@@ -10,6 +10,17 @@ const getImageUrl = (path) => {
   return `${baseUrl}${path}`;
 };
 
+const safeDate = (val) => {
+  if (!val) return '';
+  const d = new Date(val);
+  return isNaN(d.getTime()) ? '' : d.toLocaleDateString();
+};
+
+const safeNum = (val) => {
+  const n = Number(val);
+  return isNaN(n) ? 0 : n;
+};
+
 const CustomerRentals = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -19,22 +30,28 @@ const CustomerRentals = () => {
   const [extendPrompt, setExtendPrompt] = useState({ orderId: null, days: 1 });
   const [cancelPrompt, setCancelPrompt] = useState({ orderId: null, reason: '' });
   const [editingRemarks, setEditingRemarks] = useState({ orderId: null, text: '' });
+  const notifTimer = useRef(null);
 
   const showNotification = (message, type) => {
+    if (notifTimer.current) clearTimeout(notifTimer.current);
     setNotification({ show: true, message, type });
-    setTimeout(() => setNotification({ show: false, message: '', type: '' }), 5000);
+    notifTimer.current = setTimeout(() => {
+      setNotification({ show: false, message: '', type: '' });
+      notifTimer.current = null;
+    }, 5000);
   };
 
   useEffect(() => {
     fetchMyOrders();
+    return () => { if (notifTimer.current) clearTimeout(notifTimer.current); };
   }, []);
 
   const fetchMyOrders = async () => {
     try {
       setLoading(true);
       const res = await carService.getMyRentalOrders();
-      if (res.status === 'success') {
-        setOrders(res.data);
+      if (res.data?.status === 'success') {
+        setOrders(res.data.data);
       }
     } catch (error) {
       console.error('Failed to fetch my rental orders', error);
@@ -89,7 +106,7 @@ const CustomerRentals = () => {
 
   const handleExtendOrder = async (orderId, days) => {
     try {
-      await carService.extendRentalOrder(orderId, days);
+      await carService.extendRentalOrder(orderId, parseInt(days, 10));
       showNotification('Extension requested successfully.', 'success');
       setExtendPrompt({ orderId: null, days: 1 });
       fetchMyOrders();
@@ -102,10 +119,10 @@ const CustomerRentals = () => {
     try {
       await carService.updatePickupRemarks(orderId, editingRemarks.text);
       setEditingRemarks({ orderId: null, text: '' });
-      fetchOrders();
+      fetchMyOrders();
     } catch (error) {
       console.error('Failed to save remarks', error);
-      alert('Failed to save remarks');
+      showNotification('Failed to save remarks', 'error');
     }
   };
 
@@ -138,11 +155,11 @@ const CustomerRentals = () => {
             <div key={order.id} className={styles.orderCard}>
               <div className={styles.orderHeader}>
                 <span className={styles.orderNum}>Order #{order.orderNumber}</span>
-                <span className={`${styles.statusBadge} ${styles[order.status.toLowerCase()]}`}>
+                <span className={`${styles.statusBadge} ${styles[(order.status || '').toLowerCase()] || ''}`}>
                   {order.status === 'PENDING_APPROVAL' && <Clock size={16} />}
                   {order.status === 'APPROVED' && <CheckCircle2 size={16} />}
                   {order.status === 'REJECTED' && <XCircle size={16} />}
-                  {order.status.replace('_', ' ')}
+                  {(order.status || '').replace('_', ' ')}
                 </span>
               </div>
 
@@ -165,7 +182,7 @@ const CustomerRentals = () => {
                     <div>
                       <span className={styles.detailLabel}>Rental Period</span>
                       <span className={styles.detailValue}>
-                        {new Date(order.pickupDate).toLocaleDateString()} - {new Date(order.returnDate).toLocaleDateString()}
+                        {safeDate(order.pickupDate)} - {safeDate(order.returnDate)}
                       </span>
                       <span className={styles.detailSub}>({order.totalDays} days)</span>
                     </div>
@@ -175,8 +192,8 @@ const CustomerRentals = () => {
                     <CreditCard size={18} className={styles.detailIcon} />
                     <div>
                       <span className={styles.detailLabel}>Total Cost</span>
-                      <span className={styles.detailValue}>ETB {Number(order.totalAmount).toLocaleString()}</span>
-                      <span className={styles.detailSub}>(incl. ETB {Number(order.securityDeposit).toLocaleString()} deposit)</span>
+                      <span className={styles.detailValue}>ETB {safeNum(order.totalAmount).toLocaleString()}</span>
+                      <span className={styles.detailSub}>(incl. ETB {safeNum(order.securityDeposit).toLocaleString()} deposit)</span>
                     </div>
                   </div>
                 </div>
@@ -262,7 +279,7 @@ const CustomerRentals = () => {
 
                     <div className={styles.payOption}>
                       <h4>Option 3: TELEBIRR (Manual)</h4>
-                      <p>Send to: <strong>Sutana ERP</strong> (Merchant Code: <strong>123456</strong>)<br/>Amount: <strong>{Number(order.totalAmount).toLocaleString()} ETB</strong><br/>Reference: <strong>{order.orderNumber}</strong></p>
+                      <p>Send to: <strong>Sutana ERP</strong> (Merchant Code: <strong>123456</strong>)<br/>Amount: <strong>{safeNum(order.totalAmount).toLocaleString()} ETB</strong><br/>Reference: <strong>{order.orderNumber}</strong></p>
                     </div>
 
                     <div className={styles.uploadProofBox}>
@@ -292,7 +309,7 @@ const CustomerRentals = () => {
               {order.status === 'CONFIRMED' && (
                 <div className={`${styles.statusMessage} ${styles.paidMsg}`}>
                   <div className={styles.msgIcon}><CheckCircle2 size={20} color="#15803d" /></div>
-                  <p><strong>Payment Verified!</strong> Your rental is fully confirmed. Please pickup the car on {new Date(order.pickupDate).toLocaleDateString()}.</p>
+                          <p><strong>Payment Verified!</strong> Your rental is fully confirmed. Please pickup the car on {safeDate(order.pickupDate)}.</p>
                 </div>
               )}
 
@@ -300,15 +317,15 @@ const CustomerRentals = () => {
                 <div style={{ marginTop: '1rem', borderTop: '1px solid #e2e8f0', paddingTop: '1rem' }}>
                   <div className={`${styles.statusMessage} ${styles.paidMsg}`} style={{ marginBottom: '1rem' }}>
                     <div className={styles.msgIcon}><Car size={20} color="#15803d" /></div>
-                    <p><strong>Car is active!</strong> You currently have the car. Please return by {new Date(order.returnDate).toLocaleDateString()}.</p>
+                    <p><strong>Car is active!</strong> You currently have the car. Please return by {safeDate(order.returnDate)}.</p>
                   </div>
                   
-                  {Number(order.additionalOwed) > 0 && (
+                  {safeNum(order.additionalOwed) > 0 && (
                     <div className={styles.paymentSection} style={{ marginBottom: '1rem' }}>
                       <div className={`${styles.statusMessage} ${styles.rejectedMsg}`} style={{ backgroundColor: '#fff7ed', color: '#c2410c' }}>
                         <div className={styles.msgIcon}><AlertTriangle size={20} color="#ea580c" /></div>
                         <div>
-                          <p style={{ margin: '0 0 0.5rem 0' }}><strong>Outstanding Balance: {Number(order.additionalOwed).toLocaleString()} ETB</strong></p>
+                          <p style={{ margin: '0 0 0.5rem 0' }}><strong>Outstanding Balance: {safeNum(order.additionalOwed).toLocaleString()} ETB</strong></p>
                           <p style={{ margin: 0 }}>You have an additional balance due (e.g. extension fee). Please make the payment and upload proof below.</p>
                         </div>
                       </div>
@@ -399,12 +416,12 @@ const CustomerRentals = () => {
                     </div>
                   )}
 
-                  {Number(order.additionalOwed) > 0 && (
+                  {safeNum(order.additionalOwed) > 0 && (
                     <div className={styles.paymentSection} style={{ marginBottom: '1rem' }}>
                       <div className={`${styles.statusMessage} ${styles.rejectedMsg}`} style={{ backgroundColor: '#fff7ed', color: '#c2410c' }}>
                         <div className={styles.msgIcon}><AlertTriangle size={20} color="#ea580c" /></div>
                         <div>
-                          <p style={{ margin: '0 0 0.5rem 0' }}><strong>Outstanding Balance: {Number(order.additionalOwed).toLocaleString()} ETB</strong></p>
+                          <p style={{ margin: '0 0 0.5rem 0' }}><strong>Outstanding Balance: {safeNum(order.additionalOwed).toLocaleString()} ETB</strong></p>
                           <p style={{ margin: 0 }}>You have an additional balance due for late/damage fees. Please make the payment and upload proof below.</p>
                         </div>
                       </div>
@@ -430,11 +447,11 @@ const CustomerRentals = () => {
                     </div>
                   )}
 
-                  {Number(order.refundAmount) > 0 && (
+                  {safeNum(order.refundAmount) > 0 && (
                     <div className={`${styles.statusMessage} ${styles.paidMsg}`} style={{ backgroundColor: '#f0fdf4', color: '#166534', marginTop: '1rem' }}>
                       <div className={styles.msgIcon}><CheckCircle2 size={20} color="#15803d" /></div>
                       <div>
-                        <p style={{ margin: '0 0 0.25rem 0' }}><strong>Refund Processing: {Number(order.refundAmount).toLocaleString()} ETB</strong></p>
+                        <p style={{ margin: '0 0 0.25rem 0' }}><strong>Refund Processing: {safeNum(order.refundAmount).toLocaleString()} ETB</strong></p>
                         <p style={{ margin: 0, fontSize: '0.9rem' }}>Our finance team is currently processing a refund for this order.</p>
                       </div>
                     </div>

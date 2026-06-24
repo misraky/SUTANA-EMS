@@ -1,6 +1,15 @@
 const knex = require('knex');
 const mysql = require('mysql2/promise');
 const config = require('./env');
+
+// Monkey-patch whereDate for MySQL compatibility
+knex.QueryBuilder.extend('whereDate', function(column, operator, value) {
+  if (value === undefined) {
+    value = operator;
+    operator = '=';
+  }
+  return this.whereRaw(`DATE(??) ${operator} DATE(?)`, [column, value]);
+});
 const knexConfig = {
   client: 'mysql2',
   connection: {

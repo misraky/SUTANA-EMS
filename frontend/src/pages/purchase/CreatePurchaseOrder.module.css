@@ -268,3 +268,24 @@
   transition: background 0.15s;
 }
 .prefillDismiss:hover { background: #bbf7d0; }
+@media (max-width: 768px) {
+  .container { padding: 1rem; }
+  .title { font-size: 1.35rem; }
+  .grid { grid-template-columns: 1fr; gap: 1rem; }
+  .card { padding: 1rem; }
+  .cardTitle { font-size: 1rem; }
+  .itemsHeader { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+  .itemHeaderRow { display: none; }
+  .itemRow { flex-wrap: wrap; gap: 0.5rem; }
+  .colName, .colQty, .colPrice, .colTotal { flex: none; width: 100%; }
+  .colAction { width: 100%; }
+  .totalsRow { width: 100%; }
+  .formActions { flex-direction: column; }
+  .btnCancel, .btnSubmit { width: 100%; text-align: center; }
+  .prefillBanner { flex-direction: column; align-items: flex-start; }
+}
+@media (max-width: 480px) {
+  .container { padding: 0.75rem; }
+  .title { font-size: 1.125rem; }
+  .input, .textarea { padding: 0.5rem; font-size: 0.8rem; }
+}

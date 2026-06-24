@@ -196,3 +196,20 @@
 }
 .paid { background: #dcfce7; color: #166534; }
 .pending { background: #fef3c7; color: #92400e; }
+@media (max-width: 768px) {
+  .container { gap: 1rem; }
+  .header { flex-direction: column; align-items: flex-start; gap: 0.75rem; }
+  .title { font-size: 1.5rem; }
+  .tabsContainer { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .tabBtn { flex-shrink: 0; }
+  .table th, .table td { padding: 0.75rem 1rem; }
+}
+@media (max-width: 480px) {
+  .container { gap: 0.75rem; }
+  .title { font-size: 1.25rem; }
+  .exportBtn { width: 100%; justify-content: center; }
+  .summaryGrid { gap: 0.75rem; }
+  .summaryCard { padding: 1rem; }
+  .value { font-size: 1.5rem; }
+  .table th, .table td { padding: 0.5rem 0.75rem; font-size: 0.8125rem; }
+}

@@ -81,7 +81,7 @@ const CustomerInvoices = () => {
                     <td className={styles.textRed}>{formatCurrency(balance)}</td>
                     <td>{formatDate(inv.dueDate)}</td>
                     <td>
-                      <span className={`${styles.badge} ${styles[inv.status]}`}>
+                      <span className={`${styles.badge} ${styles[inv.status] || ''}`}>
                         {inv.status}
                       </span>
                     </td>

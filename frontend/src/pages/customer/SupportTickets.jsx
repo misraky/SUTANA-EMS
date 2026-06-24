@@ -1,7 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import customerService from '../../services/customerService';
 import { formatDate } from '../../utils/formatters';
 import styles from './SupportTickets.module.css';
+
+const statusClass = (status) => {
+  if (!status) return '';
+  const normalized = status.toLowerCase().replace(/\s+/g, '');
+  return styles[normalized] || styles[status] || '';
+};
+
+const normalizeTicket = (t) => ({
+  ...t,
+  createdAt: t.created_at || t.createdAt,
+});
+
 const SupportTickets = () => {
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -9,20 +21,33 @@ const SupportTickets = () => {
   const [form, setForm] = useState({ subject: '', message: '' });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
-  useEffect(() => {
-    fetchTickets();
-  }, []);
-  const fetchTickets = async () => {
+  const fetchTickets = useCallback(async () => {
     setLoading(true);
     try {
       const res = await customerService.getSupportTickets({ limit: 50 });
-      setTickets(res?.data?.tickets || []);
+      const raw = res?.data?.tickets || [];
+      setTickets(raw.map(normalizeTicket));
     } catch (err) {
       console.error('Failed to load tickets', err);
     } finally {
       setLoading(false);
     }
+  }, []);
+  useEffect(() => {
+    fetchTickets();
+  }, [fetchTickets]);
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Escape') setShowModal(false);
   };
+
+  useEffect(() => {
+    if (showModal) {
+      document.addEventListener('keydown', handleKeyDown);
+      return () => document.removeEventListener('keydown', handleKeyDown);
+    }
+  }, [showModal]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
@@ -61,22 +86,22 @@ const SupportTickets = () => {
             <div key={ticket.id} className={styles.ticketCard}>
               <div className={styles.ticketHeader}>
                 <h3 className={styles.ticketSubject}>{ticket.subject}</h3>
-                <span className={`${styles.badge} ${styles[ticket.status]}`}>
+                <span className={`${styles.badge} ${statusClass(ticket.status)}`}>
                   {ticket.status}
                 </span>
               </div>
               <p className={styles.ticketMessage}>{ticket.message}</p>
               <div className={styles.ticketFooter}>
                 <span>Ticket #{ticket.id}</span>
-                <span>{formatDate(ticket.createdAt, 'short')}</span>
+                <span>{ticket.createdAt ? formatDate(ticket.createdAt, 'short') : ''}</span>
               </div>
             </div>
           ))}
         </div>
       )}
       {showModal && (
-        <div className={styles.modalOverlay}>
-          <div className={styles.modal}>
+        <div className={styles.modalOverlay} onClick={() => setShowModal(false)}>
+          <div className={styles.modal} onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Create support ticket">
             <h2>Create Support Ticket</h2>
             {error && <div className={styles.errorAlert}>{error}</div>}
             <form onSubmit={handleSubmit}>

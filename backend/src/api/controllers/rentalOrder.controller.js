@@ -1,3 +1,5 @@
+const crypto = require('crypto');
+const { db } = require('../../config/database');
 const rentalOrderRepository = require('../../repositories/rentalOrder.repository');
 const carRepository = require('../../repositories/car.repository');
 const notificationRepository = require('../../repositories/notification.repository');
@@ -134,12 +136,14 @@ exports.uploadPaymentProof = async (req, res) => {
     if (!order) {
       return res.status(404).json({ status: 'error', message: 'Order not found' });
     }
+
+    const isFinanceStaff = req.user.roles && req.user.roles.some(r => ['Finance', 'Admin', 'CEO'].includes(r));
     
-    if (order.customerId !== req.user.id) {
+    if (order.customerId !== req.user.id && !isFinanceStaff) {
       return res.status(403).json({ status: 'error', message: 'Not authorized' });
     }
 
-    if (order.status !== 'APPROVED' && order.additionalOwed <= 0) {
+    if (!isFinanceStaff && order.status !== 'APPROVED' && order.additionalOwed <= 0) {
       return res.status(400).json({ status: 'error', message: 'Payment proof not required for this order currently' });
     }
 
@@ -149,16 +153,12 @@ exports.uploadPaymentProof = async (req, res) => {
 
     const proofUrl = `/uploads/receipts/${req.file.filename}`;
     
-    // Determine the new payment_status
-    // If it's an approved order, it becomes PENDING_VERIFICATION.
-    // If it's an active/completed order, we don't change the main status, but we update payment_status to PENDING_VERIFICATION.
     const updateData = {
       payment_proof_url: proofUrl,
       payment_status: 'PENDING_VERIFICATION'
     };
 
     const updated = await rentalOrderRepository.update(id, updateData);
-
 
     res.status(200).json({
       status: 'success',
@@ -184,6 +184,32 @@ exports.getPendingPayments = async (req, res) => {
   }
 };
 
+exports.searchOrders = async (req, res) => {
+  try {
+    const { q } = req.query;
+    if (!q || q.length < 2) {
+      return res.status(200).json({ status: 'success', data: [] });
+    }
+    const rows = await db('rental_orders as ro')
+      .leftJoin('cars as c', 'ro.car_id', 'c.id')
+      .select('ro.*', 'c.name as car_name', 'c.image1 as car_image')
+      .whereNull('ro.deleted_at')
+      .andWhere(function() {
+        this.where('ro.order_number', 'like', `%${q}%`)
+          .orWhere('ro.customer_name', 'like', `%${q}%`)
+          .orWhere('ro.customer_phone', 'like', `%${q}%`);
+      })
+      .orderBy('ro.created_at', 'desc')
+      .limit(20);
+    res.status(200).json({
+      status: 'success',
+      data: rows.map(r => new RentalOrder(r).toJSON())
+    });
+  } catch (error) {
+    logger.error('Error searching orders:', error);
+    res.status(500).json({ status: 'error', message: 'Failed to search orders' });
+  }
+};
 exports.verifyPayment = async (req, res) => {
   try {
     const { id } = req.params;
@@ -256,6 +282,26 @@ exports.verifyPayment = async (req, res) => {
         title: notificationTitle,
         message: notificationMessage
       });
+    }
+
+    // Record verified payment in bank_payments for reconciliation report
+    if (isVerified && verifiedAmount > 0 && order.refundAmount <= 0) {
+      try {
+        await db('bank_payments').insert({
+          payment_id: crypto.randomUUID(),
+          reference: referenceNumber || `RENTAL-${order.orderNumber}-${Date.now()}`,
+          amount: verifiedAmount,
+          customer_name: order.customerName,
+          customer_phone: order.customerPhone,
+          bank_code: 'CBE',
+          status: 'completed',
+          description: `Rental payment - Order ${order.orderNumber}`,
+          completed_at: db.fn.now(),
+          created_at: db.fn.now()
+        });
+      } catch (err) {
+        logger.error('Failed to record rental payment in bank_payments:', err.message);
+      }
     }
 
     const updated = await rentalOrderRepository.update(id, updateData);

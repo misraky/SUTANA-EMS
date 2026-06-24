@@ -187,6 +187,7 @@ exports.getExpiringProducts = catchAsync(async (req, res) => {
       sku,
       categoryId,
       unitId,
+      unitCost,
       sellingPrice,
       reorderLevel = 0,
       expiryDate,
@@ -217,7 +218,7 @@ exports.getExpiringProducts = catchAsync(async (req, res) => {
     await db('inventory').insert({
       product_id: productId,
       quantity: 0,
-      unit_cost: 0,
+      unit_cost: unitCost || 0,
       last_updated: db.fn.now()
     });
     await audit('PRODUCT_CREATED', productId, {
@@ -372,7 +373,7 @@ exports.getExpiringProducts = catchAsync(async (req, res) => {
     });
   });
   exports.adjustStock = catchAsync(async (req, res) => {
-    const { productId, quantityChange, reason, referenceType, referenceId } = req.body;
+    const { productId, quantityChange, unitCost, reason, referenceType, referenceId } = req.body;
     const userId = req.user.id;
     const ip = req.ip;
     const currentStock = await db('inventory')
@@ -384,6 +385,10 @@ exports.getExpiringProducts = catchAsync(async (req, res) => {
     const newQuantity = currentStock.quantity + quantityChange;
     if (newQuantity < 0) {
       throw new AppError('Insufficient stock. Cannot reduce below zero.', 400);
+    }
+    let newUnitCost = currentStock.unit_cost;
+    if (unitCost && quantityChange > 0) {
+      newUnitCost = ((currentStock.quantity * currentStock.unit_cost) + (quantityChange * unitCost)) / newQuantity;
     }
 
     // Check if user has permission to approve immediately (Store Manager or CEO only)
@@ -417,12 +422,12 @@ exports.getExpiringProducts = catchAsync(async (req, res) => {
         .where('product_id', productId)
         .update({
           quantity: newQuantity,
+          unit_cost: newUnitCost,
           last_updated: db.fn.now()
         });
       await trx('inventory_movements').insert({
         product_id: productId,
         transaction_type: referenceType || 'Adjustment',
-        model_number: 22,
         quantity_change: quantityChange,
         quantity_before: currentStock.quantity,
         quantity_after: newQuantity,
@@ -510,7 +515,6 @@ exports.getExpiringProducts = catchAsync(async (req, res) => {
       await trx('inventory_movements').insert({
         product_id: adjustment.product_id,
         transaction_type: adjustment.reference_type || 'Adjustment',
-        model_number: 22,
         quantity_change: adjustment.quantity_change,
         quantity_before: currentStock.quantity,
         quantity_after: newQuantity,
@@ -589,7 +593,6 @@ exports.getExpiringProducts = catchAsync(async (req, res) => {
       await trx('inventory_movements').insert({
         product_id: productId,
         transaction_type: 'Damaged',
-        model_number: 22,
         quantity_change: -quantity,
         quantity_before: currentStock.quantity,
         quantity_after: newQuantity,
@@ -639,7 +642,6 @@ exports.getExpiringProducts = catchAsync(async (req, res) => {
       await trx('inventory_movements').insert({
         product_id: productId,
         transaction_type: 'Lost',
-        model_number: 22,
         quantity_change: -quantity,
         quantity_before: currentStock.quantity,
         quantity_after: newQuantity,
@@ -836,23 +838,6 @@ exports.getExpiringProducts = catchAsync(async (req, res) => {
         recentMovements: parseInt(recentMovements.count),
         topMovingProducts
       }
-    });
-  });
-  exports.importProducts = catchAsync(async (req, res) => {
-    if (!req.file) {
-      throw new AppError('No import file provided', 400);
-    }
-    res.json({
-      status: 'success',
-      message: 'File uploaded successfully. Processing will begin shortly.',
-      data: { file: req.file.filename }
-    });
-  });
-  exports.exportInventory = catchAsync(async (req, res) => {
-    res.json({
-      status: 'success',
-      message: 'Export initiated',
-      data: { url: '/uploads/temp/export.csv' }
     });
   });
   exports.getCategories = catchAsync(async (req, res) => {
@@ -1074,11 +1059,4 @@ exports.getExpiringProducts = catchAsync(async (req, res) => {
       }
     }
   }
-  exports.getUnits = catchAsync(async (req, res) => {
-    const units = await db('units').select('*');
-    res.json({
-      status: 'success',
-      data: { units }
-    });
-  });
   module.exports = exports;

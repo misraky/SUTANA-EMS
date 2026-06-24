@@ -3,7 +3,7 @@ const router = express.Router();
 const { query, param } = require('express-validator');
 const ReportController = require('../controllers/report.controller');
 const { validate } = require('../middleware/validate.middleware');
-const { authenticate, authorize } = require('../middleware/auth.middleware');
+const { authenticate, authorize, authorizeAny } = require('../middleware/auth.middleware');
 const { limiters } = require('../../config/rateLimit');
 const dateRangeValidation = [
   query('startDate')
@@ -144,9 +144,16 @@ router.get(
   ReportController.getExpiringProductsReport
 );
 router.get(
+  '/inventory/current-stock',
+  authenticate,
+  authorizeAny(['inventory:read', 'reports:read']),
+  validate,
+  ReportController.getCurrentStockReport
+);
+router.get(
   '/inventory/movements',
   authenticate,
-  authorize(['inventory:read']),
+  authorizeAny(['inventory:read', 'reports:read']),
   dateRangeValidation,
   paginationValidation,
   query('productId').optional().isInt(),
@@ -204,6 +211,15 @@ router.get(
   dateRangeValidation,
   validate,
   ReportController.getTaxSummaryReport
+);
+router.get(
+  '/finance/bank-reconciliation',
+  authenticate,
+  authorize(['reports:read']),
+  query('asOfDate').optional().isISO8601(),
+  query('bankCode').optional().isString(),
+  validate,
+  ReportController.getBankReconciliation
 );
 router.get(
   '/executive/summary',

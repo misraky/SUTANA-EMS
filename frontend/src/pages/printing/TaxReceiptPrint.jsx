@@ -31,8 +31,8 @@ const TaxReceiptPrint = () => {
         printingService.getTaxReceipts({ limit: 50 }),
         printingService.getOrders({ limit: 100 }),
       ]);
-      setReceipts(receiptsRes.data?.receipts || receiptsRes.data?.rows || []);
-      setOrders(ordersRes.data?.orders || []);
+      setReceipts(receiptsRes.data?.data?.receipts || []);
+      setOrders(ordersRes.data?.data?.orders || []);
     } catch (error) {
       console.error('Failed to fetch tax receipt data:', error);
       showMessage('error', 'Failed to load data.');
@@ -58,7 +58,7 @@ const TaxReceiptPrint = () => {
         approvalDocument: formData.approvalDocument || ''
       };
       const res = await printingService.generateTaxReceipt(formData.orderId, payload);
-      const receipt = res.data?.receipt;
+      const receipt = res.data?.data?.receipt;
       setGeneratedReceipt(receipt);
       showMessage('success', `Tax receipt ${receipt?.serialNumber} generated successfully!`);
       setShowForm(false);

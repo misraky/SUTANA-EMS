@@ -378,5 +378,145 @@ class FinanceRepository extends BaseRepository {
       throw error;
     }
   }
+
+  async getEnhancedExpenses(filters = {}) {
+    const { page = 1, limit = 25, status, categoryId, startDate, endDate, approvalTier } = filters;
+    const offset = (page - 1) * limit;
+    try {
+      const baseQuery = () => db('expenses as e')
+        .leftJoin('expense_categories as ec', 'e.category_id', 'ec.id')
+        .leftJoin('payment_methods as pm', 'e.payment_method_id', 'pm.id')
+        .leftJoin('users as u', 'e.entered_by', 'u.id')
+        .leftJoin('users as a', 'e.approved_by', 'a.id')
+        .leftJoin('budget_periods as bp', 'e.budget_id', 'bp.id')
+        .whereNull('e.deleted_at');
+
+      const applyFilters = (q) => {
+        if (categoryId) q = q.where('e.category_id', categoryId);
+        if (startDate && endDate) q = q.whereBetween('e.date', [startDate, endDate]);
+        if (approvalTier) q = q.where('e.approval_tier', approvalTier);
+        if (status === 'pending') q = q.whereNull('e.approved_at').whereNull('e.rejection_reason');
+        else if (status === 'approved') q = q.whereNotNull('e.approved_at');
+        else if (status === 'rejected') q = q.whereNotNull('e.rejection_reason');
+        else if (status === 'unpaid') q = q.where('e.payment_status', 'unpaid');
+        return q;
+      };
+
+      const countQ = applyFilters(baseQuery());
+      const [{ total }] = await countQ.count('e.id as total');
+      const dataQ = applyFilters(baseQuery());
+      const expenses = await dataQ.select(
+          'e.*',
+          'ec.name as category_name',
+          'ec.requires_approval',
+          'pm.name as payment_method_name',
+          'u.full_name as entered_by_name',
+          'a.full_name as approved_by_name',
+          'bp.name as budget_name'
+        ).orderBy('e.created_at', 'desc').limit(limit).offset(offset);
+      return { data: expenses, pagination: { page, limit, total: total || 0, totalPages: Math.ceil((total || 0) / limit) } };
+    } catch (error) {
+      logger.error('FinanceRepository.getEnhancedExpenses error:', error.message);
+      throw error;
+    }
+  }
+
+  async getExpenseWithFullDetails(expenseId) {
+    try {
+      const expense = await db('expenses as e')
+        .leftJoin('expense_categories as ec', 'e.category_id', 'ec.id')
+        .leftJoin('payment_methods as pm', 'e.payment_method_id', 'pm.id')
+        .leftJoin('users as u', 'e.entered_by', 'u.id')
+        .leftJoin('users as a', 'e.approved_by', 'a.id')
+        .leftJoin('users as pp', 'e.payment_processor_id', 'pp.id')
+        .leftJoin('budget_periods as bp', 'e.budget_id', 'bp.id')
+        .leftJoin('chart_of_accounts as coa', 'e.coa_id', 'coa.id')
+        .select(
+          'e.*',
+          'ec.name as category_name',
+          'pm.name as payment_method_name',
+          'u.full_name as entered_by_name',
+          'a.full_name as approved_by_name',
+          'pp.full_name as payment_processor_name',
+          'bp.name as budget_name',
+          'coa.account_code',
+          'coa.account_name'
+        )
+        .where('e.id', expenseId)
+        .whereNull('e.deleted_at')
+        .first();
+      if (!expense) return null;
+      const approvalHistory = await db('expense_approval_requests as ear')
+        .leftJoin('users as u', 'ear.approver_id', 'u.id')
+        .select('ear.*', 'u.full_name as approver_name')
+        .where('ear.expense_id', expenseId)
+        .orderBy('ear.created_at', 'asc');
+      const taxes = await db('expense_taxes').where('expense_id', expenseId);
+      return { ...expense, approvalHistory, taxes };
+    } catch (error) {
+      logger.error('FinanceRepository.getExpenseWithFullDetails error:', error.message);
+      throw error;
+    }
+  }
+
+  async createExpenseFull(data) {
+    try {
+      const [id] = await db('expenses').insert(data);
+      return id;
+    } catch (error) {
+      logger.error('FinanceRepository.createExpenseFull error:', error.message);
+      throw error;
+    }
+  }
+
+  async addAuditTrail(entry) {
+    try {
+      await db('expense_audit_trail').insert(entry);
+    } catch (error) {
+      logger.error('FinanceRepository.addAuditTrail error:', error.message);
+    }
+  }
+
+  async getAuditTrail(expenseId) {
+    try {
+      return await db('expense_audit_trail')
+        .where('expense_id', expenseId)
+        .orderBy('created_at', 'desc');
+    } catch (error) {
+      logger.error('FinanceRepository.getAuditTrail error:', error.message);
+      throw error;
+    }
+  }
+
+  async updatePaymentStatus(expenseId, status, processorId, reference) {
+    try {
+      await db('expenses')
+        .where('id', expenseId)
+        .update({
+          payment_status: status,
+          payment_processor_id: processorId,
+          payment_reference: reference || null,
+          payment_processed_at: status === 'paid' ? db.fn.now() : null,
+          updated_at: db.fn.now()
+        });
+      return true;
+    } catch (error) {
+      logger.error('FinanceRepository.updatePaymentStatus error:', error.message);
+      throw error;
+    }
+  }
+
+  async getExpenseSummaryByTier(startDate, endDate) {
+    try {
+      return await db('expenses')
+        .select('approval_tier', db.raw('COUNT(*) as count'), db.raw('SUM(amount) as total'))
+        .whereBetween('date', [startDate, endDate])
+        .whereNull('deleted_at')
+        .groupBy('approval_tier');
+    } catch (error) {
+      logger.error('FinanceRepository.getExpenseSummaryByTier error:', error.message);
+      throw error;
+    }
+  }
 }
 module.exports = FinanceRepository;

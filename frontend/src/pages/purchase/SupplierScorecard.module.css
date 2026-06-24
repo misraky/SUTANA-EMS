@@ -1,0 +1,42 @@
+.container { padding: 1.5rem; max-width: 1400px; margin: 0 auto; }
+.header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem; }
+.title { font-size: 1.5rem; font-weight: 700; color: #0f172a; margin-bottom: 0.25rem; }
+.subtitle { color: #64748b; font-size: 0.875rem; }
+.legend { display: flex; align-items: center; gap: 0.25rem; font-size: 0.8rem; color: #64748b; flex-wrap: wrap; }
+.legendDot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+.scorecard { background: white; border-radius: 0.75rem; border: 2px solid #e2e8f0; padding: 1.25rem; cursor: pointer; transition: border-color 0.15s, box-shadow 0.15s; }
+.scorecard:hover { border-color: #94a3b8; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+.scorecard.selected { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
+.scoreHeader { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; }
+.scoreCircle { width: 56px; height: 56px; border: 3px solid; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; font-weight: 700; flex-shrink: 0; }
+.supplierName { font-size: 1rem; font-weight: 600; color: #0f172a; margin: 0 0 0.15rem 0; }
+.trend { font-size: 0.75rem; font-weight: 500; }
+.trend_up { color: #16a34a; }
+.trend_down { color: #dc2626; }
+.trend_stable { color: #64748b; }
+.scoreBar { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 0.75rem; }
+.barItem { display: flex; align-items: center; gap: 0.5rem; }
+.barLabel { font-size: 0.7rem; color: #64748b; width: 90px; flex-shrink: 0; }
+.barBg { flex: 1; height: 6px; background: #f1f5f9; border-radius: 3px; overflow: hidden; }
+.barFill { height: 100%; border-radius: 3px; transition: width 0.5s; }
+.barScore { font-size: 0.7rem; font-weight: 600; color: #475569; width: 24px; text-align: right; }
+.scoreFooter { display: flex; justify-content: space-between; font-size: 0.75rem; color: #94a3b8; border-top: 1px solid #f1f5f9; padding-top: 0.75rem; }
+.detailPanel { background: white; border-radius: 0.75rem; border: 1px solid #e2e8f0; padding: 1.5rem; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+.detailTitle { font-size: 1.125rem; font-weight: 600; color: #0f172a; margin-bottom: 1rem; }
+.detailGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; }
+.detailItem { background: #f8fafc; border-radius: 0.5rem; padding: 0.75rem 1rem; border: 1px solid #e2e8f0; }
+.detailHeader { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; }
+.detailLabel { flex: 1; font-weight: 600; font-size: 0.85rem; color: #0f172a; }
+.detailWeight { font-size: 0.7rem; color: #64748b; background: #f1f5f9; padding: 0.1rem 0.4rem; border-radius: 0.25rem; }
+.detailScore { font-size: 1rem; font-weight: 700; }
+.detailBarBg { height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden; margin-bottom: 0.25rem; }
+.detailBarFill { height: 100%; border-radius: 4px; transition: width 0.5s; }
+.detailWeighted { font-size: 0.75rem; color: #64748b; }
+.detailTotal { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; background: #f8fafc; border-radius: 0.5rem; border: 1px solid #e2e8f0; font-weight: 600; font-size: 1rem; }
+.totalValue { font-size: 1.5rem; font-weight: 700; }
+.loading { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 300px; color: #64748b; }
+.spinner { width: 32px; height: 32px; border: 3px solid #e2e8f0; border-top-color: #3b82f6; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 1rem; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (max-width: 768px) { .container { padding: 1rem; } .header { flex-direction: column; align-items: flex-start; } .grid { grid-template-columns: 1fr; } .detailGrid { grid-template-columns: 1fr; } .detailPanel { padding: 1rem; } }
+@media (max-width: 480px) { .container { padding: 0.75rem; } .title { font-size: 1.25rem; } .scoreCircle { width: 44px; height: 44px; font-size: 1rem; } .scorecard { padding: 1rem; } }

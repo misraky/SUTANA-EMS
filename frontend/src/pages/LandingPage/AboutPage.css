@@ -1,0 +1,486 @@
+/* ── About Page Styles ── */
+.about-page {
+  font-family: 'Inter', -apple-system, sans-serif;
+  background: #fff;
+  color: #111827;
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Hero ── */
+.about-hero {
+  background: #fff;
+  padding: 72px 80px 80px;
+  border-bottom: 1px solid #F1F5F9;
+}
+
+.about-hero-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 80px;
+  align-items: center;
+}
+
+.about-hero-copy {
+  display: flex;
+  flex-direction: column;
+}
+
+.about-established-badge {
+  display: inline-block;
+  background: #F0F9FF;
+  color: #0070F2;
+  border: 1px solid #BFDBFE;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 5px 12px;
+  border-radius: 99px;
+  margin-bottom: 24px;
+  width: fit-content;
+  text-transform: uppercase;
+}
+
+.about-hero-title {
+  font-size: 44px;
+  font-weight: 900;
+  color: #0F172A;
+  line-height: 1.15;
+  letter-spacing: -0.025em;
+  margin: 0 0 20px 0;
+}
+
+.about-hero-sub {
+  font-size: 16px;
+  color: #475569;
+  line-height: 1.7;
+  margin: 0 0 36px 0;
+  max-width: 480px;
+}
+
+.about-hero-actions {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.about-btn-primary {
+  background: #0070F2;
+  color: #fff;
+  padding: 13px 28px;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 15px;
+  text-decoration: none;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+}
+.about-btn-primary:hover {
+  background: #0057CC;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 112, 242, 0.3);
+  color: #fff;
+}
+
+.about-btn-outline {
+  background: transparent;
+  color: #0F172A;
+  padding: 13px 28px;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 15px;
+  text-decoration: none;
+  border: 1px solid #CBD5E1;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+}
+.about-btn-outline:hover {
+  border-color: #0070F2;
+  color: #0070F2;
+  background: #F0F9FF;
+}
+
+.about-hero-visual {
+  display: flex;
+  justify-content: center;
+}
+.about-hero-img {
+  width: 100%;
+  max-width: 520px;
+  height: 340px;
+  object-fit: cover;
+  border-radius: 20px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.15);
+}
+
+/* ── Mission Section ── */
+.about-mission {
+  padding: 96px 80px;
+  background: #fff;
+}
+.about-mission-inner {
+  max-width: 900px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.about-mission-title {
+  font-size: 32px;
+  font-weight: 800;
+  color: #0F172A;
+  margin: 0 0 16px;
+  letter-spacing: -0.02em;
+}
+
+.about-mission-divider {
+  width: 48px;
+  height: 3px;
+  background: #0070F2;
+  border-radius: 2px;
+  margin: 0 auto 32px;
+}
+
+.about-mission-text {
+  font-size: 16px;
+  color: #475569;
+  line-height: 1.75;
+  margin: 0 0 64px;
+}
+
+.about-modules-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 32px;
+  text-align: center;
+}
+
+.about-module-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.about-module-icon {
+  width: 52px;
+  height: 52px;
+  background: #F0F9FF;
+  border: 1px solid #BFDBFE;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+}
+
+.about-module-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #0F172A;
+  margin: 0;
+}
+
+.about-module-desc {
+  font-size: 14px;
+  color: #64748B;
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* ── Core Values ── */
+.about-values-section {
+  padding: 80px;
+  background: #F8FAFC;
+}
+
+.about-values-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.about-values-heading {
+  font-size: 30px;
+  font-weight: 800;
+  color: #0F172A;
+  margin: 0 0 8px;
+}
+
+.about-values-sub {
+  font-size: 15px;
+  color: #64748B;
+  margin: 0 0 48px;
+}
+
+/* Bento Grid */
+.about-bento-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.6fr;
+  grid-template-rows: auto auto;
+  gap: 16px;
+}
+
+.about-bento-card {
+  background: #fff;
+  border-radius: 20px;
+  padding: 36px;
+  border: 1px solid #E2E8F0;
+  transition: box-shadow 0.2s;
+}
+.about-bento-card:hover {
+  box-shadow: 0 12px 32px rgba(0,0,0,0.06);
+}
+
+/* top-left: just an icon */
+.about-bento-icon-only {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 180px;
+}
+.about-bento-check {
+  width: 72px;
+  height: 72px;
+  border: 2px solid #E2E8F0;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* top-right: blue Innovation card */
+.about-bento-blue {
+  background: #0070F2;
+  border-color: #0070F2;
+  color: #fff;
+  grid-column: 2;
+  grid-row: 1;
+}
+.about-bento-blue h3 {
+  font-size: 22px;
+  font-weight: 800;
+  margin: 12px 0 12px;
+  color: #fff;
+}
+.about-bento-blue p {
+  font-size: 14px;
+  color: rgba(255,255,255,0.85);
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* bottom-left: Integrity wide card */
+.about-bento-integrity {
+  grid-column: 1;
+  grid-row: 2;
+  min-height: 180px;
+}
+.about-bento-integrity h3 {
+  font-size: 22px;
+  font-weight: 800;
+  color: #0F172A;
+  margin: 0 0 12px;
+}
+.about-bento-integrity p {
+  font-size: 14px;
+  color: #64748B;
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* bottom-right: two smaller cards side by side */
+.about-bento-grid .about-bento-small:nth-child(4) {
+  grid-column: 2;
+  grid-row: 2;
+}
+/* Use a sub-grid for the two small cards */
+.about-bento-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-rows: auto auto;
+  gap: 16px;
+}
+.about-bento-icon-only { grid-column: 1; grid-row: 1; }
+.about-bento-blue      { grid-column: 2 / 4; grid-row: 1; }
+.about-bento-integrity { grid-column: 1 / 2; grid-row: 2; }
+.about-bento-small:nth-of-type(1) { grid-column: 2; grid-row: 2; }
+.about-bento-small:nth-of-type(2) { grid-column: 3; grid-row: 2; }
+
+.about-bento-small {
+  min-height: 160px;
+}
+.about-bento-small h4 {
+  font-size: 17px;
+  font-weight: 700;
+  color: #0F172A;
+  margin: 12px 0 8px;
+}
+.about-bento-small p {
+  font-size: 13px;
+  color: #64748B;
+  line-height: 1.55;
+  margin: 0;
+}
+
+.about-bento-value-icon {
+  font-size: 24px;
+}
+
+/* ── Stats Bar ── */
+.about-stats-bar {
+  background: #0F172A;
+  padding: 60px 80px;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  gap: 32px;
+  flex-wrap: wrap;
+}
+
+.about-stat-item {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.about-stat-value {
+  font-size: 52px;
+  font-weight: 900;
+  color: #fff;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.about-stat-label {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #64748B;
+}
+
+/* ── Team ── */
+.about-team-section {
+  padding: 96px 80px;
+  background: #fff;
+}
+
+.about-team-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.about-team-title {
+  font-size: 32px;
+  font-weight: 800;
+  color: #0F172A;
+  text-align: center;
+  margin: 0 0 16px;
+  letter-spacing: -0.02em;
+}
+
+.about-team-sub {
+  font-size: 16px;
+  color: #475569;
+  text-align: center;
+  max-width: 500px;
+  margin: 0 auto 64px;
+  line-height: 1.6;
+}
+
+.about-team-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+}
+
+.about-team-card {
+  display: flex;
+  flex-direction: column;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid #E2E8F0;
+  transition: all 0.3s;
+  background: #fff;
+}
+.about-team-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 20px 48px rgba(0,0,0,0.08);
+}
+
+.about-team-photo-wrap {
+  width: 100%;
+  aspect-ratio: 3/4;
+  overflow: hidden;
+  background: #F1F5F9;
+}
+
+.about-team-photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+  transition: transform 0.4s;
+}
+.about-team-card:hover .about-team-photo {
+  transform: scale(1.04);
+}
+
+.about-team-info {
+  padding: 20px 20px 24px;
+  border-top: 1px solid #F1F5F9;
+}
+
+.about-team-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: #0F172A;
+  margin: 0 0 4px;
+}
+
+.about-team-role {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #0070F2;
+}
+
+/* ── Responsive ── */
+@media (max-width: 1024px) {
+  .about-hero-inner {
+    grid-template-columns: 1fr;
+    gap: 48px;
+  }
+  .about-hero { padding: 56px 40px; }
+  .about-team-grid { grid-template-columns: repeat(2, 1fr); }
+  .about-bento-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .about-bento-blue { grid-column: 2; grid-row: 1; }
+  .about-bento-integrity { grid-column: 1; grid-row: 2; }
+  .about-bento-small:nth-of-type(1) { grid-column: 1; grid-row: 3; }
+  .about-bento-small:nth-of-type(2) { grid-column: 2; grid-row: 2; }
+}
+
+@media (max-width: 768px) {
+  .about-hero, .about-mission, .about-values-section, .about-team-section { padding: 56px 24px; }
+  .about-stats-bar { padding: 48px 24px; }
+  .about-hero-title { font-size: 32px; }
+  .about-modules-grid, .about-team-grid { grid-template-columns: 1fr; }
+  .about-bento-grid {
+    grid-template-columns: 1fr;
+  }
+  .about-bento-icon-only, .about-bento-blue, .about-bento-integrity,
+  .about-bento-small:nth-of-type(1), .about-bento-small:nth-of-type(2) {
+    grid-column: 1;
+    grid-row: auto;
+  }
+  .about-stat-value { font-size: 38px; }
+}

@@ -3,6 +3,7 @@ const { db } = require('../../config/database');
 const config = require('../../config/env');
 const AppError = require('../../utils/AppError');
 const { audit } = require('../../config/logger');
+const { getPermissionsForRoles } = require('../../config/auth');
 const extractToken = (req) => {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -96,6 +97,10 @@ const authenticate = async (req, res, next) => {
         } catch (e) {
         }
       }
+    }
+    if (!allPermissions.includes('*')) {
+      const configPermissions = getPermissionsForRoles(roleNames);
+      allPermissions.push(...configPermissions);
     }
     allPermissions = [...new Set(allPermissions)];
     req.user = {
@@ -245,10 +250,48 @@ const getPermissionsFromRoles = async (roleNames) => {
   }
   return Array.from(permissions);
 };
+const authorizeAny = (requiredPermissions) => {
+  return (req, res, next) => {
+    if (!req.user) {
+      return next(new AppError('Authentication required', 401));
+    }
+    if (req.user.permissions.includes('*')) {
+      return next();
+    }
+    const permissions = Array.isArray(requiredPermissions) 
+      ? requiredPermissions 
+      : [requiredPermissions];
+    const hasAnyPermission = permissions.some(required => {
+      if (req.user.permissions.includes(required)) {
+        return true;
+      }
+      const [resource, action] = required.split(':');
+      if (req.user.permissions.includes(`${resource}:*`)) {
+        return true;
+      }
+      return false;
+    });
+    if (!hasAnyPermission) {
+      audit('UNAUTHORIZED_ACCESS_ATTEMPT', req.user.id, {
+        ip: req.ip,
+        details: {
+          url: req.originalUrl,
+          method: req.method,
+          requiredAnyPermissions: permissions,
+          userPermissions: req.user.permissions
+        }
+      }).catch(() => {});
+      return next(new AppError('You do not have permission to perform this action', 403));
+    }
+    next();
+  };
+};
+
 module.exports = {
   authenticate,
   optionalAuthenticate,
   authorize,
+  authorizeAny,
   authorizeRoles,
   authenticateApiKey,
   hasPermission,

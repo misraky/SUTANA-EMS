@@ -127,13 +127,34 @@ const hashToken = (token) => {
 };
 const rolePermissions = {
   Admin: ['*'],
-  CEO: ['reports:read', 'reports:export', 'dashboard:read', 'approvals:discount', 'approvals:po', 'purchase_orders:read', 'purchase_orders:approve'],
-  Finance: ['payments:create', 'payments:read', 'expenses:create', 'expenses:read', 'expenses:update', 'reports:read', 'reports:export'],
+  CEO: ['reports:read', 'reports:export', 'dashboard:read', 'expenses:read', 'approvals:discount', 'approvals:po', 'approvals:config', 'approvals:restore', 'purchase_orders:read', 'purchase_orders:approve'],
+  Finance: ['payments:create', 'payments:read', 'payments:update', 'payments:delete', 'payments:refund', 'expenses:create', 'expenses:read', 'expenses:update', 'expenses:approve', 'expenses:delete', 'reports:read', 'reports:export', 'budgets:create', 'budgets:read', 'budgets:update', 'budgets:approve', 'petty_cash:create', 'petty_cash:read', 'petty_cash:update', 'coa:create', 'coa:read', 'coa:update', 'close:execute', 'close:read', 'approvals:read', 'approvals:approve', 'tax:read', 'tax:declare', 'payment_schedules:create', 'payment_schedules:read', 'payment_schedules:update', 'three_way_match:create', 'three_way_match:read', 'three_way_match:approve', 'orders:read', 'purchase_orders:read', 'receiving:read'],
   'Printing Supervisor': ['orders:create', 'orders:read', 'orders:update', 'orders:approve', 'inventory:read', 'tax_receipts:create', 'tax_receipts:read'],
-  Purchase: ['suppliers:create', 'suppliers:read', 'suppliers:update', 'purchase_orders:create', 'purchase_orders:read', 'purchase_orders:update', 'purchase_orders:approve'],
-  'Store Worker': ['inventory:create', 'inventory:read', 'inventory:update', 'receiving:create', 'receiving:read'],
+   Purchase: ['suppliers:create', 'suppliers:read', 'suppliers:update', 'purchase_orders:create', 'purchase_orders:read', 'purchase_orders:update'],
+  'Store Worker': ['inventory:create', 'inventory:read', 'inventory:update', 'receiving:create', 'receiving:read', 'purchase_orders:create', 'purchase_orders:read', 'suppliers:read'],
   'Sales/Cashier': ['pos:create', 'pos:read', 'pos:update', 'customers:create', 'customers:read'],
   Customer: ['orders:create', 'orders:read', 'profile:read', 'profile:update']
+};
+
+const adminTierPermissions = {
+  'L1 System Administrator': [
+    'admin:system', 'admin:health', 'admin:backup', 'admin:database', 'admin:maintenance',
+    'admin:service-accounts', 'admin:api-keys', 'admin:tenant', 'admin:dr',
+    'admin:field-security', 'admin:data-scopes', 'admin:sod-config'
+  ],
+  'L2 Security Administrator': [
+    'admin:users', 'admin:roles', 'admin:role-designer', 'admin:pam', 'admin:elevation',
+    'admin:vendor-access', 'admin:delegated-admin',
+    'admin:password-reset', 'admin:session-mgmt', 'admin:lockout'
+  ],
+  'L3 Functional Administrator': [
+    'admin:settings', 'admin:functional-config'
+  ],
+  'L4 Audit Administrator': [
+    'admin:audit', 'admin:audit-view', 'admin:audit-export',
+    'admin:compliance', 'admin:evidence', 'admin:access-reviews',
+    'admin:privilege-health', 'admin:reports'
+  ]
 };
 const hasPermission = (userPermissions, requiredPermission) => {
   if (userPermissions.includes('*')) return true;
@@ -170,6 +191,7 @@ module.exports = {
   generateVerificationToken,
   hashToken,
   rolePermissions,
+  adminTierPermissions,
   hasPermission,
   getPermissionsForRoles
 };

@@ -7,6 +7,7 @@ const { uploads } = require('../middleware/upload.middleware');
 // Public/Customer routes
 router.post('/', authenticate, rentalOrderController.createOrder);
 router.get('/my-orders', authenticate, rentalOrderController.getCustomerOrders);
+router.get('/search', authenticate, authorizeRoles(['Finance', 'Admin', 'CEO']), rentalOrderController.searchOrders);
 router.post('/:id/payment-proof', authenticate, uploads.singlePaymentProof.single('proof'), rentalOrderController.uploadPaymentProof);
 
 // Manager routes

@@ -13,15 +13,15 @@ const notificationService = {
     return await apiClient.put('/notifications/read-all');
   },
   getMyNotifications: async () => {
-    const res = await apiClient.get('/notifications');
+    const res = await apiClient.get('/notifications/v2');
     return res.data;
   },
-  markAsRead: async (id) => {
-    const res = await apiClient.patch(`/notifications/${id}/read`);
+  markAsReadV2: async (id) => {
+    const res = await apiClient.patch(`/notifications/v2/${id}/read`);
     return res.data;
   },
-  markAllAsRead: async () => {
-    const res = await apiClient.patch('/notifications/mark-all-read');
+  markAllAsReadV2: async () => {
+    const res = await apiClient.patch('/notifications/v2/mark-all-read');
     return res.data;
   }
 };

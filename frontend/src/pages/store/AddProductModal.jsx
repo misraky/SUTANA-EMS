@@ -7,6 +7,7 @@ const AddProductModal = ({ isOpen, onClose, onSuccess }) => {
     sku: '',
     categoryId: '',
     unitId: '',
+    unitCost: '',
     sellingPrice: '',
     reorderLevel: '0',
     expiryDate: '',
@@ -49,6 +50,7 @@ const AddProductModal = ({ isOpen, onClose, onSuccess }) => {
         ...formData,
         categoryId: parseInt(formData.categoryId),
         unitId: parseInt(formData.unitId),
+        unitCost: formData.unitCost ? parseFloat(formData.unitCost) : 0,
         sellingPrice: parseFloat(formData.sellingPrice),
         reorderLevel: parseInt(formData.reorderLevel) || 0,
         requires_serial: formData.requiresSerial
@@ -63,7 +65,7 @@ const AddProductModal = ({ isOpen, onClose, onSuccess }) => {
       onSuccess();
       setFormData({
         name: '', sku: '', categoryId: '', unitId: '',
-        sellingPrice: '', reorderLevel: '0', expiryDate: '', requiresSerial: false
+        unitCost: '', sellingPrice: '', reorderLevel: '0', expiryDate: '', requiresSerial: false
       });
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to add product');
@@ -136,6 +138,18 @@ const AddProductModal = ({ isOpen, onClose, onSuccess }) => {
                     <option key={u.id} value={u.id}>{u.name} ({u.abbreviation})</option>
                   ))}
                 </select>
+              </div>
+                <div className={styles.formGroup}>
+                <label className={styles.label}>Unit Cost</label>
+                <input 
+                  type="number" 
+                  step="0.01" 
+                  name="unitCost" 
+                  value={formData.unitCost} 
+                  onChange={handleChange} 
+                  className={styles.input} 
+                  placeholder="0.00"
+                />
               </div>
               <div className={styles.formGroup}>
                 <label className={styles.label}>Selling Price</label>

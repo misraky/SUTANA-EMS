@@ -37,27 +37,18 @@ const ReceivePO = () => {
         setReceiveData(fullPo.items.map(item => ({
           poItemId: item.id,
           productName: item.product_name,
+          requiresSerial: item.requires_serial || false,
           quantityOrdered: item.quantity_ordered,
           quantityReceived: item.quantity_ordered - (item.quantity_received || 0),
           quantityDamaged: 0,
-          qualityPass: true
+          qualityPass: true,
+          serialNumbersInput: ''
         })));
       }
     } catch (error) {
       console.error('Failed to fetch PO details:', error);
       setMessage({ type: 'error', text: 'Failed to load PO items' });
     }
-    // Initialize receive data
-    setReceiveData(po.items.map(item => ({
-      poItemId: item.id,
-      productName: item.product_name,
-      requiresSerial: item.requires_serial,
-      quantityOrdered: item.quantity_ordered,
-      quantityReceived: item.quantity_ordered - (item.quantity_received || 0),
-      quantityDamaged: 0,
-      qualityPass: true,
-      serialNumbersInput: ''
-    })));
     setMessage(null);
   };
   const handleItemChange = (index, field, value) => {

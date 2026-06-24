@@ -2,14 +2,19 @@ const { catchAsync } = require('../../utils/catchAsync');
 const AppError = require('../../utils/appError');
 const { db } = require('../../config/database');
 const { audit } = require('../../config/logger');
+const OrderModel = require('../../models/Order.model');
 const { generateOrderNumber } = require('../../utils/orderNumber');
 const deleteFile = (path) => console.log('Deleted file:', path);
-const calculatePrintingPrice = (params) => ({
-  pricePerUnit: 10,
-  bindingCost: params.bindingType === 'Spiral' ? 500 : 0,
-  subtotal: params.quantity * 10,
-  totalPrice: (params.quantity * 10) + (params.bindingType === 'Spiral' ? 500 : 0)
-});
+const calculatePrintingPrice = (params) => {
+  const model = new OrderModel({
+    paperType: params.paperType,
+    pagesPerCopy: params.pagesPerCopy,
+    quantity: params.quantity,
+    colorPrinting: params.colorPrinting,
+    bindingType: params.bindingType
+  });
+  return model.calculatePrice();
+};
 exports.getAllOrders = catchAsync(async (req, res) => {
   const { page = 1, limit = 25, status, search, startDate, endDate } = req.query;
   const offset = (parseInt(page) - 1) * parseInt(limit);
@@ -19,6 +24,8 @@ exports.getAllOrders = catchAsync(async (req, res) => {
     .leftJoin('users as u', 'po.created_by', 'u.id')
     .select(
       'po.id', 'po.order_number', 'po.total_price', 'po.quantity',
+      'po.product_type', 'po.paper_type', 'po.color_printing', 'po.pages_per_copy',
+      'po.due_date', 'po.binding_type',
       'po.created_at', 'po.completed_at', 'po.updated_at',
       'os.status_name', 'os.status_code', 'os.color_hex',
       'c.name as customer_name', 'c.phone as customer_phone',
@@ -167,6 +174,23 @@ exports.createOrder = catchAsync(async (req, res) => {
     console.error('Failed to notify printing staff:', notifErr.message);
   }
 
+  // INVENTORY CHECK: warn if paper stock is low for this order
+  try {
+    const paperProduct = await db('products')
+      .where('name', 'like', `%${paperType || order.paper_type}%`)
+      .where('is_active', true)
+      .first();
+    if (paperProduct) {
+      const stock = await db('inventory').where('product_id', paperProduct.id).first();
+      const estimatedSheets = (parseInt(pagesPerCopy) || 1) * (parseInt(quantity) || 1);
+      if (stock && parseInt(stock.quantity) < estimatedSheets) {
+        console.warn(`LOW STOCK: ${paperType} paper has ${stock.quantity} units, order needs ~${estimatedSheets}`);
+      }
+    }
+  } catch (stockErr) {
+    console.error('Stock check failed:', stockErr.message);
+  }
+
   res.status(201).json({ status: 'success', data: { orderId, orderNumber } });
 });
 exports.updateOrderStatus = catchAsync(async (req, res) => {
@@ -228,6 +252,61 @@ exports.updateOrderStatus = catchAsync(async (req, res) => {
       }).catch(err => console.error('User notification failed:', err.message));
     }
   }
+  // INVENTORY INTEGRATION: decrement stock when order moves to in_progress
+  const inProgressStatus = await db('order_statuses').where('status_code', 'in_progress').first();
+  if (inProgressStatus && newStatusId === inProgressStatus.id) {
+    try {
+      const paperProduct = await db('products')
+        .where('name', 'like', `%${order.paper_type}%`)
+        .where('is_active', true)
+        .first();
+      if (paperProduct) {
+        const currentStock = await db('inventory').where('product_id', paperProduct.id).first();
+        const currentQty = currentStock ? parseInt(currentStock.quantity) : 0;
+        const sheetsConsumed = (order.pages_per_copy || 1) * (order.quantity || 1);
+        await db('inventory_movements').insert({
+          product_id: paperProduct.id,
+          quantity_change: -sheetsConsumed,
+          quantity_before: currentQty,
+          quantity_after: Math.max(0, currentQty - sheetsConsumed),
+          transaction_type: 'Production',
+          reference_type: 'printing_order',
+          reference_id: order.id,
+          reason: `Paper consumed for order ${order.order_number}`,
+          performed_by: userId,
+          created_at: db.fn.now()
+        });
+        await db('inventory')
+          .where('product_id', paperProduct.id)
+          .update({ quantity: db.raw('GREATEST(quantity - ?, 0)', [sheetsConsumed]) });
+        // AUTO-PURCHASE TRIGGER: if stock drops below reorder level
+        if (paperProduct.reorder_level > 0 && (currentQty - sheetsConsumed) <= paperProduct.reorder_level) {
+          const supplierId = paperProduct.supplier_id;
+          const existingPending = await db('purchase_orders')
+            .where('supplier_id', supplierId)
+            .where('status', 'pending')
+            .first();
+          if (!existingPending) {
+            const poNumber = 'PO-PRT-' + Date.now().toString(36).toUpperCase();
+            await db('purchase_orders').insert({
+              order_number: poNumber,
+              supplier_id: supplierId || 1,
+              status: 'pending',
+              total_amount: paperProduct.selling_price * paperProduct.reorder_level,
+              ordered_by: userId,
+              notes: `Auto-generated: ${paperProduct.name} below reorder level after printing order ${order.order_number}`,
+              created_at: db.fn.now(),
+              updated_at: db.fn.now()
+            });
+            console.log(`Auto PO ${poNumber} generated for ${paperProduct.name}`);
+          }
+        }
+      }
+    } catch (invErr) {
+      console.error('Inventory movement / auto-PO failed:', invErr.message);
+    }
+  }
+
   await audit('PRINTING_ORDER_STATUS_UPDATED', userId, {
     ip: req.ip, resourceId: id,
     afterState: { status_code: statusRow.status_code, completed_at: updateData.completed_at || null }
@@ -638,13 +717,24 @@ exports.getBindingTypes = catchAsync(async (req, res) => {
   });
 });
 exports.getProductTypes = catchAsync(async (req, res) => {
-  const productTypes = [
-    { code: 'Book', name: 'Book Printing', description: 'For scholars and researchers' },
-    { code: 'Module', name: 'Module Printing', description: 'For lecturers and educators' },
-    { code: 'Exam', name: 'Exam Paper Printing', description: 'For examinations and tests' },
-    { code: 'Brochure', name: 'Brochure Printing', description: 'For churches, weddings, and events' },
-    { code: 'TaxReceipt', name: 'Government Tax Receipt', description: 'Official government tax receipts' }
-  ];
+  let productTypes;
+  try {
+    productTypes = await db('printing_product_types')
+      .select('id', 'code', 'name', 'base_price_per_page', 'color_multiplier', 'is_active')
+      .where('is_active', true)
+      .orderBy('sort_order', 'asc');
+  } catch (e) {
+    productTypes = [];
+  }
+  if (!productTypes || productTypes.length === 0) {
+    productTypes = [
+      { code: 'Book', name: 'Book Printing', base_price_per_page: 0.50, color_multiplier: 2.00, is_active: true },
+      { code: 'Module', name: 'Module Printing', base_price_per_page: 0.60, color_multiplier: 2.00, is_active: true },
+      { code: 'Exam', name: 'Exam Paper Printing', base_price_per_page: 0.75, color_multiplier: 2.50, is_active: true },
+      { code: 'Brochure', name: 'Brochure Printing', base_price_per_page: 0.40, color_multiplier: 1.50, is_active: true },
+      { code: 'TaxReceipt', name: 'Government Tax Receipt', base_price_per_page: 0.30, color_multiplier: 1.00, is_active: true }
+    ];
+  }
   res.json({
     status: 'success',
     data: { productTypes }

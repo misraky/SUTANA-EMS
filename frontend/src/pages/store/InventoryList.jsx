@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import inventoryService from '../../services/inventoryService';
 import { formatNumber, formatCurrency } from '../../utils/formatters';
 import AddProductModal from './AddProductModal';
@@ -8,6 +9,8 @@ const InventoryList = () => {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const navigate = useNavigate();
+
   useEffect(() => {
     fetchInventory();
   }, []);
@@ -85,6 +88,14 @@ const InventoryList = () => {
                 </td>
                 <td>
                   <div className={styles.actionBtns}>
+                    <button 
+                      className={styles.btnIcon} 
+                      title="Reorder"
+                      onClick={() => navigate(`/store/reorder?sku=${item.sku}`)}
+                      style={{ color: '#0ea5e9' }}
+                    >
+                      <i className="icon-shopping-cart"></i>
+                    </button>
                     <button className={styles.btnIcon} title="Adjust Stock">
                       <i className="icon-sliders"></i>
                     </button>

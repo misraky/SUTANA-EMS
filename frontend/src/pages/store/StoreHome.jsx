@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import inventoryService from '../../services/inventoryService';
+import printingService from '../../services/printingService';
 import { formatCurrency, formatNumber } from '../../utils/formatters';
 import { useAuth } from '../../hooks/useAuth';
 import styles from './StoreHome.module.css';
@@ -8,6 +9,7 @@ const StoreHome = () => {
   const [stats, setStats] = useState(null);
   const [lowStock, setLowStock] = useState([]);
   const [pendingAdjustments, setPendingAdjustments] = useState([]);
+  const [printingMaterials, setPrintingMaterials] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
@@ -49,11 +51,23 @@ const StoreHome = () => {
         setError('Failed to load store data. Please refresh.');
       }
 
+      if (canApprove) {
+        try {
+          const pendingRes = await inventoryService.getPendingAdjustments();
+          setPendingAdjustments(pendingRes.data?.adjustments || []);
+        } catch (err) {
+          // ignore
+        }
+      }
+
       try {
-        const pendingRes = await inventoryService.getPendingAdjustments();
-        setPendingAdjustments(pendingRes.data?.adjustments || []);
+        const prodRes = await inventoryService.getInventory({ limit: 100 });
+        const allProducts = prodRes.data?.data?.products || [];
+        setPrintingMaterials(allProducts.filter(p =>
+          p.name && (p.name.toLowerCase().includes('paper') || p.name.toLowerCase().includes('toner') || p.name.toLowerCase().includes('ink'))
+        ));
       } catch (err) {
-        // user might not have inventory:approve permission, ignore
+        // printing materials fetch optional
       } finally {
         setLoading(false);
       }
@@ -318,6 +332,52 @@ const StoreHome = () => {
                     </td>
                   </tr>
                 ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {printingMaterials.length > 0 && (
+        <div className={styles.alertSection} style={{ marginTop: '2rem' }}>
+          <div className={styles.alertHeader}>
+            <h2 className={styles.sectionTitle}>🖨️ Printing Materials Stock</h2>
+            <button className={styles.viewAllBtn} onClick={() => navigate('/printing/overview')}>
+              Printing Dashboard →
+            </button>
+          </div>
+          <div className={styles.alertTable}>
+            <table>
+              <thead>
+                <tr>
+                  <th>Product</th>
+                  <th>SKU</th>
+                  <th>Current Stock</th>
+                  <th>Reorder Level</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {printingMaterials.map((item) => {
+                  const stockQty = item.quantity ?? item.current_stock ?? 0;
+                  return (
+                    <tr key={item.id}>
+                      <td><strong>{item.name}</strong></td>
+                      <td className={styles.skuCell}>{item.sku}</td>
+                      <td>
+                        <span className={stockQty === 0 ? styles.outBadge : stockQty <= (item.reorder_level || 0) ? styles.lowBadge : ''}>
+                          {formatNumber(stockQty)} {item.unit || ''}
+                        </span>
+                      </td>
+                      <td>{formatNumber(item.reorder_level)}</td>
+                      <td>
+                        <span className={`${styles.statusBadge} ${stockQty === 0 ? styles.outStatus : stockQty <= (item.reorder_level || 0) ? styles.lowStatus : styles.positiveStatus}`}>
+                          {stockQty === 0 ? 'Out of Stock' : stockQty <= (item.reorder_level || 0) ? 'Low Stock' : 'In Stock'}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

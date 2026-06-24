@@ -94,7 +94,7 @@ const Receiving = () => {
         <div className={styles.poList}>
           {pendingReceiving.length === 0 ? (
             <div className={styles.emptyState}>
-              <div style={{fontSize: 48, marginBottom: 16}}>📦</div>
+              <div className={styles.emptyIcon}>📦</div>
               <p>No pending purchase orders to receive right now.</p>
             </div>
           ) : (

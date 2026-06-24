@@ -3,7 +3,7 @@ const config = require('../config/env');
 const { audit } = require('../config/logger');
 const { sendEmail } = require('./email.service');
 const { sendSMS } = require('./sms.service');
-const { AppError } = require('../utils/AppError');
+const AppError = require('../utils/AppError');
 const { generateOrderNumber } = require('../utils/orderNumber');
 const getSuppliers = async (filters) => {
   const { page = 1, limit = 25, search, isActive } = filters;
@@ -67,7 +67,23 @@ const getSupplierById = async (supplierId) => {
     .where('supplier_id', supplierId)
     .orderBy('created_at', 'desc')
     .limit(10);
-  return { supplier, recentPOs };
+    
+  const documents = await db('supplier_documents')
+    .where('supplier_id', supplierId)
+    .orderBy('uploaded_at', 'desc');
+
+  const catalog = await db('supplier_catalog')
+    .where('supplier_id', supplierId)
+    .orderBy('product_name', 'asc');
+
+  // To avoid breaking existing code that expects priceHistory
+  const priceHistory = await db('po_items')
+    .join('purchase_orders', 'po_items.po_id', 'purchase_orders.id')
+    .where('purchase_orders.supplier_id', supplierId)
+    .select('po_items.product_name', 'po_items.unit_price', 'purchase_orders.created_at as order_date', 'purchase_orders.po_number')
+    .orderBy('purchase_orders.created_at', 'desc');
+
+  return { supplier, recentPOs, documents, catalog, priceHistory };
 };
 const createSupplier = async (supplierData, userId) => {
   const {
@@ -465,6 +481,32 @@ const approvePurchaseOrder = async (poId, approved, rejectionReason, userId) => 
   }).catch(() => {});
   return { approved };
 };
+const saveSupplierAward = async (supplierId, document, productsList) => {
+  return await transaction(async (trx) => {
+    // 1. Save document if provided
+    if (document) {
+      await trx('supplier_documents').insert({
+        supplier_id: supplierId,
+        document_name: document.originalname,
+        document_type: 'Bid Award',
+        file_url: `/uploads/temp/${document.filename}`
+      });
+    }
+
+    // 2. Save catalog products
+    if (productsList && productsList.length > 0) {
+      const inserts = productsList.map(p => ({
+        supplier_id: supplierId,
+        product_name: p.product_name,
+        awarded_unit_price: p.awarded_unit_price,
+        effective_date: new Date()
+      }));
+      await trx('supplier_catalog').insert(inserts);
+    }
+    
+    return { success: true };
+  });
+};
 const cancelPurchaseOrder = async (poId, reason, userId) => {
   const purchaseOrder = await db('purchase_orders as po')
     .leftJoin('po_statuses as ps', 'po.status_id', 'ps.id')
@@ -719,5 +761,6 @@ module.exports = {
   registerReceiving,
   getPurchaseStatistics,
   getSectors,
-  getPaymentTerms
+  getPaymentTerms,
+  saveSupplierAward
 };

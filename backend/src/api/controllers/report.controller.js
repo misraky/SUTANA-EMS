@@ -4,6 +4,7 @@ const AppError = require('../../utils/AppError');
 const { catchAsync } = require('../../utils/catchAsync');
 const ExcelJS = require('exceljs');
 const PDFDocument = require('pdfkit');
+const reportService = require('../../services/report.service');
 exports.getDailySalesReport = catchAsync(async (req, res) => {
   const { date = new Date().toISOString().split('T')[0] } = req.query;
   const sales = await db('pos_sales')
@@ -161,7 +162,6 @@ exports.getProfitAndLoss = catchAsync(async (req, res) => {
     .first();
   const expenses = await db('expenses')
     .whereBetween('date', [startDate, endDate])
-    .whereNotNull('approved_at')
     .sum('amount as total')
     .first();
   const totalRevenue = (parseFloat(revenue.total_revenue || 0) + parseFloat(printingRevenue.total || 0));
@@ -198,8 +198,8 @@ exports.getBalanceSheet = catchAsync(async (req, res) => {
   const accountsReceivable = await db('customers')
     .sum('current_balance as total')
     .first();
-  const cashBalance = await db('payments')
-    .where('status_id', 1) 
+  const cashBalance = await db('invoice_payments')
+    .where('status_id', 2) 
     .sum('amount as total')
     .first();
   const accountsPayable = await db('purchase_orders')
@@ -255,6 +255,10 @@ exports.exportReport = catchAsync(async (req, res) => {
     case 'pnl':
       reportData = await exports.getProfitAndLossData(startDate, endDate);
       filename = `pnl_${startDate}_to_${endDate}`;
+      break;
+    case 'bank-reconciliation':
+      reportData = await reportService.getBankReconciliation(startDate);
+      filename = `bank_reconciliation_${new Date().toISOString().split('T')[0]}`;
       break;
     default:
       throw new AppError('Invalid report type', 400);
@@ -382,7 +386,6 @@ exports.getProfitAndLossData = async (startDate, endDate) => {
     .first();
   const expenses = await db('expenses')
     .whereBetween('date', [startDate, endDate])
-    .whereNotNull('approved_at')
     .sum('amount as total')
     .first();
   const revenueAmount = parseFloat(revenue.total || 0);
@@ -429,8 +432,21 @@ exports.getLowStockReport = catchAsync(async (req, res) => {
 exports.getExpiringProductsReport = catchAsync(async (req, res) => {
   res.json({ status: 'success', data: { products: [] } });
 });
+exports.getCurrentStockReport = catchAsync(async (req, res) => {
+  const data = await reportService.getCurrentStockReport();
+  res.json({ status: 'success', data });
+});
 exports.getInventoryMovementReport = catchAsync(async (req, res) => {
-  res.json({ status: 'success', data: { movements: [] } });
+  const { productId, transactionType, startDate, endDate, page = 1, limit = 50 } = req.query;
+  const data = await reportService.getInventoryMovementReport(
+    productId,
+    transactionType,
+    startDate,
+    endDate,
+    parseInt(page),
+    parseInt(limit)
+  );
+  res.json({ status: 'success', data });
 });
 exports.getInventoryValuationReport = catchAsync(async (req, res) => {
   res.json({ status: 'success', data: { valuation: [] } });
@@ -439,7 +455,9 @@ exports.getCashFlow = catchAsync(async (req, res) => {
   res.json({ status: 'success', data: { cashFlow: [] } });
 });
 exports.getExpensesReport = catchAsync(async (req, res) => {
-  res.json({ status: 'success', data: { expenses: [] } });
+  const { startDate, endDate, categoryId, page = 1, limit = 50 } = req.query;
+  const data = await reportService.getExpensesReport(startDate, endDate, categoryId, page, limit);
+  res.json({ status: 'success', data });
 });
 exports.getTaxSummaryReport = catchAsync(async (req, res) => {
   res.json({ status: 'success', data: { taxSummary: [] } });
@@ -461,4 +479,9 @@ exports.getScheduledReports = catchAsync(async (req, res) => {
 });
 exports.cancelScheduledReport = catchAsync(async (req, res) => {
   res.json({ status: 'success', message: 'Scheduled report cancelled' });
+});
+exports.getBankReconciliation = catchAsync(async (req, res) => {
+  const { asOfDate, bankCode } = req.query;
+  const data = await reportService.getBankReconciliation(asOfDate, bankCode);
+  res.json({ status: 'success', data });
 });

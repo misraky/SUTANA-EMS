@@ -18,8 +18,8 @@ const PrintingHome = () => {
         printingService.getStatistics(),
         printingService.getOrders({ limit: 10 }),
       ]);
-      setStats(statsRes.data);
-      setOrders(ordersRes.data?.orders || []);
+      setStats(statsRes.data?.data);
+      setOrders(ordersRes.data?.data?.orders || []);
       setLastRefresh(new Date());
     } catch (err) {
       console.error('PrintingHome fetch failed:', err);

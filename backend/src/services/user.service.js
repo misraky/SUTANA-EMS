@@ -9,7 +9,7 @@ const {
 const { audit } = require('../config/logger');
 const { sendEmail } = require('./email.service');
 const { sendSMS } = require('./sms.service');
-const { AppError } = require('../utils/AppError');
+const AppError = require('../utils/AppError');
 const getAllUsers = async (filters) => {
   const { page = 1, limit = 25, search, departmentId, roleId, statusId } = filters;
   const offset = (page - 1) * limit;

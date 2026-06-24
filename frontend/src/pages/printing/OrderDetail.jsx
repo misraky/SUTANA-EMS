@@ -24,7 +24,7 @@ const OrderDetail = () => {
     setError(null);
     try {
       const response = await printingService.getOrderById(id);
-      setOrder(response.data?.order || response.data || null);
+      setOrder(response.data?.data?.order || response.data || null);
     } catch (err) {
       console.error('Failed to fetch order details:', err);
       setError('Failed to load order details. It may not exist.');
@@ -197,34 +197,25 @@ const OrderDetail = () => {
           <div className={styles.card}>
             <h2 className={styles.cardTitle}>Attachments & Files</h2>
             {order.attachments ? (
-              <ul style={{ listStyle: 'none', padding: 0, marginTop: '1rem' }}>
+              <div className={styles.attachmentsSection}>
                 {(typeof order.attachments === 'string' ? JSON.parse(order.attachments) : order.attachments).map((file, idx) => {
                   const baseUrl = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1').replace('/api/v1', '');
                   return (
-                    <li key={idx} style={{ marginBottom: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem', backgroundColor: '#f9fafb', border: '1px solid #e5e7eb', borderRadius: '4px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        📄 <span style={{ fontWeight: '500', color: '#111827' }}>{file.originalName || file.filename}</span>
-                        <span style={{ color: '#6b7280', fontSize: '0.85rem' }}>
-                          ({(file.size / 1024 / 1024).toFixed(2)} MB)
-                        </span>
+                    <div key={idx} className={styles.attachmentRow}>
+                      <div className={styles.attachmentInfo}>
+                        <span>📄</span>
+                        <span className={styles.attachmentName}>{file.originalName || file.filename}</span>
+                        <span className={styles.attachmentSize}>({(file.size / 1024 / 1024).toFixed(2)} MB)</span>
                       </div>
-                      <a
-                        href={`${baseUrl}/uploads/orders/${file.filename}`}
-                        download={file.originalName || file.filename}
-                        target="_blank"
-                        rel="noreferrer"
-                        style={{ padding: '0.5rem 1rem', backgroundColor: '#0284c7', color: 'white', textDecoration: 'none', borderRadius: '4px', fontSize: '0.875rem', fontWeight: '500' }}
-                      >
+                      <a href={`${baseUrl}/uploads/orders/${file.filename}`} download={file.originalName || file.filename} target="_blank" rel="noreferrer" className={styles.downloadBtn}>
                         Download
                       </a>
-                    </li>
+                    </div>
                   );
                 })}
-              </ul>
+              </div>
             ) : (
-              <p style={{ marginTop: '1rem', color: '#6b7280', fontStyle: 'italic' }}>
-                No files uploaded. The customer opted to bring the files physically.
-              </p>
+              <p className={styles.noFiles}>No files uploaded. The customer opted to bring the files physically.</p>
             )}
           </div>
         </div>

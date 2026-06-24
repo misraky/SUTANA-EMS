@@ -8,6 +8,14 @@ const ServicesPage     = lazy(() => import('../pages/LandingPage/ServicesPage'))
 const FleetGalleryPage = lazy(() => import('../pages/LandingPage/FleetGalleryPage'));
 const AboutPage        = lazy(() => import('../pages/LandingPage/AboutPage'));
 const ContactPage      = lazy(() => import('../pages/LandingPage/ContactPage'));
+const PrintingPage     = lazy(() => import('../pages/LandingPage/PrintingPage'));
+const PharmacyPage     = lazy(() => import('../pages/LandingPage/PharmacyPage'));
+const FarmingPage      = lazy(() => import('../pages/LandingPage/FarmingPage'));
+const RetailPage       = lazy(() => import('../pages/LandingPage/RetailPage'));
+const FinancePage      = lazy(() => import('../pages/LandingPage/FinancePage'));
+const InventoryPage    = lazy(() => import('../pages/LandingPage/InventoryPage'));
+const SalesPage        = lazy(() => import('../pages/LandingPage/SalesPage'));
+const PurchasePage     = lazy(() => import('../pages/LandingPage/PurchasePage'));
 const LoginPage          = lazy(() => import('../pages/auth/LoginPage'));
 const RegisterPage       = lazy(() => import('../pages/auth/RegisterPage'));
 const ForgotPasswordPage = lazy(() => import('../pages/auth/ForgotPasswordPage'));
@@ -25,6 +33,8 @@ const FarmingDashboard  = lazy(() => import('../pages/farming/FarmingDashboard')
 const PharmacyDashboard = lazy(() => import('../pages/pharmacy/PharmacyDashboard'));
 const CarRentingDashboard = lazy(() => import('../pages/car-renting/CarRentingDashboard'));
 const ReportsIndex    = lazy(() => import('../pages/reports/ReportsIndex'));
+const PlaceholderPage = lazy(() => import('../pages/LandingPage/PlaceholderPage'));
+const TrackOrderPage = lazy(() => import('../pages/LandingPage/TrackOrderPage'));
 const Loader = () => (
   <div style={{
     display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -42,9 +52,25 @@ const AppRoutes = () => {
         {/* Public / Landing Pages — redirect to dashboard if logged in */}
         <Route path="/"         element={<PublicRoute><LandingPage /></PublicRoute>} />
         <Route path="/services" element={<PublicRoute><ServicesPage /></PublicRoute>} />
+        <Route path="/services/printing" element={<PublicRoute><PrintingPage /></PublicRoute>} />
+        <Route path="/services/pharmacy" element={<PublicRoute><PharmacyPage /></PublicRoute>} />
+        <Route path="/services/farming" element={<PublicRoute><FarmingPage /></PublicRoute>} />
+        <Route path="/services/retail" element={<PublicRoute><RetailPage /></PublicRoute>} />
+        <Route path="/services/finance" element={<PublicRoute><FinancePage /></PublicRoute>} />
+        <Route path="/services/inventory" element={<PublicRoute><InventoryPage /></PublicRoute>} />
+        <Route path="/services/sales" element={<PublicRoute><SalesPage /></PublicRoute>} />
+        <Route path="/services/purchase" element={<PublicRoute><PurchasePage /></PublicRoute>} />
         <Route path="/fleet-gallery" element={<FleetGalleryPage />} />
         <Route path="/about"    element={<PublicRoute><AboutPage /></PublicRoute>} />
         <Route path="/contact"  element={<PublicRoute><ContactPage /></PublicRoute>} />
+        <Route path="/track-order" element={<TrackOrderPage />} />
+        <Route path="/search" element={<PublicRoute><PlaceholderPage /></PublicRoute>} />
+        <Route path="/gallery/workers" element={<PublicRoute><PlaceholderPage /></PublicRoute>} />
+        <Route path="/gallery/cars" element={<PublicRoute><PlaceholderPage /></PublicRoute>} />
+        <Route path="/gallery/other" element={<PublicRoute><PlaceholderPage /></PublicRoute>} />
+        <Route path="/news/notice" element={<PublicRoute><PlaceholderPage /></PublicRoute>} />
+        <Route path="/news/video" element={<PublicRoute><PlaceholderPage /></PublicRoute>} />
+        <Route path="/news/gallery" element={<PublicRoute><PlaceholderPage /></PublicRoute>} />
         {}
         <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
         <Route path="/auth/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />

@@ -1,6 +1,6 @@
 const { db } = require('../config/database');
 const { logger, audit: auditLogger } = require('../config/logger');
-const { AppError } = require('../utils/AppError');
+const AppError = require('../utils/AppError');
 const AUDIT_CONFIG = {
   retentionDays: 2555, 
   batchSize: 1000,

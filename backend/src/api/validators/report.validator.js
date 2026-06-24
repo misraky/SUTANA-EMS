@@ -201,7 +201,7 @@ const trendsReportValidation = [
 ];
 const exportReportValidation = [
   param('reportType')
-    .isIn(['sales', 'inventory', 'pnl', 'balance-sheet', 'expenses', 'tax-audit'])
+    .isIn(['sales', 'inventory', 'pnl', 'balance-sheet', 'expenses', 'tax-audit', 'bank-reconciliation'])
     .withMessage('Invalid report type'),
   ...exportFormatValidation,
   ...dateRangeValidation
@@ -234,6 +234,16 @@ const cancelScheduledReportValidation = [
     .withMessage('Schedule ID must be a valid positive integer')
     .toInt()
 ];
+const bankReconciliationValidation = [
+  query('asOfDate')
+    .optional()
+    .isISO8601()
+    .withMessage('Invalid date format. Use YYYY-MM-DD'),
+  query('bankCode')
+    .optional()
+    .isIn(['CBE', 'DASHEN', 'AWASH', 'TELEBIRR'])
+    .withMessage('Bank code must be CBE, DASHEN, AWASH, or TELEBIRR')
+];
 module.exports = {
   dateRangeValidation,
   paginationValidation,
@@ -261,5 +271,6 @@ module.exports = {
   trendsReportValidation,
   exportReportValidation,
   scheduleReportValidation,
-  cancelScheduledReportValidation
+  cancelScheduledReportValidation,
+  bankReconciliationValidation
 };

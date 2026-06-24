@@ -9,13 +9,63 @@ class CronService {
     setInterval(() => {
       this.runCleanup();
     }, 1000 * 60 * 60);
+
+    // Run finance tasks every 30 minutes
+    setInterval(() => {
+      this.runFinanceTasks();
+    }, 1000 * 60 * 30);
     
     // Run once on startup after 10 seconds
     setTimeout(() => {
       this.runCleanup();
     }, 10000);
+
+    // Run finance tasks once on startup after 15 seconds
+    setTimeout(() => {
+      this.runFinanceTasks();
+    }, 15000);
     
-    logger.info('Cron service started for auto-cleanup tasks.');
+    logger.info('Cron service started for auto-cleanup and finance tasks.');
+  }
+
+  async runFinanceTasks() {
+    try {
+      logger.info('Running finance cron tasks...');
+      const now = new Date();
+
+      // 1. Mark overdue payment schedules
+      const overdueSchedules = await db('payment_schedules')
+        .where('status', 'pending')
+        .where('due_date', '<', now);
+
+      for (const s of overdueSchedules) {
+        await db('payment_schedules').where('id', s.id).update({
+          status: 'overdue',
+          updated_at: db.fn.now()
+        });
+        await notificationRepository.create({
+          userId: s.created_by,
+          title: 'Payment Overdue',
+          message: `Payment schedule #${s.id} for ETB ${s.amount_due} is overdue (due: ${s.due_date}).`
+        });
+      }
+
+      // 2. Deactivate expired budget periods
+      const expiredBudgets = await db('budget_periods')
+        .where('status', 'active')
+        .where('end_date', '<', now);
+
+      for (const b of expiredBudgets) {
+        await db('budget_periods').where('id', b.id).update({
+          status: 'closed',
+          updated_at: db.fn.now()
+        });
+      }
+
+      logger.info('Finance cron tasks completed.');
+    } catch (error) {
+      logger.error('Error during finance cron tasks:', error);
+    }
   }
 
   async runCleanup() {

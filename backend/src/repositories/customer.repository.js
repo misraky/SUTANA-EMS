@@ -64,7 +64,7 @@ class CustomerRepository extends BaseRepository {
         customer.order_count = parseInt(orderCount?.count || 0);
         const totalSpent = await db('pos_sales')
           .where('customer_id', customerId)
-          .where('status', 'Completed')
+          .where('status_id', 1)
           .sum('total_amount as total')
           .first();
         customer.total_spent = parseFloat(totalSpent?.total || 0);
@@ -245,7 +245,7 @@ class CustomerRepository extends BaseRepository {
       const invoices = await db('pos_sales')
         .select('id', 'invoice_number', 'total_amount', 'amount_paid', 'sale_date')
         .where('customer_id', customerId)
-        .where('payment_method', 'Credit')
+        .where('payment_method_id', 2)
         .orderBy('sale_date', 'desc');
       const processedInvoices = invoices.map(inv => ({
         ...inv,
@@ -307,7 +307,7 @@ class CustomerRepository extends BaseRepository {
       if (!customer) return null;
       const unpaidInvoices = await db('pos_sales')
         .where('customer_id', customerId)
-        .where('payment_method', 'Credit')
+        .where('payment_method_id', 2)
         .whereRaw('total_amount > COALESCE(amount_paid, 0)')
         .select('id', 'invoice_number', 'total_amount', 'amount_paid', 'sale_date');
       const aging = {

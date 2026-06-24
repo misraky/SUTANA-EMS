@@ -3,7 +3,7 @@ const config = require('../config/env');
 const { audit } = require('../config/logger');
 const { sendEmail } = require('./email.service');
 const { sendSMS } = require('./sms.service');
-const { AppError } = require('../utils/AppError');
+const AppError = require('../utils/AppError');
 const ExcelJS = require('exceljs');
 const getProducts = async (filters) => {
   const { page = 1, limit = 25, categoryId, search, isActive, lowStock = false } = filters;

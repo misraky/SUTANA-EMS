@@ -166,3 +166,123 @@
   border-radius: 12px;
   border: 1px solid #e5e7eb;
 }
+.tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 2px solid #e5e7eb;
+  padding-bottom: 0;
+}
+.tab {
+  padding: 0.75rem 1.5rem;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.tab:hover {
+  color: #374151;
+}
+.activeTab {
+  color: #6366f1;
+  border-bottom-color: #6366f1;
+}
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+.table th {
+  text-align: left;
+  padding: 0.75rem 0.5rem;
+  background: #f9fafb;
+  color: #374151;
+  font-weight: 600;
+  border-bottom: 2px solid #e5e7eb;
+}
+.table td {
+  padding: 0.65rem 0.5rem;
+  border-bottom: 1px solid #f3f4f6;
+  color: #4b5563;
+}
+.btnSecondary {
+  background: #fff;
+  color: #6366f1;
+  border: 1px solid #c7d2fe;
+  padding: 0.6rem 1.25rem;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btnSecondary:hover {
+  background: #eef2ff;
+  border-color: #6366f1;
+}
+.txFormCard {
+  background: #fff;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+  border: 1px solid #c7d2fe;
+  margin-bottom: 2rem;
+}
+.txFormTitle {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin: 0 0 1.2rem 0;
+  color: #374151;
+}
+.txForm {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.txFormRow {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+.txFormRow .formGroup {
+  flex: 1;
+  min-width: 180px;
+}
+.textarea {
+  padding: 0.6rem 0.9rem;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  outline: none;
+  background: #fff;
+  width: 100%;
+  resize: vertical;
+  font-family: inherit;
+}
+.textarea:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
+}
+
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+.modal {
+  background: white;
+  border-radius: 10px;
+  width: 480px;
+  max-width: 90vw;
+  padding: 1.5rem;
+}
+.modal h3 { margin: 0 0 1rem 0; color: #0f172a; }

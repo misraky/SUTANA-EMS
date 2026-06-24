@@ -3,7 +3,7 @@ const config = require('../config/env');
 const { audit } = require('../config/logger');
 const { sendEmail } = require('./email.service');
 const { sendSMS } = require('./sms.service');
-const { AppError } = require('../utils/AppError');
+const AppError = require('../utils/AppError');
 const { generateOrderNumber, calculatePrintingPrice } = require('../utils/orderNumber');
 const getAllOrders = async (filters) => {
   const { page = 1, limit = 25, status, search, startDate, endDate, userId, role } = filters;

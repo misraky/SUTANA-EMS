@@ -3,8 +3,9 @@ const config = require('../config/env');
 const { audit } = require('../config/logger');
 const { sendEmail } = require('./email.service');
 const { sendSMS } = require('./sms.service');
-const { AppError } = require('../utils/AppError');
-const { generateOrderNumber } = require('../utils/orderNumber');
+const AppError = require('../utils/AppError');
+const { generateInvoiceNumber } = require('../utils/orderNumber');
+const salesAdmin = require('./salesAdmin.service');
 const carts = new Map();
 const getProducts = async (filters) => {
   const { page = 1, limit = 50, categoryId } = filters;
@@ -95,7 +96,7 @@ const getProductByBarcode = async (barcode) => {
   return product;
 };
 const getCart = async (userId) => {
-  const cart = carts.get(userId) || { items: [], discount: { type: null, value: 0 }, createdAt: new Date() };
+  const cart = carts.get(userId) || { items: [], discount: { type: null, value: 0 }, createdAt: new Date(), customerId: null };
   let subtotal = 0;
   for (const item of cart.items) {
     item.total = item.quantity * item.unitPrice;
@@ -117,15 +118,17 @@ const getCart = async (userId) => {
     taxAmount: parseFloat(taxAmount.toFixed(2)),
     totalAmount: parseFloat(totalAmount.toFixed(2)),
     discount: cart.discount,
-    itemCount: cart.items.length
+    itemCount: cart.items.length,
+    customerId: cart.customerId
   };
 };
-const addToCart = async (userId, productId, quantity) => {
+const addToCart = async (userId, productId, quantity, customerId = null) => {
   const product = await db('products as p')
     .leftJoin('inventory as i', 'p.id', 'i.product_id')
     .select(
       'p.id',
       'p.name',
+      'p.sku',
       'p.selling_price',
       db.raw('COALESCE(i.quantity, 0) as stock_quantity')
     )
@@ -133,28 +136,57 @@ const addToCart = async (userId, productId, quantity) => {
     .where('p.is_active', true)
     .whereNull('p.deleted_at')
     .first();
-  if (!product) {
-    throw new AppError('Product not found', 404);
-  }
+  if (!product) throw new AppError('Product not found', 404);
   if (product.stock_quantity < quantity) {
     throw new AppError(`Insufficient stock. Available: ${product.stock_quantity}`, 400);
   }
+
+  // Use pricing engine for effective price
+  let effectivePrice = parseFloat(product.selling_price);
+  let appliedPromotion = null;
+  let priceListName = null;
+  if (customerId) {
+    try {
+      effectivePrice = await salesAdmin.getEffectivePrice(productId, customerId, quantity);
+      if (effectivePrice !== parseFloat(product.selling_price)) priceListName = 'Customer Price';
+    } catch (_) { effectivePrice = parseFloat(product.selling_price); }
+  }
+
+  const activePromotions = await salesAdmin.getActivePromotions();
+  for (const promo of activePromotions) {
+    if (promo.applies_to === 'all' || (promo.applies_to === 'product' && promo.product_id === productId)) {
+      if (promo.type === 'percentage') effectivePrice = effectivePrice * (1 - parseFloat(promo.value) / 100);
+      else if (promo.type === 'fixed') effectivePrice = effectivePrice - parseFloat(promo.value);
+      appliedPromotion = { id: promo.id, name: promo.name, type: promo.type, value: promo.value };
+      break;
+    }
+  }
+  effectivePrice = Math.max(0, effectivePrice);
+
   let cart = carts.get(userId);
   if (!cart) {
-    cart = { items: [], discount: { type: null, value: 0 }, createdAt: new Date() };
+    cart = { items: [], discount: { type: null, value: 0 }, createdAt: new Date(), customerId: customerId || null };
   }
+  if (customerId) cart.customerId = customerId;
+
   const existingItem = cart.items.find(item => item.productId === productId);
   if (existingItem) {
     existingItem.quantity += quantity;
+    existingItem.unitPrice = effectivePrice;
     existingItem.total = existingItem.quantity * existingItem.unitPrice;
   } else {
     cart.items.push({
       id: Date.now().toString(),
       productId: product.id,
       productName: product.name,
+      sku: product.sku,
       quantity,
-      unitPrice: parseFloat(product.selling_price),
-      total: quantity * parseFloat(product.selling_price)
+      unitPrice: effectivePrice,
+      basePrice: parseFloat(product.selling_price),
+      total: quantity * effectivePrice,
+      hasDiscount: effectivePrice !== parseFloat(product.selling_price),
+      promotion: appliedPromotion,
+      priceListName: priceListName,
     });
   }
   carts.set(userId, cart);
@@ -195,7 +227,7 @@ const clearCart = async (userId) => {
   carts.delete(userId);
   return true;
 };
-const applyCartDiscount = async (userId, type, value, reason, userRoles) => {
+const applyCartDiscount = async (userId, type, value, reason, userRoles, ip) => {
   let maxDiscount = config.businessRules.cashierMaxDiscount;
   if (userRoles.includes('CEO') || userRoles.includes('Admin')) {
     maxDiscount = config.businessRules.ceoMaxDiscount;
@@ -211,6 +243,10 @@ const applyCartDiscount = async (userId, type, value, reason, userRoles) => {
   }
   cart.discount = { type, value, reason: reason || null };
   carts.set(userId, cart);
+  audit('CART_DISCOUNT_APPLIED', userId, {
+    ip,
+    details: { type, value, reason }
+  });
   return cart.discount;
 };
 const removeCartDiscount = async (userId) => {
@@ -221,105 +257,119 @@ const removeCartDiscount = async (userId) => {
   }
   return true;
 };
+const setCartCustomer = async (userId, customerId) => {
+  const cart = carts.get(userId);
+  if (!cart) throw new AppError('Cart is empty. Add items first.', 400);
+  cart.customerId = customerId || null;
+  carts.set(userId, cart);
+  return true;
+};
 const checkout = async (userId, checkoutData, ip) => {
   const {
-    customerId,
-    customer,
-    paymentMethod,
-    amountPaid,
-    paymentReference,
-    notes
+    customerId, customer, paymentMethod, amountPaid,
+    paymentReference, notes, serials
   } = checkoutData;
   const cart = carts.get(userId);
-  if (!cart || cart.items.length === 0) {
-    throw new AppError('Cart is empty', 400);
-  }
-  let subtotal = 0;
-  for (const item of cart.items) {
-    subtotal += item.quantity * item.unitPrice;
-  }
+  if (!cart || cart.items.length === 0) throw new AppError('Cart is empty', 400);
+
+  const subtotal = cart.items.reduce((s, i) => s + i.quantity * i.unitPrice, 0);
   const taxRate = config.businessRules.taxRate / 100;
   let discountAmount = 0;
-  if (cart.discount.type === 'percentage') {
-    discountAmount = subtotal * (cart.discount.value / 100);
-  } else if (cart.discount.type === 'fixed') {
-    discountAmount = Math.min(cart.discount.value, subtotal);
-  }
+  if (cart.discount.type === 'percentage') discountAmount = subtotal * (cart.discount.value / 100);
+  else if (cart.discount.type === 'fixed') discountAmount = Math.min(cart.discount.value, subtotal);
   const taxAmount = (subtotal - discountAmount) * taxRate;
   const totalAmount = subtotal - discountAmount + taxAmount;
+
   if (paymentMethod === 'Cash' && amountPaid < totalAmount) {
     throw new AppError(`Amount paid (${amountPaid} ETB) is less than total (${totalAmount} ETB)`, 400);
   }
+  if (paymentMethod === 'Credit' && !customerId) {
+    throw new AppError('A customer must be selected for credit sales', 400);
+  }
+  const referencedMethods = ['Bank Transfer', 'Telebirr', 'Check'];
+  if (referencedMethods.includes(paymentMethod) && !paymentReference) {
+    throw new AppError(`A payment reference number is required for ${paymentMethod} transactions.`, 400);
+  }
+
   const changeAmount = paymentMethod === 'Cash' ? amountPaid - totalAmount : 0;
   let finalCustomerId = customerId;
   if (!finalCustomerId && customer) {
     const [newCustomerId] = await db('customers').insert({
-      name: customer.name,
-      phone: customer.phone,
-      email: customer.email || null,
-      customer_type_id: 5, 
-      created_by: userId,
-      created_at: db.fn.now()
+      name: customer.name, phone: customer.phone,
+      email: customer.email || null, customer_type_id: 5,
+      created_by: userId, created_at: db.fn.now()
     });
     finalCustomerId = newCustomerId;
   }
-  const invoiceNumber = await generateOrderNumber('INV');
-  const completedStatus = await db('sale_statuses').where('status_code', 'completed').first();
+
+  const invoiceNumber = await generateInvoiceNumber();
+  const saleStatusCode = paymentMethod === 'Credit' ? 'pending_payment' : 'completed';
+  let completedStatus = await db('sale_statuses').where('status_code', saleStatusCode).first();
+  if (!completedStatus) completedStatus = await db('sale_statuses').where('status_code', 'completed').first();
   const paymentMethodRecord = await db('payment_methods').where('name', paymentMethod).first();
+
   const result = await transaction(async (trx) => {
     const [saleId] = await trx('pos_sales').insert({
-      invoice_number: invoiceNumber,
-      customer_id: finalCustomerId || null,
-      subtotal: subtotal,
-      tax_amount: taxAmount,
-      discount_amount: discountAmount,
-      total_amount: totalAmount,
-      payment_method_id: paymentMethodRecord.id,
+      invoice_number: invoiceNumber, customer_id: finalCustomerId || null,
+      subtotal, tax_amount: taxAmount, discount_amount: discountAmount,
+      total_amount: totalAmount, payment_method_id: paymentMethodRecord.id,
       payment_reference: paymentReference || null,
-      amount_paid: amountPaid,
-      change_amount: changeAmount,
-      cashier_id: userId,
-      sale_date: db.fn.now(),
-      status_id: completedStatus.id,
-      notes: notes || null
+      amount_paid: paymentMethod === 'Credit' ? 0 : amountPaid,
+      change_amount: changeAmount, cashier_id: userId,
+      sale_date: db.fn.now(), status_id: completedStatus.id
     });
+
+    if (paymentMethod === 'Credit' && finalCustomerId) {
+      await trx('customers').where('id', finalCustomerId).increment('current_balance', totalAmount);
+    }
+
     for (const item of cart.items) {
       await trx('pos_items').insert({
-        sale_id: saleId,
-        product_id: item.productId,
-        quantity: item.quantity,
-        unit_price: item.unitPrice,
-        discount_percent: 0,
-        subtotal: item.quantity * item.unitPrice,
+        sale_id: saleId, product_id: item.productId,
+        quantity: item.quantity, unit_price: item.unitPrice,
+        discount_percent: 0, subtotal: item.quantity * item.unitPrice,
         total: item.quantity * item.unitPrice
       });
-      const currentStock = await trx('inventory')
-        .where('product_id', item.productId)
-        .first();
+
+      const product = await trx('products').where('id', item.productId).first();
+      if (product && product.requires_serial) {
+        const itemSerials = (serials && serials[item.productId]) || [];
+        if (itemSerials.length !== item.quantity) {
+          throw new AppError(`Product ${product.name} requires exactly ${item.quantity} serial numbers.`, 400);
+        }
+        for (const serial of itemSerials) {
+          const serialRecord = await trx('inventory_serials')
+            .where('product_id', item.productId).where('serial_number', serial)
+            .where('status', 'In Stock').first();
+          if (!serialRecord) throw new AppError(`Serial ${serial} for ${product.name} is not in stock.`, 400);
+          await trx('inventory_serials').where('id', serialRecord.id).update({
+            status: 'Sold', reference_type: 'Sale', reference_id: saleId
+          });
+        }
+      }
+
+      const currentStock = await trx('inventory').where('product_id', item.productId).first();
       if (currentStock) {
         const newQuantity = currentStock.quantity - item.quantity;
-        await trx('inventory')
-          .where('product_id', item.productId)
-          .update({
-            quantity: newQuantity,
-            last_updated: db.fn.now()
-          });
+        await trx('inventory').where('product_id', item.productId).update({
+          quantity: newQuantity, last_updated: db.fn.now()
+        });
         await trx('inventory_movements').insert({
-          product_id: item.productId,
-          transaction_type: 'Sale',
-          quantity_change: -item.quantity,
-          quantity_before: currentStock.quantity,
-          quantity_after: newQuantity,
-          reference_type: 'POS',
-          reference_id: saleId,
-          performed_by: userId,
-          created_at: db.fn.now()
+          product_id: item.productId, transaction_type: 'Sale',
+          quantity_change: -item.quantity, quantity_before: currentStock.quantity,
+          quantity_after: newQuantity, reference_type: 'POS',
+          reference_id: saleId, performed_by: userId, created_at: db.fn.now()
         });
       }
     }
     return saleId;
   });
+
   carts.delete(userId);
+  await audit('SALE_COMPLETED', result, {
+    ip, details: { invoiceNumber, totalAmount, paymentMethod, itemCount: cart.items.length }
+  });
+
   if (finalCustomerId) {
     const customerRecord = await db('customers').where('id', finalCustomerId).first();
     if (customerRecord && customerRecord.phone) {
@@ -328,15 +378,14 @@ const checkout = async (userId, checkoutData, ip) => {
         message: `Receipt: ${invoiceNumber} | Amount: ${totalAmount} ETB | Thank you for your purchase!`
       }).catch(() => {});
     }
+    try {
+      const loyalty = await salesAdmin.getCustomerLoyalty(finalCustomerId);
+      await salesAdmin.earnPoints(finalCustomerId, result, totalAmount, loyalty.pointsMultiplier);
+      await salesAdmin.updateCustomerTier(finalCustomerId);
+    } catch (_) { }
   }
-  return {
-    saleId: result,
-    invoiceNumber,
-    totalAmount,
-    changeAmount,
-    paymentMethod,
-    itemsSold: cart.items.length
-  };
+
+  return { saleId: result, invoiceNumber, totalAmount, changeAmount, paymentMethod, itemsSold: cart.items.length };
 };
 const getSalesHistory = async (filters) => {
   const { page = 1, limit = 25, startDate, endDate, customerId } = filters;
@@ -490,7 +539,7 @@ const voidSale = async (saleId, reason, userId, ip) => {
 const getDailyStatistics = async (date) => {
   const stats = await db('pos_sales')
     .whereDate('sale_date', date)
-    .where('status', 'Completed')
+    .where('status_id', 1)
     .select(
       db.raw('COUNT(*) as total_transactions'),
       db.raw('SUM(total_amount) as total_revenue'),
@@ -502,7 +551,7 @@ const getDailyStatistics = async (date) => {
   const paymentBreakdown = await db('pos_sales')
     .leftJoin('payment_methods', 'pos_sales.payment_method_id', 'payment_methods.id')
     .whereDate('sale_date', date)
-    .where('status', 'Completed')
+    .where('status_id', 1)
     .select('payment_methods.name as method', db.raw('COUNT(*) as count'), db.raw('SUM(total_amount) as amount'))
     .groupBy('pos_sales.payment_method_id', 'payment_methods.name');
   return {
@@ -535,6 +584,10 @@ const validateDiscount = async (discountPercent, subtotal, userRoles) => {
     approvalRole: requiresApproval ? 'Manager' : null
   };
 };
+const getCustomerLoyalty = async (customerId) => {
+  return salesAdmin.getCustomerLoyalty(customerId);
+};
+
 module.exports = {
   getProducts,
   searchProducts,
@@ -546,11 +599,13 @@ module.exports = {
   clearCart,
   applyCartDiscount,
   removeCartDiscount,
+  setCartCustomer,
   checkout,
   getSalesHistory,
   getSaleById,
   getReceipt,
   voidSale,
+  getCustomerLoyalty,
   getDailyStatistics,
   validateDiscount
 };

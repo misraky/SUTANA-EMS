@@ -1,16 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import customerService from '../../services/customerService';
 import { formatDate } from '../../utils/formatters';
 import styles from './CustomerReceipts.module.css';
 const CustomerReceipts = () => {
   const [receipts, setReceipts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [pagination, setPagination] = useState({ page: 1, totalPages: 1 });
-  useEffect(() => {
-    fetchReceipts(pagination.page);
-  }, []);
-  const fetchReceipts = async (page = 1) => {
+  const fetchReceipts = useCallback(async (page = 1) => {
     setLoading(true);
+    setError('');
     try {
       const res = await customerService.getReceipts({ page, limit: 12 });
       const data = res?.data || {};
@@ -32,7 +31,10 @@ const CustomerReceipts = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+  useEffect(() => {
+    fetchReceipts(1);
+  }, [fetchReceipts]);
   const handleDownload = async (id, receiptNumber) => {
     try {
       const res = await customerService.downloadReceipt(id);
@@ -43,8 +45,9 @@ const CustomerReceipts = () => {
       document.body.appendChild(link);
       link.click();
       link.remove();
+      setTimeout(() => window.URL.revokeObjectURL(url), 5000);
     } catch (err) {
-      alert('Failed to download receipt');
+      setError('Failed to download receipt. Please try again.');
     }
   };
   const handlePageChange = (newPage) => {
@@ -56,6 +59,7 @@ const CustomerReceipts = () => {
         <h1 className={styles.title}>My Receipts</h1>
         <p className={styles.subtitle}>Download and view your past transaction receipts.</p>
       </div>
+      {error && <div className={styles.errorAlert}>{error}</div>}
       {loading ? (
         <div className={styles.loadingState}>Loading receipts...</div>
       ) : receipts.length === 0 ? (

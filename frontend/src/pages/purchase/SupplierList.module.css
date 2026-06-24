@@ -272,3 +272,20 @@
   color: #94a3b8;
   font-size: 0.875rem;
 }
+@media (max-width: 768px) {
+  .container { padding: 1rem; }
+  .header { flex-direction: column; align-items: flex-start; gap: 0.75rem; }
+  .title { font-size: 1.25rem; }
+  .headerActions { width: 100%; flex-wrap: wrap; }
+  .searchInput { width: 100%; }
+  .dataTable th, .dataTable td { padding: 0.5rem; font-size: 0.78rem; }
+  .actionBtns { gap: 0.25rem; }
+  .priceHistoryPanel { padding: 1rem; }
+  .innerTable th, .innerTable td { padding: 0.35rem 0.5rem; font-size: 0.7rem; }
+}
+@media (max-width: 480px) {
+  .container { padding: 0.75rem; border-radius: 0; }
+  .title { font-size: 1.125rem; }
+  .btnPrimary { padding: 0.5rem 1rem; font-size: 0.8rem; }
+}
+

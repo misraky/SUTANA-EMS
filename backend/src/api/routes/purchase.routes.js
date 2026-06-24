@@ -31,7 +31,7 @@ const updateSupplierValidation = [
 ];
 
 const createPOValidation = [
-  body('supplierId').notEmpty().withMessage('Supplier ID is required').isInt(),
+  body('supplierId').optional().isInt(),
   body('expectedDeliveryDate').notEmpty().withMessage('Expected delivery date is required').isISO8601()
     .custom((value) => {
       const deliveryDate = new Date(value);
@@ -40,7 +40,7 @@ const createPOValidation = [
       if (deliveryDate < today) throw new Error('Expected delivery date cannot be in the past');
       return true;
     }),
-  body('sectorId').notEmpty().withMessage('Sector ID is required').isInt(),
+  body('sectorId').optional().isInt(),
   body('items').isArray({ min: 1 }).withMessage('At least one item is required'),
   body('items.*.productId').optional().isInt(),
   body('items.*.productName').notEmpty().withMessage('Product name is required for each item'),
@@ -132,6 +132,15 @@ router.delete(
   supplierIdParamValidation,
   validate,
   PurchaseController.deleteSupplier
+);
+router.post(
+  '/suppliers/:id/award',
+  authenticate,
+  authorize(['suppliers:create', 'suppliers:update']),
+  supplierIdParamValidation,
+  validate,
+  uploads.generic.single('document'),
+  PurchaseController.onboardSupplierAward
 );
 router.post(
   '/suppliers/:id/restore',
@@ -270,11 +279,19 @@ router.post('/orders/:id/attachment', authenticate, authorize(['purchase_orders:
 // Receiving routes
 router.get('/receiving/pending', authenticate, authorize(['receiving:read']), PurchaseController.getPendingReceiving);
 router.post('/receiving/register', authenticate, authorize(['receiving:create']), receiveItemsValidation, validate, PurchaseController.registerReceiving);
+router.get('/receiving/grns', authenticate, authorize(['receiving:read']), PurchaseController.getGRNs);
+router.get('/receiving/grns/:id', authenticate, authorize(['receiving:read']), PurchaseController.getGRNDetail);
 
 // Analytics & Misc
 router.get('/statistics', authenticate, authorize(['purchase_orders:read']), PurchaseController.getPurchaseStatistics);
 router.get('/reorder-suggestions', authenticate, authorize(['purchase_orders:read']), PurchaseController.getReorderSuggestions);
 router.get('/sectors', authenticate, PurchaseController.getSectors);
 router.get('/payment-terms', authenticate, PurchaseController.getPaymentTerms);
+
+// ── Contracts ──
+router.get('/contracts', authenticate, authorize(['purchase_orders:read']), PurchaseController.getContracts);
+
+// ── Fraud Detection ──
+router.get('/fraud/alerts', authenticate, authorize(['purchase_orders:read']), PurchaseController.getFraudAlerts);
 
 module.exports = router;

@@ -7,13 +7,17 @@ import StockMovements from './StockMovements';
 import InventoryAdjustment from './InventoryAdjustment';
 import ReceivePO from './ReceivePO';
 import DamagedLostItems from './DamagedLostItems';
+import CycleCounting from './CycleCounting';
+import StoreReorderRequest from './StoreReorderRequest';
 import styles from './StoreDashboard.module.css';
 const StoreDashboard = () => {
   const menuItems = [
     { label: 'Inventory Overview', path: '/store/overview', icon: 'box' },
     { label: 'Inventory List', path: '/store/inventory', icon: 'list' },
     { label: 'Stock Movements', path: '/store/movements', icon: 'repeat' },
+    { label: 'Cycle Counting', path: '/store/counting', icon: 'check-square' },
     { label: 'Stock Adjustment', path: '/store/adjustment', icon: 'sliders' },
+    { label: 'Reorder Requests', path: '/store/reorder', icon: 'shopping-cart' },
     { label: 'Receive PO', path: '/store/receive', icon: 'download' },
     { label: 'Damaged/Lost Items', path: '/store/damaged', icon: 'alert-triangle' },
   ];
@@ -24,7 +28,9 @@ const StoreDashboard = () => {
           <Route path="overview" element={<StoreHome />} />
           <Route path="inventory" element={<InventoryList />} />
           <Route path="movements" element={<StockMovements />} />
+          <Route path="counting" element={<CycleCounting />} />
           <Route path="adjustment" element={<InventoryAdjustment />} />
+          <Route path="reorder" element={<StoreReorderRequest />} />
           <Route path="receive" element={<ReceivePO />} />
           <Route path="damaged" element={<DamagedLostItems />} />
           <Route path="/" element={<Navigate to="overview" replace />} />

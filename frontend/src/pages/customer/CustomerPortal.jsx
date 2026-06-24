@@ -34,7 +34,7 @@ const CustomerPortalHome = () => {
       <div className={styles.statsGrid}>
         <div className={styles.statCard}>
           <h3>Current Balance</h3>
-          <p className={balance > 0 ? styles.textRed : styles.textGreen}>
+          <p className={balance > 0 ? styles.textGreen : styles.textRed}>
             {formatCurrency(balance)}
           </p>
         </div>
@@ -56,6 +56,7 @@ const CustomerPortal = () => {
     { label: 'Receipts', path: '/customer/receipts', icon: 'file-text' },
     { label: 'Invoices', path: '/customer/invoices', icon: 'credit-card' },
     { label: 'Support', path: '/customer/support', icon: 'message-circle' },
+    { label: 'Profile', path: '/customer/profile', icon: 'user' },
   ];
   return (
     <div className={styles.portalWrapper}>

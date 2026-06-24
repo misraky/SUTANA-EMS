@@ -55,7 +55,11 @@ const createProductValidation = [
     .optional()
     .isInt({ min: 1 })
     .withMessage('Supplier ID must be a valid integer')
-    .toInt()
+    .toInt(),
+  body('unitCost')
+    .optional()
+    .isFloat({ min: 0 })
+    .withMessage('Unit cost must be a non-negative number')
 ];
 const updateProductValidation = [
   param('id')
@@ -213,7 +217,11 @@ const adjustStockValidation = [
     .optional()
     .isInt({ min: 1 })
     .withMessage('Reference ID must be a valid integer')
-    .toInt()
+    .toInt(),
+  body('unitCost')
+    .optional()
+    .isFloat({ min: 0 })
+    .withMessage('Unit cost must be a non-negative number')
 ];
 const markDamagedValidation = [
   body('productId')

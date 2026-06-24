@@ -1,5 +1,5 @@
 const { db } = require('../config/database');
-const { AppError } = require('../utils/AppError');
+const AppError = require('../utils/AppError');
 const ExcelJS = require('exceljs');
 const PDFDocument = require('pdfkit');
 const getDailySalesReport = async (date) => {
@@ -60,7 +60,7 @@ const getSalesByPeriod = async (startDate, endDate, groupBy = 'day') => {
       db.raw('AVG(total_amount) as avg_order_value')
     )
     .whereBetween('sale_date', [startDate, endDate])
-    .where('status', 'Completed')
+    .where('status_id', 1)
     .groupByRaw(`DATE_FORMAT(sale_date, '${dateFormat}')`)
     .orderBy('period', 'asc');
   const totals = {
@@ -227,7 +227,7 @@ const getPrintingRevenueReport = async (startDate, endDate, groupBy = 'month') =
       db.raw('AVG(total_price) as avg_order_value')
     )
     .whereBetween('created_at', [startDate, endDate])
-    .where('status', 'Delivered')
+    .whereIn('status_id', db('order_statuses').select('id').where('status_code', 'delivered'))
     .groupByRaw(`DATE_FORMAT(created_at, '${dateFormat}')`)
     .orderBy('period', 'asc');
   const totals = {
@@ -358,7 +358,7 @@ const getInventoryMovementReport = async (productId, transactionType, startDate,
   if (startDate && endDate) {
     query = query.whereBetween('im.created_at', [startDate, endDate]);
   }
-  const total = await query.clone().count('im.id as total').first();
+  const total = await query.clone().clearSelect().count('im.id as total').first();
   const movements = await query
     .orderBy('im.created_at', 'desc')
     .limit(limit)
@@ -412,7 +412,7 @@ const getInventoryValuationReport = async (asOfDate = null) => {
 const getProfitAndLoss = async (startDate, endDate, sectorId = null) => {
   let revenueQuery = db('pos_sales')
     .whereBetween('sale_date', [startDate, endDate])
-    .where('status', 'Completed');
+    .where('status_id', 1);
   const revenue = await revenueQuery
     .select(
       db.raw('SUM(total_amount) as total_revenue'),
@@ -422,7 +422,7 @@ const getProfitAndLoss = async (startDate, endDate, sectorId = null) => {
     .first();
   const printingRevenue = await db('printing_orders')
     .whereBetween('created_at', [startDate, endDate])
-    .where('status', 'Delivered')
+    .whereIn('status_id', db('order_statuses').select('id').where('status_code', 'delivered'))
     .sum('total_price as total')
     .first();
   const cogs = await db('inventory_movements')
@@ -432,7 +432,6 @@ const getProfitAndLoss = async (startDate, endDate, sectorId = null) => {
     .first();
   const expenses = await db('expenses')
     .whereBetween('date', [startDate, endDate])
-    .whereNotNull('approved_at')
     .sum('amount as total')
     .first();
   const totalRevenue = (parseFloat(revenue.total_revenue || 0) + parseFloat(printingRevenue.total || 0));
@@ -466,8 +465,8 @@ const getBalanceSheet = async (asOfDate = null) => {
   const accountsReceivable = await db('customers')
     .sum('current_balance as total')
     .first();
-  const cashBalance = await db('payments')
-    .where('status', 'Completed')
+  const cashBalance = await db('invoice_payments')
+    .where('status_id', 2)
     .sum('amount as total')
     .first();
   const accountsPayable = await db('purchase_orders')
@@ -475,7 +474,7 @@ const getBalanceSheet = async (asOfDate = null) => {
     .select(db.raw('SUM(total_amount - paid_amount) as total'))
     .first();
   const retainedEarnings = await db('pos_sales')
-    .where('status', 'Completed')
+    .where('status_id', 1)
     .select(db.raw('SUM(total_amount) - (SELECT SUM(amount) FROM expenses WHERE approved_at IS NOT NULL) as total'))
     .first();
   const totalAssets = (parseFloat(inventoryValue.total_value || 0) + 
@@ -504,7 +503,7 @@ const getBalanceSheet = async (asOfDate = null) => {
 const getCashFlow = async (startDate, endDate) => {
   const salesReceipts = await db('pos_sales')
     .whereBetween('sale_date', [startDate, endDate])
-    .where('status', 'Completed')
+    .where('status_id', 1)
     .sum('total_amount as total')
     .first();
   const paymentsToSuppliers = await db('purchase_orders')
@@ -513,7 +512,6 @@ const getCashFlow = async (startDate, endDate) => {
     .first();
   const operatingExpenses = await db('expenses')
     .whereBetween('date', [startDate, endDate])
-    .whereNotNull('approved_at')
     .sum('amount as total')
     .first();
   const netCashFromOperations = (parseFloat(salesReceipts.total || 0) - 
@@ -541,7 +539,6 @@ const getExpensesReport = async (startDate, endDate, categoryId = null, page = 1
       'u.full_name as entered_by_name'
     )
     .whereBetween('e.date', [startDate, endDate])
-    .whereNotNull('e.approved_at')
     .whereNull('e.deleted_at');
   if (categoryId) {
     query = query.where('e.category_id', categoryId);
@@ -553,7 +550,6 @@ const getExpensesReport = async (startDate, endDate, categoryId = null, page = 1
     .offset(offset);
   const summary = await db('expenses')
     .whereBetween('date', [startDate, endDate])
-    .whereNotNull('approved_at')
     .whereNull('deleted_at')
     .select(
       db.raw('SUM(amount) as total_amount'),
@@ -579,7 +575,7 @@ const getExpensesReport = async (startDate, endDate, categoryId = null, page = 1
 const getTaxSummaryReport = async (startDate, endDate) => {
   const vatCollected = await db('pos_sales')
     .whereBetween('sale_date', [startDate, endDate])
-    .where('status', 'Completed')
+    .where('status_id', 1)
     .sum('tax_amount as total')
     .first();
   const vatPaid = await db('purchase_orders')
@@ -588,7 +584,6 @@ const getTaxSummaryReport = async (startDate, endDate) => {
     .first();
   const withholdingTax = await db('expenses')
     .whereBetween('date', [startDate, endDate])
-    .whereNotNull('approved_at')
     .select(db.raw('SUM(amount * 0.02) as tax')) 
     .first();
   return {
@@ -666,7 +661,7 @@ const getKPIReport = async (period = 'month') => {
     .first();
   const orders = await db('printing_orders')
     .whereBetween('created_at', [startDate, endDate])
-    .where('status', 'Delivered')
+    .whereIn('status_id', db('order_statuses').select('id').where('status_code', 'delivered'))
     .count('id as count')
     .first();
   const avgFulfillment = await db('printing_orders')
@@ -702,7 +697,7 @@ const getTrendsReport = async (metrics = 'revenue,profit,orders', months = 12) =
         case 'revenue': {
           const revenue = await db('pos_sales')
             .whereBetween('sale_date', [startDate, endDate])
-            .where('status', 'Completed')
+            .where('status_id', 1)
             .sum('total_amount as total')
             .first();
           monthData.revenue = parseFloat(revenue.total || 0);
@@ -734,6 +729,42 @@ const getTrendsReport = async (metrics = 'revenue,profit,orders', months = 12) =
     trends.push(monthData);
   }
   return { metrics: metricList, months, trends };
+};
+const getBankReconciliation = async (asOfDate = null, bankCode = null) => {
+  const reportDate = asOfDate || new Date().toISOString().split('T')[0];
+  let paymentsQuery = db('bank_payments').whereDate('created_at', '<=', reportDate);
+  let byBankQuery = db('bank_payments')
+    .whereDate('created_at', '<=', reportDate)
+    .select(
+      'bank_code',
+      db.raw('COUNT(*) as total_count'),
+      db.raw('SUM(amount) as total_amount'),
+      db.raw('SUM(CASE WHEN status = "completed" THEN amount ELSE 0 END) as settled_amount'),
+      db.raw('SUM(CASE WHEN status = "pending" THEN amount ELSE 0 END) as outstanding_amount'),
+      db.raw('SUM(CASE WHEN status = "failed" THEN amount ELSE 0 END) as failed_amount')
+    )
+    .groupBy('bank_code');
+  if (bankCode) {
+    paymentsQuery = paymentsQuery.where('bank_code', bankCode);
+    byBankQuery = byBankQuery.where('bank_code', bankCode);
+  }
+  const [payments, byBank] = await Promise.all([
+    paymentsQuery.orderBy('created_at', 'desc').limit(500),
+    byBankQuery
+  ]);
+  const summary = {
+    totalPayments: payments.length,
+    totalAmount: payments.reduce((s, p) => s + parseFloat(p.amount || 0), 0),
+    settledAmount: payments.filter(p => p.status === 'completed').reduce((s, p) => s + parseFloat(p.amount || 0), 0),
+    outstandingAmount: payments.filter(p => p.status === 'pending').reduce((s, p) => s + parseFloat(p.amount || 0), 0),
+    failedAmount: payments.filter(p => p.status === 'failed').reduce((s, p) => s + parseFloat(p.amount || 0), 0)
+  };
+  return {
+    asOfDate: reportDate,
+    summary,
+    byBank,
+    recentPayments: payments.slice(0, 50)
+  };
 };
 const exportReport = async (reportType, format, params) => {
   let data;
@@ -793,6 +824,32 @@ const convertToPDF = async (data, reportType) => {
   }
   return doc;
 };
+const getCurrentStockReport = async () => {
+  const products = await db('products as p')
+    .leftJoin('inventory as i', 'p.id', 'i.product_id')
+    .leftJoin('product_categories as pc', 'p.category_id', 'pc.id')
+    .select(
+      'p.id',
+      'p.name',
+      'p.sku',
+      'pc.name as category',
+      db.raw('COALESCE(i.quantity, 0) as current_stock'),
+      db.raw('COALESCE(i.unit_cost, 0) as unit_cost'),
+      'p.selling_price',
+      'p.reorder_level'
+    )
+    .whereNull('p.deleted_at')
+    .orderBy('p.name', 'asc');
+
+  const summary = {
+    totalProducts: products.length,
+    totalStockValue: products.reduce((sum, p) => sum + (parseFloat(p.current_stock) * parseFloat(p.unit_cost || 0)), 0),
+    totalSellingValue: products.reduce((sum, p) => sum + (parseFloat(p.current_stock) * parseFloat(p.selling_price || 0)), 0),
+    lowStockCount: products.filter(p => p.reorder_level > 0 && p.current_stock <= p.reorder_level).length,
+    outOfStockCount: products.filter(p => p.current_stock === 0).length
+  };
+  return { products, summary };
+};
 module.exports = {
   getDailySalesReport,
   getSalesByPeriod,
@@ -813,5 +870,7 @@ module.exports = {
   getExecutiveSummary,
   getKPIReport,
   getTrendsReport,
+  getBankReconciliation,
+  getCurrentStockReport,
   exportReport
 };

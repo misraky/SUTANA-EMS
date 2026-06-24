@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import purchaseService from '../../services/purchaseService';
 import { formatCurrency, formatDate } from '../../utils/formatters';
+const API_ORIGIN = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1').replace('/api/v1', '');
 import styles from './SupplierProfile.module.css';
 
 const SupplierProfile = () => {
@@ -10,27 +11,67 @@ const SupplierProfile = () => {
   const [supplier, setSupplier] = useState(null);
   const [recentPOs, setRecentPOs] = useState([]);
   const [priceHistory, setPriceHistory] = useState([]);
+  const [documents, setDocuments] = useState([]);
+  const [catalog, setCatalog] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('priceHistory');
   const [priceFilter, setPriceFilter] = useState('');
+  
+  // Award Form State
+  const [awardDocument, setAwardDocument] = useState(null);
+  const [awardProducts, setAwardProducts] = useState([{ product_name: '', awarded_unit_price: '' }]);
+  const [isSubmittingAward, setIsSubmittingAward] = useState(false);
+
+  const fetchProfileData = async () => {
+    try {
+      setLoading(true);
+      const res = await purchaseService.getSupplierById(id);
+      const { supplier: s, recentPOs: pos, priceHistory: ph, documents: docs, catalog: cat } = res.data;
+      setSupplier(s);
+      setRecentPOs(pos || []);
+      setPriceHistory(ph || []);
+      setDocuments(docs || []);
+      setCatalog(cat || []);
+    } catch (err) {
+      setError('Failed to load supplier profile. The supplier may not exist.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const res = await purchaseService.getSupplierById(id);
-        const { supplier: s, recentPOs: pos, priceHistory: ph } = res.data;
-        setSupplier(s);
-        setRecentPOs(pos || []);
-        setPriceHistory(ph || []);
-      } catch (err) {
-        setError('Failed to load supplier profile. The supplier may not exist.');
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
+    fetchProfileData();
   }, [id]);
+
+  const handleAddProductRow = () => setAwardProducts([...awardProducts, { product_name: '', awarded_unit_price: '' }]);
+  const handleRemoveProductRow = (index) => setAwardProducts(awardProducts.filter((_, i) => i !== index));
+  const handleProductChange = (index, field, value) => {
+    const newProducts = [...awardProducts];
+    newProducts[index][field] = value;
+    setAwardProducts(newProducts);
+  };
+
+  const handleAwardSubmit = async (e) => {
+    e.preventDefault();
+    if (!awardDocument && awardProducts.length === 0) return;
+    try {
+      setIsSubmittingAward(true);
+      const formData = new FormData();
+      if (awardDocument) formData.append('document', awardDocument);
+      formData.append('products', JSON.stringify(awardProducts.filter(p => p.product_name && p.awarded_unit_price)));
+      
+      await purchaseService.awardSupplierBid(id, formData);
+      alert('Supplier award details saved successfully!');
+      setAwardDocument(null);
+      setAwardProducts([{ product_name: '', awarded_unit_price: '' }]);
+      fetchProfileData();
+    } catch (error) {
+      alert('Failed to save award details: ' + (error.response?.data?.message || error.message));
+    } finally {
+      setIsSubmittingAward(false);
+    }
+  };
 
   const filteredHistory = priceHistory.filter(item =>
     priceFilter === '' ||
@@ -183,6 +224,12 @@ const SupplierProfile = () => {
         >
           📄 Recent Purchase Orders {recentPOs.length > 0 && <span className={styles.tabBadge}>{recentPOs.length}</span>}
         </button>
+        <button
+          className={`${styles.tab} ${activeTab === 'awardBid' ? styles.tabActive : ''}`}
+          onClick={() => setActiveTab('awardBid')}
+        >
+          🏆 Bid Award & Catalog
+        </button>
       </div>
 
       {/* Tab: Price History */}
@@ -289,6 +336,122 @@ const SupplierProfile = () => {
               </table>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Tab: Award Bid */}
+      {activeTab === 'awardBid' && (
+        <div className={styles.tabPanel}>
+          <div className={styles.panelToolbar}>
+            <p className={styles.panelHint}>
+              Upload a bid award document or contract and register the approved catalog prices for this supplier.
+            </p>
+          </div>
+          
+          <form className={styles.awardForm} onSubmit={handleAwardSubmit}>
+            <div className={styles.formSection}>
+              <h3>1. Upload Bid Award Document</h3>
+              <input 
+                type="file" 
+                accept=".pdf,.doc,.docx,.jpg,.png" 
+                onChange={e => setAwardDocument(e.target.files[0])}
+                className={styles.fileInput}
+              />
+            </div>
+            
+            <div className={styles.formSection}>
+              <h3>2. Register Awarded Products & Prices</h3>
+              <table className={styles.dataTable}>
+                <thead>
+                  <tr>
+                    <th>Product / Description</th>
+                    <th>Awarded Unit Price (ETB)</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {awardProducts.map((p, idx) => (
+                    <tr key={idx}>
+                      <td>
+                        <input 
+                          type="text" 
+                          placeholder="e.g. Dell XPS 15" 
+                          value={p.product_name}
+                          onChange={e => handleProductChange(idx, 'product_name', e.target.value)}
+                          style={{ width: '100%', padding: '8px' }}
+                          required
+                        />
+                      </td>
+                      <td>
+                        <input 
+                          type="number" 
+                          step="0.01"
+                          placeholder="0.00" 
+                          value={p.awarded_unit_price}
+                          onChange={e => handleProductChange(idx, 'awarded_unit_price', e.target.value)}
+                          style={{ width: '100%', padding: '8px' }}
+                          required
+                        />
+                      </td>
+                      <td>
+                        <button type="button" onClick={() => handleRemoveProductRow(idx)} style={{color: 'red', cursor: 'pointer', background: 'none', border: 'none'}}>
+                          ✕ Remove
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <button type="button" className={styles.btnAddRow} onClick={handleAddProductRow} style={{ marginTop: '10px', padding: '8px', cursor: 'pointer'}}>
+                + Add Another Product
+              </button>
+            </div>
+            
+            <div style={{ marginTop: '20px' }}>
+              <button type="submit" disabled={isSubmittingAward} className={styles.btnCreatePO}>
+                {isSubmittingAward ? 'Saving...' : 'Save Award Details'}
+              </button>
+            </div>
+          </form>
+
+          {/* Read-Only Existing Data */}
+          <div style={{ display: 'flex', gap: '2rem', marginTop: '3rem' }}>
+            <div style={{ flex: 1 }}>
+              <h3 style={{ marginBottom: '1rem' }}>Registered Catalog</h3>
+              {catalog.length === 0 ? <p>No items registered.</p> : (
+                <table className={styles.dataTable}>
+                  <thead><tr><th>Product</th><th>Price</th><th>Effective Date</th></tr></thead>
+                  <tbody>
+                    {catalog.map(c => (
+                      <tr key={c.id}>
+                        <td>{c.product_name}</td>
+                        <td>{formatCurrency(c.awarded_unit_price)}</td>
+                        <td>{formatDate(c.effective_date, 'short')}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+            <div style={{ flex: 1 }}>
+              <h3 style={{ marginBottom: '1rem' }}>Award Documents</h3>
+              {documents.length === 0 ? <p>No documents uploaded.</p> : (
+                <ul style={{ listStyle: 'none', padding: 0 }}>
+                  {documents.map(d => (
+                    <li key={d.id} style={{ marginBottom: '10px', padding: '10px', background: '#f5f5f5', borderRadius: '4px' }}>
+                      📄 <strong>{d.document_name}</strong> <br/>
+                      <small>Type: {d.document_type} | Uploaded: {formatDate(d.uploaded_at, 'short')}</small>
+                      {d.file_url && (
+                        <a href={`${API_ORIGIN}${d.file_url}`} target="_blank" rel="noreferrer" style={{ display: 'block', marginTop: '5px', color: '#0d6efd' }}>
+                          Download / View
+                        </a>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
         </div>
       )}
     </div>

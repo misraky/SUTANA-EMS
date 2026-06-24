@@ -51,7 +51,7 @@ const CreateSupplier = () => {
         </div>
       )}
       <form onSubmit={handleSubmit} style={{ background: 'white', padding: '2rem', borderRadius: '0.5rem', border: '1px solid #e2e8f0' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '1.5rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem', marginBottom: '1.5rem' }}>
           <div>
             <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>Supplier Name *</label>
             <input type="text" name="name" value={formData.name} onChange={handleInputChange} required style={{ width: '100%', padding: '0.75rem', borderRadius: '0.375rem', border: '1px solid #cbd5e1' }} />
@@ -81,11 +81,11 @@ const CreateSupplier = () => {
           <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>Physical Address *</label>
           <textarea name="address" value={formData.address} onChange={handleInputChange} required rows="3" style={{ width: '100%', padding: '0.75rem', borderRadius: '0.375rem', border: '1px solid #cbd5e1' }} />
         </div>
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
-          <button type="button" onClick={() => navigate('/purchase/suppliers')} style={{ padding: '0.75rem 1.5rem', borderRadius: '0.375rem', border: '1px solid #e2e8f0', background: 'white', cursor: 'pointer' }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', flexWrap: 'wrap' }}>
+          <button type="button" onClick={() => navigate('/purchase/suppliers')} style={{ padding: '0.75rem 1.5rem', borderRadius: '0.375rem', border: '1px solid #e2e8f0', background: 'white', cursor: 'pointer', flex: '1 1 auto' }}>
             Cancel
           </button>
-          <button type="submit" disabled={submitting} style={{ padding: '0.75rem 1.5rem', borderRadius: '0.375rem', background: '#3b82f6', color: 'white', border: 'none', cursor: submitting ? 'not-allowed' : 'pointer' }}>
+          <button type="submit" disabled={submitting} style={{ padding: '0.75rem 1.5rem', borderRadius: '0.375rem', background: '#3b82f6', color: 'white', border: 'none', cursor: submitting ? 'not-allowed' : 'pointer', flex: '1 1 auto' }}>
             {submitting ? 'Saving...' : 'Save Supplier'}
           </button>
         </div>

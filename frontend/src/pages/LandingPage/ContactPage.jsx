@@ -1,46 +1,54 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { PublicNav, PublicFooter } from './ServicesPage';
 import './PublicLayout.css';
+import './ContactPage.css';
 import ToggleSection from './ToggleSection';
 
 const ContactPage = () => {
-  const [form, setForm] = useState({ name: '', email: '', company: '', message: '' });
+  const [form, setForm] = useState({ name: '', email: '', company: '', phone: '', message: '' });
   const [sent, setSent] = useState(false);
   const [activeFaq, setActiveFaq] = useState(null);
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
-  
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Simulate API request
     setSent(true);
   };
 
   const contactInfo = [
-    { 
-      icon: '📍', 
-      label: 'Main Headquarters', 
+    {
+      icon: '📍',
+      label: 'Main Headquarters',
       value: 'Injibara, Ethiopia',
-      sub: 'Located inside Injibara University, central business complex.'
+      sub: 'Injibara University, central business complex.',
     },
-    { 
-      icon: '📞', 
-      label: 'Direct Consultation Line', 
+    {
+      icon: '📞',
+      label: 'Direct Consultation Line',
       value: '+251 91 123 4567',
-      sub: 'Available for general inquiries, live product demonstrations, and technical support.'
+      sub: 'General inquiries, demos, and technical support.',
     },
-    { 
-      icon: '✉️', 
-      label: 'Email Communications', 
+    {
+      icon: '✉️',
+      label: 'Email Communications',
       value: 'hello@sutana.et',
-      sub: 'Send us your RFP documents, custom integration requirements, or feedback.'
+      sub: 'RFP documents, integration requests, or feedback.',
     },
-    { 
-      icon: '🕐', 
-      label: 'Operational Working Hours', 
+    {
+      icon: '🕐',
+      label: 'Operational Working Hours',
       value: 'Mon – Fri, 8:00 AM – 6:00 PM',
-      sub: 'Ethiopian Local Time (excluding public holidays). Emergency support available 24/7.'
+      sub: 'Ethiopian Local Time. Emergency support 24/7.',
     },
+  ];
+
+  const quickStats = [
+    { num: '500+', label: 'Enterprises Onboarded' },
+    { num: '98%', label: 'Client Satisfaction' },
+    { num: '3–7', label: 'Days to Go Live' },
+    { num: '24/7', label: 'Support Coverage' },
   ];
 
   const faqs = [
@@ -73,121 +81,132 @@ const ContactPage = () => {
   return (
     <div className="public-page">
       <PublicNav />
-      
-      {/* ── Hero ── */}
-      <section className="pub-hero pub-hero--slim">
-        <div className="pub-hero-inner">
-          <span className="pub-badge">Contact Us</span>
-          <h1>Let's Start a Conversation</h1>
-          <p>
-            Have a question about our enterprise modules, need a customized demo for your team, 
-            or ready to migrate your legacy spreadsheets to SUTANA? Our product specialists are 
-            standing by to help you transform your business operations.
-          </p>
+
+      {/* ═══════════ HERO ═══════════ */}
+      <section className="cp-hero">
+        <div className="cp-hero-bg" />
+        <div className="cp-hero-inner">
+          <div className="cp-hero-copy">
+            <span className="cp-pill">Get in Touch</span>
+            <h1 className="cp-hero-title">
+              Let's build something<br />
+              <span className="cp-hero-accent">great together</span>
+            </h1>
+            <p className="cp-hero-sub">
+              Whether you are evaluating SUTANA for your enterprise, need a custom integration,
+              or just want to say hello — our team is ready to help.
+            </p>
+            <div className="cp-hero-actions">
+              <a href="#contact-form" className="cp-btn-primary">
+                Send a Message
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+              </a>
+              <a href="#faq" className="cp-btn-ghost">
+                View FAQs
+              </a>
+            </div>
+          </div>
+          <div className="cp-hero-visual">
+            <div className="cp-hero-card">
+              <div className="cp-hero-card-header">
+                <div className="cp-hero-card-dots">
+                  <span style={{background:'#EF4444'}} /><span style={{background:'#F59E0B'}} /><span style={{background:'#10B981'}} />
+                </div>
+                <span className="cp-hero-card-title">New Inquiry</span>
+              </div>
+              <div className="cp-hero-card-body">
+                <div className="cp-hero-card-row"><span>From</span><span>Betelhem Gete</span></div>
+                <div className="cp-hero-card-row"><span>Company</span><span>Betelhem Trading PLC</span></div>
+                <div className="cp-hero-card-row"><span>Module</span><span>Inventory + Finance</span></div>
+                <div className="cp-hero-card-progress">
+                  <div className="cp-hero-card-bar" />
+                </div>
+                <span className="cp-hero-card-status">✓ Routed to Sales Team</span>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* ── Main Contact & Form Section ── */}
-      <section className="pub-section">
-        <div className="pub-container">
-          <div className="contact-grid">
-            {/* Contact Details */}
-            <div className="contact-info">
-              <h3>Reach Us Directly</h3>
-              <p className="contact-info-sub">
-                Our support team and product specialists aim to respond to all inquiries within 24 business hours. 
-                Feel free to visit our office or reach out through any of our channels below.
+      {/* ═══════════ QUICK STATS ═══════════ */}
+      <section className="cp-stats">
+        {quickStats.map((s, i) => (
+          <div key={i} className="cp-stat-item">
+            <span className="cp-stat-num">{s.num}</span>
+            <span className="cp-stat-lbl">{s.label}</span>
+          </div>
+        ))}
+      </section>
+
+      {/* ═══════════ CONTACT INFO + FORM ═══════════ */}
+      <section className="cp-section">
+        <div className="cp-container">
+          <div className="cp-grid">
+            {/* Left — Contact cards */}
+            <div className="cp-info">
+              <h2 className="cp-section-title">Contact Information</h2>
+              <p className="cp-section-sub">
+                Our support team and product specialists aim to respond to all inquiries within 24 business hours.
               </p>
-              <div className="contact-info-cards">
+              <div className="cp-info-cards">
                 {contactInfo.map((c, i) => (
-                  <div className="contact-info-card" key={i}>
-                    <span className="contact-info-icon">{c.icon}</span>
+                  <div key={i} className="cp-info-card">
+                    <div className="cp-info-icon-wrap">{c.icon}</div>
                     <div>
-                      <strong>{c.label}</strong>
-                      <p className="contact-info-val">{c.value}</p>
-                      <span className="contact-info-subtext">{c.sub}</span>
+                      <strong className="cp-info-label">{c.label}</strong>
+                      <p className="cp-info-value">{c.value}</p>
+                      <p className="cp-info-sub">{c.sub}</p>
                     </div>
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* Contact Form */}
-            <div className="contact-form-card">
+            {/* Right — Form */}
+            <div className="cp-form-wrap" id="contact-form">
               {sent ? (
-                <div className="contact-sent">
-                  <span className="contact-sent-icon">✅</span>
-                  <h3>Thank You for Reaching Out!</h3>
+                <div className="cp-sent">
+                  <div className="cp-sent-icon">✓</div>
+                  <h3>Message Sent Successfully!</h3>
                   <p>
-                    Your message has been successfully received, {form.name}. One of our business consultants 
-                    will review your inquiry and follow up at <strong>{form.email}</strong> to discuss how 
-                    we can support your company's growth.
+                    Thank you, <strong>{form.name}</strong>. A business consultant will follow up at{' '}
+                    <strong>{form.email}</strong> within 24 hours.
                   </p>
-                  <button className="pub-btn-primary" onClick={() => { setSent(false); setForm({ name: '', email: '', company: '', message: '' }); }}>
+                  <button className="cp-btn-primary" onClick={() => { setSent(false); setForm({ name: '', email: '', company: '', phone: '', message: '' }); }}>
                     Send Another Message
                   </button>
                 </div>
               ) : (
-                <form className="contact-form" onSubmit={handleSubmit}>
-                  <h3>Send Us a Secure Message</h3>
-                  <p style={{ fontSize: '14px', color: 'var(--pub-text-2)', marginBottom: '24px', lineHeight: '1.6' }}>
-                    Fill out the form below, and we will route your inquiry to the correct department (Sales, Technical Support, or Integrations).
-                  </p>
-                  
-                  <div className="form-row">
-                    <div className="form-group">
-                      <label htmlFor="contact-name">Full Name <span>*</span></label>
-                      <input
-                        id="contact-name"
-                        type="text"
-                        name="name"
-                        placeholder="e.g. Betelhem Gete"
-                        value={form.name}
-                        onChange={handleChange}
-                        required
-                      />
+                <form className="cp-form" onSubmit={handleSubmit}>
+                  <h3>Send us a message</h3>
+                  <p className="cp-form-sub">Fill out the form below and we will route your inquiry to the right department.</p>
+                  <div className="cp-form-row">
+                    <div className="cp-field">
+                      <label>Full Name <span>*</span></label>
+                      <input type="text" name="name" placeholder="Betelhem Gete" value={form.name} onChange={handleChange} required />
                     </div>
-                    <div className="form-group">
-                      <label htmlFor="contact-email">Email Address <span>*</span></label>
-                      <input
-                        id="contact-email"
-                        type="email"
-                        name="email"
-                        placeholder="e.g. betelehem@company.et"
-                        value={form.email}
-                        onChange={handleChange}
-                        required
-                      />
+                    <div className="cp-field">
+                      <label>Email Address <span>*</span></label>
+                      <input type="email" name="email" placeholder="betelhem@company.et" value={form.email} onChange={handleChange} required />
                     </div>
                   </div>
-                  
-                  <div className="form-group">
-                    <label htmlFor="contact-company">Company Name</label>
-                    <input
-                      id="contact-company"
-                      type="text"
-                      name="company"
-                      placeholder="e.g. Betelhem Trading PLC"
-                      value={form.company}
-                      onChange={handleChange}
-                    />
+                  <div className="cp-form-row">
+                    <div className="cp-field">
+                      <label>Company Name</label>
+                      <input type="text" name="company" placeholder="Betelhem Trading PLC" value={form.company} onChange={handleChange} />
+                    </div>
+                    <div className="cp-field">
+                      <label>Phone Number</label>
+                      <input type="tel" name="phone" placeholder="+251 91 234 5678" value={form.phone} onChange={handleChange} />
+                    </div>
                   </div>
-                  
-                  <div className="form-group">
-                    <label htmlFor="contact-message">How can SUTANA help your business? <span>*</span></label>
-                    <textarea
-                      id="contact-message"
-                      name="message"
-                      rows={5}
-                      placeholder="Please specify your business type, approximate number of users, and which modules you are interested in (POS, Inventory, Finance, Printing workflow)..."
-                      value={form.message}
-                      onChange={handleChange}
-                      required
-                    />
+                  <div className="cp-field">
+                    <label>How can we help? <span>*</span></label>
+                    <textarea name="message" rows={4} placeholder="Tell us about your business, number of users, and which modules interest you..." value={form.message} onChange={handleChange} required />
                   </div>
-                  
-                  <button type="submit" className="pub-btn-primary" style={{ width: '100%', justifyContent: 'center' }}>
-                    Submit Inquiry & Request Demo →
+                  <button type="submit" className="cp-btn-primary cp-btn-block">
+                    Submit Inquiry
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
                   </button>
                 </form>
               )}
@@ -196,37 +215,60 @@ const ContactPage = () => {
         </div>
       </section>
 
-      {/* ── FAQ Section ── */}
-      <section className="pub-section pub-section--alt">
-        <div className="pub-container" style={{ maxWidth: '800px' }}>
-          <ToggleSection
-            label="Common Inquiries"
-            title="Frequently Asked Questions"
-            titleAccent=""
-          >
-            <p className="cnx-toggle-desc">
-              Got questions before you take the leap? We have gathered answers to the most frequent 
-              questions we hear from business owners, IT managers, and finance directors.
-            </p>
-
-            <div className="contact-faq-list">
-              {faqs.map((faq, idx) => (
-                <div 
-                  className={`contact-faq-item ${activeFaq === idx ? 'active' : ''}`} 
-                  key={idx}
-                  onClick={() => toggleFaq(idx)}
-                >
-                  <div className="contact-faq-question">
-                    <h4>{faq.q}</h4>
-                    <span className="contact-faq-toggle-icon">{activeFaq === idx ? '−' : '+'}</span>
-                  </div>
-                  <div className="contact-faq-answer">
-                    <p>{faq.a}</p>
-                  </div>
-                </div>
-              ))}
+      {/* ═══════════ MAP PLACEHOLDER ═══════════ */}
+      <section className="cp-map-section">
+        <div className="cp-container">
+          <div className="cp-map-card">
+            <div className="cp-map-content">
+              <div className="cp-map-marker">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+              </div>
+              <h3>Visit Our Headquarters</h3>
+              <p>Injibara, Ethiopia — Inside Injibara University, central business complex.</p>
+              <div className="cp-map-grid">
+                {Array.from({ length: 16 }).map((_, i) => (
+                  <div key={i} className={`cp-map-cell ${Math.random() > 0.6 ? 'cp-map-cell--active' : ''}`} style={{ animationDelay: `${i * 0.05}s` }} />
+                ))}
+              </div>
             </div>
-          </ToggleSection>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════ FAQ ═══════════ */}
+      <section className="cp-faq-section" id="faq">
+        <div className="cp-container">
+          <div className="cp-faq-header">
+            <span className="cp-faq-label">Common Inquiries</span>
+            <h2>Frequently Asked Questions</h2>
+            <p>Answers to the most common questions from business owners, IT managers, and finance directors.</p>
+          </div>
+          <div className="cp-faq-list">
+            {faqs.map((faq, idx) => (
+              <div key={idx} className={`cp-faq-item ${activeFaq === idx ? 'cp-faq-item--open' : ''}`} onClick={() => toggleFaq(idx)}>
+                <div className="cp-faq-q">
+                  <h4>{faq.q}</h4>
+                  <span className="cp-faq-icon">{activeFaq === idx ? '−' : '+'}</span>
+                </div>
+                <div className="cp-faq-a">
+                  <p>{faq.a}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════ CTA ═══════════ */}
+      <section className="cp-cta">
+        <div className="cp-cta-bg" />
+        <div className="cp-container cp-cta-inner">
+          <h2>Ready to transform your operations?</h2>
+          <p>Join 500+ Ethiopian enterprises running on SUTANA. Get started today.</p>
+          <div className="cp-cta-actions">
+            <Link to="/auth/register" className="cp-btn-primary cp-btn-primary--light">Start Free Trial</Link>
+            <Link to="/services" className="cp-btn-ghost cp-btn-ghost--light">Explore Services</Link>
+          </div>
         </div>
       </section>
 

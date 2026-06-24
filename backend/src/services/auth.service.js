@@ -13,7 +13,7 @@ const {
 const { audit } = require('../config/logger');
 const { sendEmail } = require('./email.service');
 const { sendSMS } = require('./sms.service');
-const { AppError } = require('../utils/AppError');
+const AppError = require('../utils/AppError');
 const crypto = require('crypto');
 const login = async (credentials, ip, userAgent) => {
   const { username, password } = credentials;

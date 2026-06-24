@@ -29,11 +29,11 @@ const ExpenseManagement = () => {
         financeService.getExpenseCategories().catch(() => ({ data: { data: [] } })),
         financeService.getPaymentMethods().catch(() => ({ data: { data: [] } }))
       ]);
-      setExpenses(expRes?.data?.data?.expenses || []);
-      setCategories(catRes?.data?.data || [
+      setExpenses(expRes?.data?.expenses || []);
+      setCategories(catRes?.data?.categories || [
         { id: 1, name: 'Office Supplies' }, { id: 2, name: 'Travel' }, { id: 3, name: 'Logistics' }
       ]);
-      setPaymentMethods(payRes?.data?.data || [
+      setPaymentMethods(payRes?.data?.paymentMethods || [
         { id: 1, name: 'Bank Transfer' }, { id: 2, name: 'Cash' }, { id: 3, name: 'Corporate Card' }
       ]);
     } catch (error) {
@@ -189,8 +189,8 @@ const ExpenseManagement = () => {
                     <td>{expense.Category?.name || getCategoryName(expense.categoryId)}</td>
                     <td>{expense.referenceNumber || '-'}</td>
                     <td>
-                      <span className={`${styles.badge} ${styles[(expense.status || 'pending').toLowerCase()]}`}>
-                        {expense.status || 'Pending'}
+                      <span className={`${styles.badge} ${expense.approved_at ? styles.approved : styles.pending}`}>
+                        {expense.approved_at ? 'Approved' : 'Pending'}
                       </span>
                     </td>
                     <td className={styles.amountCol}>{formatCurrency(expense.amount)}</td>

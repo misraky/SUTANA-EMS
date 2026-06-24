@@ -33,7 +33,7 @@ const getOverdueCustomers = async () => {
     for (const customer of overdueCustomers) {
       const lastSale = await db('pos_sales')
         .where('customer_id', customer.id)
-        .where('status', 'Completed')
+        .where('status_id', 1)
         .orderBy('sale_date', 'desc')
         .first();
       if (lastSale) {

@@ -3,6 +3,7 @@ const { audit } = require('../../config/logger');
 const { sendEmail } = require('../../services/email.service');
 const AppError = require('../../utils/AppError');
 const { catchAsync } = require('../../utils/catchAsync');
+const financeService = require('../../services/finance.service');
 exports.getExpenses = catchAsync(async (req, res) => {
   const {
     page = 1,
@@ -130,6 +131,7 @@ exports.createExpense = catchAsync(async (req, res) => {
     payment_method_id: paymentMethodId,
     reference_number: referenceNumber || null,
     entered_by: userId,
+    approved_at: db.fn.now(),
     created_at: db.fn.now()
   });
   if (requiresApproval) {
@@ -341,6 +343,57 @@ exports.approveExpense = catchAsync(async (req, res) => {
     message: 'Expense approved'
   });
 });
+exports.getUnpaidInvoices = catchAsync(async (req, res) => {
+  const { search } = req.query;
+  let query = db('pos_sales as ps')
+    .leftJoin('customers as c', 'ps.customer_id', 'c.id')
+    .leftJoin('payment_methods as pm', 'ps.payment_method_id', 'pm.id')
+    .select(
+      'ps.id',
+      'ps.invoice_number',
+      'ps.total_amount',
+      'ps.amount_paid',
+      'ps.sale_date',
+      'c.name as customer_name',
+      'c.phone as customer_phone',
+      db.raw('(ps.total_amount - ps.amount_paid) as balance_due')
+    )
+    .where('ps.payment_method_id', 2)
+    .where('ps.deleted_at', null)
+    .havingRaw('balance_due > 0');
+  if (search) {
+    query = query.where(function () {
+      this.where('ps.invoice_number', 'like', `%${search}%`)
+        .orWhere('c.name', 'like', `%${search}%`);
+    });
+  }
+  const invoices = await query.orderBy('ps.sale_date', 'desc').limit(50);
+  res.json({ status: 'success', data: invoices });
+});
+exports.getUnpaidPOs = catchAsync(async (req, res) => {
+  const { search } = req.query;
+  let query = db('purchase_orders as po')
+    .leftJoin('suppliers as s', 'po.supplier_id', 's.id')
+    .select(
+      'po.id',
+      'po.po_number',
+      'po.total_amount',
+      'po.paid_amount',
+      'po.created_at',
+      's.name as supplier_name',
+      db.raw('(po.total_amount - po.paid_amount) as balance_due')
+    )
+    .whereRaw('po.paid_amount < po.total_amount')
+    .whereNull('po.deleted_at');
+  if (search) {
+    query = query.where(function () {
+      this.where('po.po_number', 'like', `%${search}%`)
+        .orWhere('s.name', 'like', `%${search}%`);
+    });
+  }
+  const orders = await query.orderBy('po.created_at', 'desc').limit(50);
+  res.json({ status: 'success', data: orders });
+});
 exports.getPayments = catchAsync(async (req, res) => {
   const {
     page = 1,
@@ -503,7 +556,7 @@ exports.processPOMobilePayments = catchAsync(async (req, res) => {
       processed_at: db.fn.now(),
       notes: notes || null
     });
-    const newPaidAmount = purchaseOrder.paid_amount + amount;
+    const newPaidAmount = Number(purchaseOrder.paid_amount) + Number(amount);
     await trx('purchase_orders')
       .where('id', poId)
       .update({
@@ -515,6 +568,24 @@ exports.processPOMobilePayments = catchAsync(async (req, res) => {
     ip,
     details: { amount, poNumber: purchaseOrder.po_number }
   });
+  try {
+    const supplier = purchaseOrder.supplier_id
+      ? await db('suppliers').where('id', purchaseOrder.supplier_id).select('name').first()
+      : null;
+    await db('bank_payments').insert({
+      payment_id: require('crypto').randomUUID(),
+      reference: referenceNumber || `PO-${purchaseOrder.po_number}-${Date.now()}`,
+      amount,
+      customer_name: supplier?.name || 'Supplier',
+      bank_code: 'CBE',
+      status: 'completed',
+      description: `PO payment - ${purchaseOrder.po_number}`,
+      completed_at: db.fn.now(),
+      created_at: db.fn.now()
+    });
+  } catch (err) {
+    console.error('Failed to record PO payment in bank_payments:', err.message);
+  }
   res.json({
     status: 'success',
     message: `Payment of ${amount} ETB processed for PO ${purchaseOrder.po_number}`,
@@ -578,6 +649,22 @@ exports.processInvoicePayment = catchAsync(async (req, res) => {
     ip,
     details: { amount, customerId: sale.customer_id, customerName: sale.customer_name }
   });
+  try {
+    await db('bank_payments').insert({
+      payment_id: require('crypto').randomUUID(),
+      reference: referenceNumber || `INV-${sale.invoice_number}-${Date.now()}`,
+      amount,
+      customer_name: sale.customer_name,
+      customer_phone: null,
+      bank_code: 'CBE',
+      status: 'completed',
+      description: `Invoice payment - ${sale.invoice_number}`,
+      completed_at: db.fn.now(),
+      created_at: db.fn.now()
+    });
+  } catch (err) {
+    console.error('Failed to record invoice payment in bank_payments:', err.message);
+  }
   if (sale.customer_id) {
     const customer = await db('customers').where('id', sale.customer_id).first();
     if (customer.email) {
@@ -621,7 +708,7 @@ exports.getAccountsReceivable = catchAsync(async (req, res) => {
   for (const customer of customers) {
     const invoices = await db('pos_sales')
       .where('customer_id', customer.id)
-      .where('payment_method', 'Credit')
+      .where('payment_method_id', 2)
       .where('status_id', 1) 
       .select('id', 'invoice_number', 'total_amount', 'sale_date')
       .orderBy('sale_date', 'asc');
@@ -806,23 +893,152 @@ exports.processRefund = catchAsync(async (req, res) => {
     message: 'Refund processed successfully (stub)'
   });
 });
-exports.getAccountsPayable = catchAsync(async (req, res) => {
-  res.json({
+
+// Enhanced expense with multi-tier approval, taxes, budgets, and encumbrance
+exports.createEnhancedExpense = catchAsync(async (req, res) => {
+  const {
+    categoryId, amount, date, description, paymentMethodId, referenceNumber,
+    currency, exchangeRate, coaId, poId, expenseType, isVatRegistered
+  } = req.body;
+  const userId = req.user.id;
+  const ip = req.ip;
+  const category = await db('expense_categories').where('id', categoryId).first();
+  if (!category) throw new AppError('Expense category not found', 400);
+
+  const taxService = require('../../services/tax.service');
+  const taxComputation = taxService.computeExpenseTaxes(amount, expenseType || 'goods', isVatRegistered !== false);
+  const approvalWorkflow = require('../../services/approval-workflow.service');
+  const tier = approvalWorkflow.determineTierForAmount(amount);
+
+  const expenseId = await db('expenses').insert({
+    category_id: categoryId, amount, date, description,
+    payment_method_id: paymentMethodId, reference_number: referenceNumber || null,
+    entered_by: userId, approval_tier: tier,
+    currency: currency || 'ETB', exchange_rate: exchangeRate || 1,
+    coa_id: coaId || null, po_id: poId || null,
+    vat_amount: taxComputation.vatAmount, withholding_tax: taxComputation.withholdingTax,
+    tax_amount: taxComputation.totalTax, net_amount: taxComputation.netAmount,
+    payment_status: 'unpaid', created_at: db.fn.now()
+  });
+
+  // Save tax breakdown
+  await taxService.saveExpenseTaxes(expenseId, taxComputation, userId);
+
+  // Initiate approval workflow
+  await approvalWorkflow.initiateApprovalWorkflow(expenseId, amount, description, category.name, userId);
+
+  // Try to encumber budget
+  const budgetEncumbrance = require('../../services/budget-encumbrance.service');
+  const budgetInfo = await budgetEncumbrance.encumberExpense(expenseId, categoryId, amount, userId);
+
+  // Audit trail
+  await db('expense_audit_trail').insert({
+    expense_id: expenseId, action: 'CREATED', actor_id: userId,
+    actor_name: req.user.full_name, new_values: JSON.stringify(req.body),
+    ip_address: ip, created_at: db.fn.now()
+  });
+
+  await audit('EXPENSE_CREATED', expenseId, {
+    ip, details: { categoryId, amount, tier, requiresApproval: true }
+  });
+
+  res.status(201).json({
     status: 'success',
-    data: { accountsPayable: [] }
+    message: `Expense created. Tier: ${tier}. ${budgetInfo ? 'Budget encumbered.' : 'No budget available for encumbrance.'}`,
+    data: { expenseId, tier, budgetEncumbered: !!budgetInfo, taxSummary: taxComputation }
   });
 });
-exports.getExpenseCategories = catchAsync(async (req, res) => {
-  const categories = await db('expense_categories').select('*');
-  res.json({
+
+exports.processPayment = catchAsync(async (req, res) => {
+  const { id } = req.params;
+  const { paymentMethodId, referenceNumber, notes } = req.body;
+  const userId = req.user.id;
+  const expense = await db('expenses').where('id', id).whereNull('deleted_at').first();
+  if (!expense) throw new AppError('Expense not found', 404);
+  if (!expense.approved_at) throw new AppError('Expense must be approved before payment', 400);
+  if (expense.payment_status === 'paid') throw new AppError('Expense already paid', 400);
+
+  const { disburseEncumbrance } = require('../../services/budget-encumbrance.service');
+  const updated = await db('expenses').where('id', id).update({
+    payment_status: 'paid', payment_processor_id: userId,
+    payment_reference: referenceNumber || null, payment_processed_at: db.fn.now(),
+    updated_at: db.fn.now()
+  });
+  if (updated) await disburseEncumbrance(id, expense.amount);
+
+  await db('expense_audit_trail').insert({
+    expense_id: id, action: 'PAYMENT_PROCESSED', actor_id: userId,
+    actor_name: req.user.full_name, new_values: JSON.stringify(req.body),
+    ip_address: req.ip, created_at: db.fn.now()
+  });
+
+  res.json({ status: 'success', message: 'Payment processed' });
+});
+
+exports.getEnhancedExpenses = catchAsync(async (req, res) => {
+  const FinanceRepository = require('../../repositories/finance.repository');
+  const repo = new FinanceRepository();
+  const result = await repo.getEnhancedExpenses(req.query);
+  res.json({ status: 'success', data: result });
+});
+
+exports.getEnhancedExpenseById = catchAsync(async (req, res) => {
+  const FinanceRepository = require('../../repositories/finance.repository');
+  const repo = new FinanceRepository();
+  const expense = await repo.getExpenseWithFullDetails(req.params.id);
+  if (!expense) throw new AppError('Expense not found', 404);
+  res.json({ status: 'success', data: { expense } });
+});
+
+exports.getAuditTrail = catchAsync(async (req, res) => {
+  const FinanceRepository = require('../../repositories/finance.repository');
+  const repo = new FinanceRepository();
+  const trail = await repo.getAuditTrail(req.params.id);
+  res.json({ status: 'success', data: { auditTrail: trail } });
+});
+
+exports.createBankTransaction = catchAsync(async (req, res) => {
+  const result = await financeService.createBankTransaction(req.body, req.user.id);
+  await audit('BANK_TRANSACTION_CREATED', result.id, {
+    ip: req.ip,
+    details: { reference: result.reference, amount: req.body.amount, bankCode: req.body.bankCode }
+  });
+  res.status(201).json({
     status: 'success',
-    data: { categories }
+    message: 'Bank transaction recorded successfully',
+    data: result
   });
 });
-exports.getPaymentMethods = catchAsync(async (req, res) => {
-  const methods = await db('payment_methods').select('*');
+exports.getExpenseSummaryByTier = catchAsync(async (req, res) => {
+  const FinanceRepository = require('../../repositories/finance.repository');
+  const repo = new FinanceRepository();
+  const { startDate, endDate } = req.query;
+  const summary = await repo.getExpenseSummaryByTier(
+    startDate || new Date(new Date().getFullYear(), 0, 1).toISOString().split('T')[0],
+    endDate || new Date().toISOString().split('T')[0]
+  );
+  res.json({ status: 'success', data: { summary } });
+});
+
+exports.getExpenseStatistics = catchAsync(async (req, res) => {
+  const startOfMonth = db.raw('DATE_FORMAT(NOW(), "%Y-%m-01")');
+  const totalExpenses = await db('expenses').whereNull('deleted_at').sum('amount as total').first();
+  const pendingApprovals = await db('expenses').whereNull('approved_at').whereNull('deleted_at').count('id as count').first();
+  const pendingAmount = await db('expenses').whereNull('approved_at').whereNull('deleted_at').sum('amount as total').first();
+  const thisMonth = await db('expenses').where('created_at', '>=', startOfMonth).whereNull('deleted_at').sum('amount as total').first();
+  const byTier = await db('expenses').select('approval_tier', db.raw('COUNT(*) as count'), db.raw('SUM(amount) as total')).whereNotNull('approval_tier').whereNull('deleted_at').groupBy('approval_tier');
+  const paymentStatusBreakdown = await db('expenses').select('payment_status', db.raw('COUNT(*) as count'), db.raw('SUM(amount) as total')).whereNull('deleted_at').groupBy('payment_status');
+  const [budgetUtilization] = await db('budget_periods').where('status', 'active').select(db.raw('SUM(total_budget) as budget'), db.raw('SUM(total_encumbered + total_spent) as used'));
   res.json({
     status: 'success',
-    data: { paymentMethods: methods }
+    data: {
+      totalExpenses: parseFloat(totalExpenses?.total || 0),
+      pendingApprovals: parseInt(pendingApprovals?.count || 0),
+      pendingApprovalAmount: parseFloat(pendingAmount?.total || 0),
+      thisMonthExpenses: parseFloat(thisMonth?.total || 0),
+      byTier,
+      paymentStatusBreakdown,
+      budgetUtilization
+    }
   });
 });

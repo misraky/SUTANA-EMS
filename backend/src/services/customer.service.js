@@ -3,7 +3,7 @@ const config = require('../config/env');
 const { audit } = require('../config/logger');
 const { sendEmail } = require('./email.service');
 const { sendSMS } = require('./sms.service');
-const { AppError } = require('../utils/AppError');
+const AppError = require('../utils/AppError');
 const { comparePassword, hashPassword, validatePasswordStrength } = require('../config/auth');
 const { generateOrderNumber, calculatePrintingPrice } = require('../utils/orderNumber');
 const getProfile = async (userId) => {
@@ -408,15 +408,16 @@ const getReceipts = async (userId, page = 1, limit = 25) => {
     throw new AppError('Customer not found', 404);
   }
   const receipts = await db('pos_sales')
-    .select('id', 'invoice_number', 'total_amount', 'sale_date', 'payment_method')
-    .where('customer_id', customer.id)
-    .where('status', 'Completed')
+    .leftJoin('payment_methods as pm', 'pos_sales.payment_method_id', 'pm.id')
+    .select('pos_sales.id', 'invoice_number', 'total_amount', 'sale_date', 'payment_method_id', 'pm.name as payment_method_name')
+    .where('pos_sales.customer_id', customer.id)
+    .where('status_id', 1)
     .orderBy('sale_date', 'desc')
     .limit(limit)
     .offset(offset);
   const total = await db('pos_sales')
     .where('customer_id', customer.id)
-    .where('status', 'Completed')
+    .where('status_id', 1)
     .count('id as total')
     .first();
   return {
@@ -475,7 +476,7 @@ const getInvoices = async (userId, status = null) => {
   let invoices = await db('pos_sales')
     .select('id', 'invoice_number', 'total_amount', 'amount_paid', 'sale_date')
     .where('customer_id', customer.id)
-    .where('payment_method', 'Credit')
+    .where('payment_method_id', 2)
     .orderBy('sale_date', 'desc');
   invoices = invoices.map(inv => ({
     ...inv,

@@ -42,7 +42,7 @@ const CreateOrder = () => {
         colorPrinting: formData.colorPrinting,
         bindingType: formData.bindingType
       });
-      setPriceEstimate(response.data?.estimatedPrice || 0);
+      setPriceEstimate(response.data?.data?.totalPrice || 0);
     } catch (err) {
       console.error('Failed to calculate price:', err);
       // Fallback rough estimate if API fails

@@ -2,6 +2,7 @@ const { db } = require('../../config/database');
 const { audit } = require('../../config/logger');
 const AppError = require('../../utils/AppError');
 const { catchAsync } = require('../../utils/catchAsync');
+const adminService = require('../../services/admin.service');
 const fs = require('fs');
 const path = require('path');
 const archiver = require('archiver');
@@ -600,6 +601,419 @@ exports.getDatabaseStatus = catchAsync(async (req, res) => {
     }
   });
 });
+/* ════════════════════════════════════════════
+   D1 — TIERED ADMIN
+   ════════════════════════════════════════════ */
+exports.getAdminTiers = catchAsync(async (req, res) => {
+  const data = await adminService.getAdminTiers();
+  res.json({ status: 'success', data });
+});
+exports.assignAdminTier = catchAsync(async (req, res) => {
+  const { userId, tier } = req.body;
+  await audit('ADMIN_TIER_ASSIGNED', userId, { ip: req.ip, details: { tier, assignedBy: req.user.id } });
+  const data = await adminService.assignAdminTier(userId, tier);
+  res.json({ status: 'success', data });
+});
+exports.getAdminCoverage = catchAsync(async (req, res) => {
+  const data = await adminService.getAdminCoverage();
+  res.json({ status: 'success', data });
+});
+
+/* ════════════════════════════════════════════
+   D2 — PAM
+   ════════════════════════════════════════════ */
+exports.requestElevation = catchAsync(async (req, res) => {
+  const { tier, duration, reason, ticketRef } = req.body;
+  const data = await adminService.requestElevation(req.user.id, tier, duration, reason, ticketRef);
+  await audit('ELEVATION_REQUESTED', req.user.id, { ip: req.ip, details: { tier, duration } });
+  res.json({ status: 'success', data });
+});
+exports.getActiveElevations = catchAsync(async (req, res) => {
+  const data = await adminService.getActiveElevations();
+  res.json({ status: 'success', data });
+});
+exports.approveElevation = catchAsync(async (req, res) => {
+  const data = await adminService.approveElevation(req.params.id, req.user.id);
+  await audit('ELEVATION_APPROVED', req.user.id, { ip: req.ip, details: { elevationId: req.params.id } });
+  res.json({ status: 'success', data });
+});
+exports.revokeElevation = catchAsync(async (req, res) => {
+  const data = await adminService.revokeElevation(req.params.id);
+  await audit('ELEVATION_REVOKED', req.user.id, { ip: req.ip, details: { elevationId: req.params.id } });
+  res.json({ status: 'success', data });
+});
+exports.getElevationHistory = catchAsync(async (req, res) => {
+  const data = await adminService.getElevationHistory();
+  res.json({ status: 'success', data });
+});
+exports.activateBreakGlass = catchAsync(async (req, res) => {
+  const { reason, coApproverId } = req.body;
+  const data = await adminService.activateBreakGlass(req.user.id, reason, coApproverId);
+  await audit('BREAK_GLASS_ACTIVATED', req.user.id, { ip: req.ip, details: { reason } });
+  res.json({ status: 'success', data });
+});
+exports.deactivateBreakGlass = catchAsync(async (req, res) => {
+  const data = await adminService.deactivateBreakGlass(req.user.id);
+  await audit('BREAK_GLASS_DEACTIVATED', req.user.id, { ip: req.ip });
+  res.json({ status: 'success', data });
+});
+exports.getBreakGlassStatus = catchAsync(async (req, res) => {
+  const data = await adminService.getBreakGlassStatus();
+  res.json({ status: 'success', data });
+});
+
+/* ════════════════════════════════════════════
+   D3 — SoD
+   ════════════════════════════════════════════ */
+exports.getSodRules = catchAsync(async (req, res) => {
+  const data = await adminService.getSodRules();
+  res.json({ status: 'success', data });
+});
+exports.createSodRule = catchAsync(async (req, res) => {
+  const data = await adminService.createSodRule(req.body);
+  await audit('SOD_RULE_CREATED', null, { ip: req.ip, details: req.body });
+  res.json({ status: 'success', data });
+});
+exports.updateSodRule = catchAsync(async (req, res) => {
+  const data = await adminService.updateSodRule(req.params.id, req.body);
+  await audit('SOD_RULE_UPDATED', null, { ip: req.ip, details: { id: req.params.id } });
+  res.json({ status: 'success', data });
+});
+exports.deleteSodRule = catchAsync(async (req, res) => {
+  const data = await adminService.deleteSodRule(req.params.id);
+  await audit('SOD_RULE_DELETED', null, { ip: req.ip, details: { id: req.params.id } });
+  res.json({ status: 'success', data });
+});
+exports.getSodViolations = catchAsync(async (req, res) => {
+  const data = await adminService.getSodViolations();
+  res.json({ status: 'success', data });
+});
+exports.remediateSodViolation = catchAsync(async (req, res) => {
+  const { action, notes } = req.body;
+  const data = await adminService.remediateSodViolation(req.params.id, action, notes);
+  await audit('SOD_VIOLATION_REMEDIATED', null, { ip: req.ip, details: { id: req.params.id, action } });
+  res.json({ status: 'success', data });
+});
+exports.checkSodAssignment = catchAsync(async (req, res) => {
+  const data = await adminService.checkSodAssignment(req.query.roleIds);
+  res.json({ status: 'success', data });
+});
+
+/* ════════════════════════════════════════════
+   D4 — ACCESS CERTIFICATION
+   ════════════════════════════════════════════ */
+exports.getCertificationList = catchAsync(async (req, res) => {
+  const data = await adminService.getCertificationList();
+  res.json({ status: 'success', data });
+});
+exports.createCertification = catchAsync(async (req, res) => {
+  const data = await adminService.createCertification({ ...req.body, ownerId: req.body.ownerId || req.user.id });
+  await audit('CERTIFICATION_CREATED', req.user.id, { ip: req.ip, details: { type: req.body.type } });
+  res.json({ status: 'success', data });
+});
+exports.getCertificationById = catchAsync(async (req, res) => {
+  const data = await adminService.getCertificationById(req.params.id);
+  res.json({ status: 'success', data });
+});
+exports.performCertificationReview = catchAsync(async (req, res) => {
+  const { action, notes } = req.body;
+  const data = await adminService.performCertificationReview(req.params.id, req.params.userId, action, notes);
+  await audit('CERTIFICATION_REVIEW', req.user.id, { ip: req.ip, details: { certId: req.params.id, action } });
+  res.json({ status: 'success', data });
+});
+exports.completeCertification = catchAsync(async (req, res) => {
+  const data = await adminService.completeCertification(req.params.id);
+  await audit('CERTIFICATION_COMPLETED', req.user.id, { ip: req.ip, details: { certId: req.params.id } });
+  res.json({ status: 'success', data });
+});
+exports.generateEvidencePackage = catchAsync(async (req, res) => {
+  const data = await adminService.generateEvidencePackage(req.params.id);
+  res.json({ status: 'success', data });
+});
+exports.getDormantAccounts = catchAsync(async (req, res) => {
+  const data = await adminService.getDormantAccounts();
+  res.json({ status: 'success', data });
+});
+exports.disableDormantAccount = catchAsync(async (req, res) => {
+  const data = await adminService.disableDormantAccount(req.params.id);
+  await audit('DORMANT_ACCOUNT_DISABLED', req.user.id, { ip: req.ip, details: { userId: req.params.id } });
+  res.json({ status: 'success', data });
+});
+
+/* ════════════════════════════════════════════
+   D5 — SESSION RECORDING
+   ════════════════════════════════════════════ */
+exports.getActiveAdminSessions = catchAsync(async (req, res) => {
+  const data = await adminService.getActiveAdminSessions();
+  res.json({ status: 'success', data });
+});
+exports.getSessionHistory = catchAsync(async (req, res) => {
+  const data = await adminService.getSessionHistory();
+  res.json({ status: 'success', data });
+});
+exports.getSessionDetail = catchAsync(async (req, res) => {
+  const data = await adminService.getSessionDetail(req.params.id);
+  res.json({ status: 'success', data });
+});
+exports.terminateSession = catchAsync(async (req, res) => {
+  const { reason } = req.body;
+  const data = await adminService.terminateSession(req.params.id, reason);
+  await audit('SESSION_TERMINATED', req.user.id, { ip: req.ip, details: { sessionId: req.params.id } });
+  res.json({ status: 'success', data });
+});
+exports.getSessionAnomalies = catchAsync(async (req, res) => {
+  const data = await adminService.getSessionAnomalies();
+  res.json({ status: 'success', data });
+});
+
+/* ════════════════════════════════════════════
+   D6 — ROLE DESIGNER
+   ════════════════════════════════════════════ */
+exports.getSingleRoles = catchAsync(async (req, res) => {
+  const data = await adminService.getSingleRoles();
+  res.json({ status: 'success', data });
+});
+exports.createSingleRole = catchAsync(async (req, res) => {
+  const data = await adminService.createSingleRole(req.body);
+  await audit('SINGLE_ROLE_CREATED', req.user.id, { ip: req.ip, details: { name: req.body.name } });
+  res.json({ status: 'success', data });
+});
+exports.updateSingleRole = catchAsync(async (req, res) => {
+  const data = await adminService.updateSingleRole(req.params.id, req.body);
+  res.json({ status: 'success', data });
+});
+exports.deleteSingleRole = catchAsync(async (req, res) => {
+  const data = await adminService.deleteSingleRole(req.params.id);
+  await audit('SINGLE_ROLE_DELETED', req.user.id, { ip: req.ip, details: { id: req.params.id } });
+  res.json({ status: 'success', data });
+});
+exports.getCompositeRoles = catchAsync(async (req, res) => {
+  const data = await adminService.getCompositeRoles();
+  res.json({ status: 'success', data });
+});
+exports.createCompositeRole = catchAsync(async (req, res) => {
+  const data = await adminService.createCompositeRole(req.body);
+  await audit('COMPOSITE_ROLE_CREATED', req.user.id, { ip: req.ip, details: { name: req.body.name } });
+  res.json({ status: 'success', data });
+});
+exports.updateCompositeRole = catchAsync(async (req, res) => {
+  const data = await adminService.updateCompositeRole(req.params.id, req.body);
+  res.json({ status: 'success', data });
+});
+exports.deleteCompositeRole = catchAsync(async (req, res) => {
+  const data = await adminService.deleteCompositeRole(req.params.id);
+  await audit('COMPOSITE_ROLE_DELETED', req.user.id, { ip: req.ip, details: { id: req.params.id } });
+  res.json({ status: 'success', data });
+});
+exports.getPermissionMatrix = catchAsync(async (req, res) => {
+  const data = await adminService.getPermissionMatrix();
+  res.json({ status: 'success', data });
+});
+
+/* ════════════════════════════════════════════
+   D7 — SERVICE ACCOUNTS
+   ════════════════════════════════════════════ */
+exports.getServiceAccounts = catchAsync(async (req, res) => {
+  const data = await adminService.getServiceAccounts();
+  res.json({ status: 'success', data });
+});
+exports.createServiceAccount = catchAsync(async (req, res) => {
+  const data = await adminService.createServiceAccount(req.body);
+  await audit('SERVICE_ACCOUNT_CREATED', req.user.id, { ip: req.ip, details: { name: req.body.name } });
+  res.json({ status: 'success', data });
+});
+exports.rotateServiceAccountSecret = catchAsync(async (req, res) => {
+  const data = await adminService.rotateServiceAccountSecret(req.params.id);
+  await audit('SERVICE_ACCOUNT_ROTATED', req.user.id, { ip: req.ip, details: { id: req.params.id } });
+  res.json({ status: 'success', data });
+});
+exports.deleteServiceAccount = catchAsync(async (req, res) => {
+  const data = await adminService.deleteServiceAccount(req.params.id);
+  await audit('SERVICE_ACCOUNT_DELETED', req.user.id, { ip: req.ip, details: { id: req.params.id } });
+  res.json({ status: 'success', data });
+});
+
+/* ════════════════════════════════════════════
+   D8 — FIELD SECURITY
+   ════════════════════════════════════════════ */
+exports.getFieldSecurityConfig = catchAsync(async (req, res) => {
+  const data = await adminService.getFieldSecurityConfig();
+  res.json({ status: 'success', data });
+});
+exports.updateFieldSensitivity = catchAsync(async (req, res) => {
+  const { sensitivity, maskRule } = req.body;
+  const data = await adminService.updateFieldSensitivity(req.params.id, sensitivity, maskRule);
+  await audit('FIELD_SENSITIVITY_UPDATED', req.user.id, { ip: req.ip, details: { fieldId: req.params.id, sensitivity } });
+  res.json({ status: 'success', data });
+});
+exports.getFieldSecurityModules = catchAsync(async (req, res) => {
+  const data = await adminService.getFieldSecurityModules();
+  res.json({ status: 'success', data });
+});
+
+/* ════════════════════════════════════════════
+   D9 — DATA SCOPES
+   ════════════════════════════════════════════ */
+exports.getDataScopes = catchAsync(async (req, res) => {
+  const data = await adminService.getDataScopes();
+  res.json({ status: 'success', data });
+});
+exports.getAdminScope = catchAsync(async (req, res) => {
+  const data = await adminService.getAdminScope(req.params.adminId);
+  res.json({ status: 'success', data });
+});
+exports.updateAdminScope = catchAsync(async (req, res) => {
+  const data = await adminService.updateAdminScope(req.params.adminId, req.body);
+  await audit('ADMIN_SCOPE_UPDATED', req.user.id, { ip: req.ip, details: { adminId: req.params.adminId } });
+  res.json({ status: 'success', data });
+});
+
+/* ════════════════════════════════════════════
+   D10 — DELEGATED ADMIN
+   ════════════════════════════════════════════ */
+exports.getDelegatedNodes = catchAsync(async (req, res) => {
+  const data = await adminService.getDelegatedNodes();
+  res.json({ status: 'success', data });
+});
+exports.createDelegatedNode = catchAsync(async (req, res) => {
+  const data = await adminService.createDelegatedNode(req.body);
+  res.json({ status: 'success', data });
+});
+exports.assignDelegatedAdmin = catchAsync(async (req, res) => {
+  const { adminId, capability } = req.body;
+  const data = await adminService.assignDelegatedAdmin(req.params.nodeId, adminId, capability);
+  await audit('DELEGATED_ADMIN_ASSIGNED', req.user.id, { ip: req.ip, details: { nodeId: req.params.nodeId, adminId } });
+  res.json({ status: 'success', data });
+});
+exports.unassignDelegatedAdmin = catchAsync(async (req, res) => {
+  const data = await adminService.unassignDelegatedAdmin(req.params.nodeId, req.params.adminId);
+  await audit('DELEGATED_ADMIN_UNASSIGNED', req.user.id, { ip: req.ip, details: { nodeId: req.params.nodeId, adminId: req.params.adminId } });
+  res.json({ status: 'success', data });
+});
+
+/* ════════════════════════════════════════════
+   D11 — TENANT MGMT
+   ════════════════════════════════════════════ */
+exports.getTenants = catchAsync(async (req, res) => {
+  const data = await adminService.getTenants();
+  res.json({ status: 'success', data });
+});
+exports.createTenant = catchAsync(async (req, res) => {
+  const data = await adminService.createTenant(req.body);
+  await audit('TENANT_CREATED', req.user.id, { ip: req.ip, details: { name: req.body.name } });
+  res.json({ status: 'success', data });
+});
+exports.getTenantAudit = catchAsync(async (req, res) => {
+  const data = await adminService.getTenantAudit(req.params.id);
+  res.json({ status: 'success', data });
+});
+
+/* ════════════════════════════════════════════
+   D12 — COMPLIANCE EVIDENCE
+   ════════════════════════════════════════════ */
+exports.getEvidenceList = catchAsync(async (req, res) => {
+  const data = await adminService.getEvidenceList();
+  res.json({ status: 'success', data });
+});
+exports.generateEvidence = catchAsync(async (req, res) => {
+  const { type, periodStart, periodEnd } = req.body;
+  const data = await adminService.generateEvidence(type, periodStart, periodEnd);
+  await audit('EVIDENCE_GENERATED', req.user.id, { ip: req.ip, details: { type, periodStart, periodEnd } });
+  res.json({ status: 'success', data });
+});
+exports.downloadEvidence = catchAsync(async (req, res) => {
+  const data = await adminService.downloadEvidence(req.params.id);
+  res.json({ status: 'success', data });
+});
+
+/* ════════════════════════════════════════════
+   D13 — VENDOR ACCESS
+   ════════════════════════════════════════════ */
+exports.getVendorAccessList = catchAsync(async (req, res) => {
+  const data = await adminService.getVendorAccessList();
+  res.json({ status: 'success', data });
+});
+exports.onboardVendor = catchAsync(async (req, res) => {
+  const data = await adminService.onboardVendor(req.body);
+  await audit('VENDOR_ONBOARDED', req.user.id, { ip: req.ip, details: { vendorName: req.body.vendorName } });
+  res.json({ status: 'success', data });
+});
+exports.extendVendorAccess = catchAsync(async (req, res) => {
+  const { newEndDate } = req.body;
+  const data = await adminService.extendVendorAccess(req.params.id, newEndDate);
+  await audit('VENDOR_ACCESS_EXTENDED', req.user.id, { ip: req.ip, details: { vendorId: req.params.id, newEndDate } });
+  res.json({ status: 'success', data });
+});
+exports.revokeVendorAccess = catchAsync(async (req, res) => {
+  const data = await adminService.revokeVendorAccess(req.params.id);
+  await audit('VENDOR_ACCESS_REVOKED', req.user.id, { ip: req.ip, details: { vendorId: req.params.id } });
+  res.json({ status: 'success', data });
+});
+
+/* ════════════════════════════════════════════
+   D14 — DISASTER RECOVERY
+   ════════════════════════════════════════════ */
+exports.getDRStatus = catchAsync(async (req, res) => {
+  const data = await adminService.getDRStatus();
+  res.json({ status: 'success', data });
+});
+exports.initiateDRTest = catchAsync(async (req, res) => {
+  const data = await adminService.initiateDRTest();
+  await audit('DR_TEST_INITIATED', req.user.id, { ip: req.ip });
+  res.json({ status: 'success', data });
+});
+exports.completeDRTest = catchAsync(async (req, res) => {
+  const { result, notes } = req.body;
+  const data = await adminService.completeDRTest(req.params.id, result, notes);
+  await audit('DR_TEST_COMPLETED', req.user.id, { ip: req.ip, details: { id: req.params.id, result } });
+  res.json({ status: 'success', data });
+});
+
+/* ════════════════════════════════════════════
+   D15 — PRIVILEGE HEALTH / CREEP
+   ════════════════════════════════════════════ */
+exports.getPrivilegeHealth = catchAsync(async (req, res) => {
+  const data = await adminService.getPrivilegeHealth();
+  res.json({ status: 'success', data });
+});
+exports.getDidDoAnalysis = catchAsync(async (req, res) => {
+  const data = await adminService.getDidDoAnalysis();
+  res.json({ status: 'success', data });
+});
+exports.getRoleAccumulation = catchAsync(async (req, res) => {
+  const data = await adminService.getRoleAccumulation();
+  res.json({ status: 'success', data });
+});
+exports.remediatePrivilegeCreep = catchAsync(async (req, res) => {
+  const { roleId } = req.body;
+  const data = await adminService.remediatePrivilegeCreep(req.params.userId, roleId);
+  await audit('PRIVILEGE_CREEP_REMEDIATED', req.user.id, { ip: req.ip, details: { userId: req.params.userId, roleId } });
+  res.json({ status: 'success', data });
+});
+
+/* ════════════════════════════════════════════
+   D16 — API KEYS
+   ════════════════════════════════════════════ */
+exports.getApiKeys = catchAsync(async (req, res) => {
+  const data = await adminService.getApiKeys();
+  res.json({ status: 'success', data });
+});
+exports.createApiKey = catchAsync(async (req, res) => {
+  const data = await adminService.createApiKey(req.body);
+  await audit('API_KEY_CREATED', req.user.id, { ip: req.ip, details: { name: req.body.name } });
+  res.json({ status: 'success', data });
+});
+exports.revokeApiKey = catchAsync(async (req, res) => {
+  const data = await adminService.revokeApiKey(req.params.id);
+  await audit('API_KEY_REVOKED', req.user.id, { ip: req.ip, details: { id: req.params.id } });
+  res.json({ status: 'success', data });
+});
+exports.rotateApiKey = catchAsync(async (req, res) => {
+  const data = await adminService.rotateApiKey(req.params.id);
+  await audit('API_KEY_ROTATED', req.user.id, { ip: req.ip, details: { id: req.params.id } });
+  res.json({ status: 'success', data });
+});
+
 async function getLastBackupTime() {
   const backupDir = process.env.BACKUP_PATH || './backups';
   if (!fs.existsSync(backupDir)) return null;

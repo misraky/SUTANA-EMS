@@ -2,15 +2,31 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import printingService from '../../services/printingService';
 import { formatDate } from '../../utils/formatters';
-import styles from './OrderList.module.css';
+import OrdersLayout from '../../components/orders/OrdersLayout';
+import OrderCard from '../../components/orders/OrderCard';
+
 const OrderList = () => {
   const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [activeTab, setActiveTab] = useState('ALL');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedOrders, setSelectedOrders] = useState([]);
+
+  const tabs = [
+    { id: 'ALL', label: 'All', count: orders.length, badgeColor: 'progress' },
+    { id: 'Received', label: 'Received' },
+    { id: 'In Progress', label: 'In Progress' },
+    { id: 'Quality Check', label: 'Quality Check' },
+    { id: 'Ready', label: 'Ready' },
+    { id: 'Delivered', label: 'Delivered' }
+  ];
+
   useEffect(() => {
     fetchOrders();
   }, []);
+
   const fetchOrders = async () => {
     setLoading(true);
     try {
@@ -23,100 +39,106 @@ const OrderList = () => {
       setLoading(false);
     }
   };
-  const getStatusBadgeClass = (status) => {
-    switch ((status || '').toLowerCase()) {
-      case 'received': return styles.received;
-      case 'in progress': return styles.inProgress;
-      case 'quality check': return styles.qualityCheck;
-      case 'ready': return styles.ready;
-      case 'delivered': return styles.delivered;
-      default: return styles.pending;
+
+  const filteredOrders = orders.filter(o => {
+    const matchesTab = activeTab === 'ALL' || o.status_name === activeTab;
+    const matchesSearch = !searchTerm || 
+      o.order_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      o.customer_name?.toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesTab && matchesSearch;
+  });
+
+  const handleToggleSelect = (orderId) => {
+    setSelectedOrders(prev => 
+      prev.includes(orderId) ? prev.filter(id => id !== orderId) : [...prev, orderId]
+    );
+  };
+
+  const handleSelectAll = (checked) => {
+    if (checked) {
+      setSelectedOrders(filteredOrders.map(o => o.id));
+    } else {
+      setSelectedOrders([]);
     }
   };
+
+  const handleDeleteSelected = async () => {
+    if (window.confirm(`Are you sure you want to delete ${selectedOrders.length} orders?`)) {
+      setOrders(orders.filter(o => !selectedOrders.includes(o.id)));
+      setSelectedOrders([]);
+    }
+  };
+
   return (
-    <div className={styles.container}>
-      <div className={styles.header}>
-        <div>
-          <h1 className={styles.title}>Printing Orders</h1>
-          <p className={styles.subtitle}>Manage and track all production requests</p>
+    <OrdersLayout
+      title="Printing Orders"
+      tabs={tabs}
+      activeTab={activeTab}
+      onTabChange={setActiveTab}
+      searchTerm={searchTerm}
+      onSearchChange={setSearchTerm}
+      onCreateOrder={() => navigate('/printing/orders/create')}
+      onExport={() => console.log('Exporting printing orders')}
+      loading={loading}
+      empty={orders.length === 0}
+      emptyMessage={error || "No orders found. Create a new order to get started."}
+      selectedCount={selectedOrders.length}
+      totalCount={filteredOrders.length}
+      onSelectAll={handleSelectAll}
+      onDeleteSelected={handleDeleteSelected}
+      onPrintSelected={() => window.print()}
+    >
+      {filteredOrders.length > 0 ? filteredOrders.map(order => (
+        <OrderCard
+          key={order.id}
+          orderId={order.order_number || `PRT-${order.id}`}
+          isSelected={selectedOrders.includes(order.id)}
+          onSelect={() => handleToggleSelect(order.id)}
+          status={order.status_name || 'Received'}
+          amount=""
+          date={formatDate(order.due_date)}
+          referenceLabel="Due Date"
+          referenceNo={formatDate(order.due_date)}
+          providerLogo="Printing Dept"
+          actionOptions={[
+            { value: order.status_name || 'Received', label: order.status_name || 'Received' }
+          ]}
+          currentAction={order.status_name || 'Received'}
+          items={[
+            {
+              name: order.product_type || 'Custom Print',
+              sku: order.customer_name || 'Walk-in',
+              quantity: order.quantity,
+              icon: '🖨️',
+              meta: [
+                { label: 'Paper', value: order.paper_type || 'A4' },
+                { label: 'Color', value: order.color_printing ? 'Color' : 'B&W' },
+                { label: 'Pages', value: `${order.pages_per_copy || 1} pgs` }
+              ]
+            }
+          ]}
+          onClick={() => navigate(`/printing/orders/${order.id}`)}
+          extraContent={{
+            actions: (
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate(`/printing/orders/${order.id}`);
+                }}
+                style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '0.5rem 1rem', borderRadius: '8px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: '600', transition: 'background 0.2s' }}
+              >
+                View Details
+              </button>
+            )
+          }}
+        />
+      )) : (
+        <div style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>
+          No orders match your search or filter.
         </div>
-        <button 
-          className={styles.primaryBtn} 
-          onClick={() => navigate('/printing/orders/create')}
-        >
-          + Create New Order
-        </button>
-      </div>
-      <div className={styles.tableCard}>
-        {loading ? (
-          <div className={styles.loadingState}>
-            <div className={styles.spinner}></div>
-            <p>Loading orders...</p>
-          </div>
-        ) : error ? (
-          <div className={styles.errorState}>
-            <p>{error}</p>
-            <button onClick={fetchOrders} className={styles.retryBtn}>Retry</button>
-          </div>
-        ) : orders.length === 0 ? (
-          <div className={styles.emptyState}>
-            <p>No orders found. Create a new order to get started.</p>
-          </div>
-        ) : (
-          <div className={styles.tableResponsive}>
-            <table className={styles.table}>
-              <thead>
-                <tr>
-                  <th>Order ID</th>
-                  <th>Customer</th>
-                  <th>Product</th>
-                  <th>Quantity</th>
-                  <th>Due Date</th>
-                  <th>Status</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {orders.map((order) => (
-                  <tr key={order.id} className={styles.tableRow} onClick={() => navigate(`/printing/orders/${order.id}`)}>
-                    <td className={styles.boldText}>PRT-{order.id}</td>
-                    <td>{order.Customer?.name || 'Walk-in'}</td>
-                    <td>
-                      <div className={styles.productInfo}>
-                        <span className={styles.productType}>{order.productType}</span>
-                        <span className={styles.productSpecs}>
-                          {order.paperType}, {order.colorPrinting ? 'Color' : 'B&W'}, {order.pagesPerCopy}pgs
-                        </span>
-                      </div>
-                    </td>
-                    <td>{order.quantity}</td>
-                    <td className={new Date(order.dueDate) < new Date() && order.status !== 'Delivered' ? styles.overdue : ''}>
-                      {formatDate(order.dueDate)}
-                    </td>
-                    <td>
-                      <span className={`${styles.badge} ${getStatusBadgeClass(order.status)}`}>
-                        {order.status || 'Received'}
-                      </span>
-                    </td>
-                    <td>
-                      <button 
-                        className={styles.viewBtn}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          navigate(`/printing/orders/${order.id}`);
-                        }}
-                      >
-                        View
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-    </div>
+      )}
+    </OrdersLayout>
   );
 };
+
 export default OrderList;

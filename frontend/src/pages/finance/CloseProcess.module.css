@@ -1,0 +1,312 @@
+/* ── Layout ──────────────────────────────────────────────── */
+.container {
+  padding: 28px;
+  max-width: 1400px;
+  margin: 0 auto;
+  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+}
+
+/* ── Header ──────────────────────────────────────────────── */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.headerIcon {
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 22px;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.3);
+}
+.title {
+  font-size: 22px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+  letter-spacing: -0.3px;
+}
+.subtitle {
+  font-size: 13px;
+  color: #64748b;
+  margin: 3px 0 0;
+}
+.primaryBtn {
+  background: linear-gradient(135deg, #0f172a, #334155);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+  white-space: nowrap;
+  transition: opacity 0.2s, transform 0.1s;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.25);
+}
+.primaryBtn:hover { opacity: 0.85; transform: translateY(-1px); }
+
+/* ── Alerts ──────────────────────────────────────────────── */
+.alert {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+  font-size: 14px;
+  font-weight: 500;
+  animation: slideIn 0.3s ease;
+}
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: none; }
+}
+.success { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+.error   { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+.warning { background: #fffbeb; color: #92400e; border: 1px solid #fde68a; }
+
+/* ── Current Period Card ─────────────────────────────────── */
+.currentPeriod {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 20px 24px;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+.currentPeriod h3 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+  color: #0f172a;
+}
+.periodInfo { flex: 1; }
+.periodMeta { font-size: 13px; color: #64748b; margin-top: 4px; }
+
+/* ── Status Badges ───────────────────────────────────────── */
+.statusBadge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  white-space: nowrap;
+}
+.statusBadge.open     { background: #dcfce7; color: #166534; }
+.statusBadge.closed   { background: #dbeafe; color: #1e40af; }
+.statusBadge.closing  { background: #fef3c7; color: #92400e; }
+.statusBadge.reopened { background: #fef2f2; color: #991b1b; }
+
+/* ── Readiness Panel ─────────────────────────────────────── */
+.readinessPanel {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+.readinessPanel h3 {
+  margin: 0 0 20px;
+  font-size: 17px;
+  font-weight: 700;
+  color: #0f172a;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #f1f5f9;
+}
+.checklist {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+.checkItem {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 14px 16px;
+  border-radius: 10px;
+  font-size: 14px;
+  transition: transform 0.1s;
+}
+.checkItem:hover { transform: translateX(2px); }
+.checkItem.passed { background: linear-gradient(135deg, #f0fdf4, #dcfce7); border: 1px solid #bbf7d0; }
+.checkItem.failed { background: linear-gradient(135deg, #fef2f2, #fee2e2); border: 1px solid #fecaca; }
+.checkIcon {
+  font-size: 20px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.passed .checkIcon { color: #10b981; }
+.failed .checkIcon { color: #ef4444; }
+.checkContent { flex: 1; }
+.checkLabel { font-weight: 600; color: #1e293b; margin-bottom: 2px; }
+.checkDetails { font-size: 12px; color: #64748b; }
+
+/* ── Close Actions ───────────────────────────────────────── */
+.closeActions {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.notesLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  margin-bottom: 6px;
+}
+.notesInput {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+  resize: vertical;
+  box-sizing: border-box;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  color: #1e293b;
+}
+.notesInput:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+.executeBtn {
+  background: linear-gradient(135deg, #059669, #047857);
+  color: white;
+  border: none;
+  padding: 13px 28px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 15px;
+  align-self: flex-start;
+  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
+  transition: opacity 0.2s, transform 0.1s;
+}
+.executeBtn:hover:not(:disabled) { opacity: 0.9; transform: translateY(-1px); }
+.executeBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+.blockedMsg {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #dc2626;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 12px 16px;
+  background: #fef2f2;
+  border-radius: 8px;
+  border: 1px solid #fecaca;
+}
+
+/* ── Section ─────────────────────────────────────────────── */
+.section { margin-bottom: 32px; }
+.sectionTitle {
+  font-size: 17px;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0 0 16px;
+}
+
+/* ── Table ───────────────────────────────────────────────── */
+.tableResponsive {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+.table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 520px; }
+.table th {
+  background: #f8fafc;
+  padding: 12px 16px;
+  text-align: left;
+  font-weight: 600;
+  color: #64748b;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 2px solid #e2e8f0;
+  white-space: nowrap;
+}
+.table td {
+  padding: 13px 16px;
+  border-bottom: 1px solid #f1f5f9;
+  color: #334155;
+}
+.table tbody tr:hover td { background: #f8fafc; }
+.table tbody tr:last-child td { border-bottom: none; }
+.boldText { font-weight: 600; color: #0f172a; }
+.actionBtn {
+  background: none;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 5px 14px;
+  cursor: pointer;
+  font-size: 12px;
+  color: #475569;
+  white-space: nowrap;
+  transition: all 0.15s;
+  font-weight: 500;
+}
+.actionBtn:hover {
+  border-color: #2563eb;
+  color: #2563eb;
+  background: #eff6ff;
+}
+.dangerBtn { border-color: #fecaca; color: #dc2626; }
+.dangerBtn:hover { border-color: #dc2626; background: #fef2f2; }
+
+/* ── Empty / Loading ─────────────────────────────────────── */
+.loadingState, .emptyState { padding: 56px 16px; text-align: center; color: #94a3b8; }
+.spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid #e2e8f0;
+  border-top-color: #2563eb;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto 16px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Responsive ──────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .container      { padding: 16px; }
+  .header         { flex-direction: column; align-items: flex-start; }
+  .currentPeriod  { flex-direction: column; align-items: flex-start; }
+  .title          { font-size: 19px; }
+  .readinessPanel { padding: 16px; }
+  .executeBtn     { width: 100%; text-align: center; }
+}
+@media (max-width: 480px) {
+  .container { padding: 12px; }
+  .table td, .table th { padding: 8px 10px; font-size: 12px; }
+  .title     { font-size: 17px; }
+  .primaryBtn { width: 100%; text-align: center; }
+  .sectionTitle { font-size: 15px; }
+}

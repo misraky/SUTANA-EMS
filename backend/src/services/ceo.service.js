@@ -1,7 +1,7 @@
 const { db } = require('../config/database');
 const config = require('../config/env');
 const { audit } = require('../config/logger');
-const { AppError } = require('../utils/AppError');
+const AppError = require('../utils/AppError');
 const { sendEmail } = require('./email.service');
 const getDashboardOverview = async () => {
   const [revenue, profit, cashFlow, kpis, alerts] = await Promise.all([
@@ -61,23 +61,23 @@ const getRevenueMetrics = async (period = 'week') => {
   }
   const currentRevenue = await db('pos_sales')
     .whereBetween('sale_date', [startDate, endDate])
-    .where('status', 'Completed')
+    .where('status_id', 1)
     .sum('total_amount as total')
     .first();
   const currentPrinting = await db('printing_orders')
     .whereBetween('created_at', [startDate, endDate])
-    .where('status', 'Delivered')
+    .whereIn('status_id', db('order_statuses').select('id').where('status_code', 'delivered'))
     .sum('total_price as total')
     .first();
   const current = parseFloat(currentRevenue.total || 0) + parseFloat(currentPrinting.total || 0);
   const previousRevenue = await db('pos_sales')
     .whereBetween('sale_date', [previousStartDate, startDate])
-    .where('status', 'Completed')
+    .where('status_id', 1)
     .sum('total_amount as total')
     .first();
   const previousPrinting = await db('printing_orders')
     .whereBetween('created_at', [previousStartDate, startDate])
-    .where('status', 'Delivered')
+    .whereIn('status_id', db('order_statuses').select('id').where('status_code', 'delivered'))
     .sum('total_price as total')
     .first();
   const previous = parseFloat(previousRevenue.total || 0) + parseFloat(previousPrinting.total || 0);
@@ -113,12 +113,12 @@ const getRevenueBreakdown = async (period = 'month') => {
   }
   const salesRevenue = await db('pos_sales')
     .whereBetween('sale_date', [startDate, endDate])
-    .where('status', 'Completed')
+    .where('status_id', 1)
     .sum('total_amount as total')
     .first();
   const printingRevenue = await db('printing_orders')
     .whereBetween('created_at', [startDate, endDate])
-    .where('status', 'Delivered')
+    .whereIn('status_id', db('order_statuses').select('id').where('status_code', 'delivered'))
     .sum('total_price as total')
     .first();
   const breakdown = [
@@ -150,7 +150,7 @@ const getRevenueForecast = async (months = 6) => {
       db.raw('SUM(total_amount) as revenue')
     )
     .where('sale_date', '>=', db.raw('DATE_SUB(NOW(), INTERVAL 12 MONTH)'))
-    .where('status', 'Completed')
+    .where('status_id', 1)
     .groupByRaw('DATE_FORMAT(sale_date, "%Y-%m")')
     .orderBy('month', 'asc');
   const revenues = last12Months.map(m => parseFloat(m.revenue));
@@ -200,12 +200,12 @@ const getProfitMetrics = async (period = 'month') => {
   }
   const revenue = await db('pos_sales')
     .whereBetween('sale_date', [startDate, endDate])
-    .where('status', 'Completed')
+    .where('status_id', 1)
     .sum('total_amount as total')
     .first();
   const printingRevenue = await db('printing_orders')
     .whereBetween('created_at', [startDate, endDate])
-    .where('status', 'Delivered')
+    .whereIn('status_id', db('order_statuses').select('id').where('status_code', 'delivered'))
     .sum('total_price as total')
     .first();
   const expenses = await db('expenses')
@@ -277,7 +277,7 @@ const getProfitMarginTrends = async (months = 12) => {
 const getProfitMetricsForDateRange = async (startDate, endDate) => {
   const revenue = await db('pos_sales')
     .whereBetween('sale_date', [startDate, endDate])
-    .where('status', 'Completed')
+    .where('status_id', 1)
     .sum('total_amount as total')
     .first();
   const expenses = await db('expenses')
@@ -314,7 +314,7 @@ const getCashFlowData = async (period = 'weekly', days = 30) => {
       db.raw('SUM(total_amount) as amount')
     )
     .where('sale_date', '>=', startDate)
-    .where('status', 'Completed')
+    .where('status_id', 1)
     .groupByRaw(`DATE_FORMAT(sale_date, '${dateFormat}')`)
     .orderBy('period', 'asc');
   const outflow = await db('expenses')
@@ -377,7 +377,7 @@ const getPerformanceKPIs = async () => {
   const actualSales = await getTodaySales();
   const targetFulfillment = await getTargetSetting('fulfillment_hours_target', 48);
   const actualFulfillmentResult = await db('printing_orders')
-    .where('status', 'Delivered')
+    .whereIn('status_id', db('order_statuses').select('id').where('status_code', 'delivered'))
     .select(db.raw('AVG(TIMESTAMPDIFF(HOUR, created_at, completed_at)) as avg_hours'))
     .first();
   const actualFulfillment = parseFloat(actualFulfillmentResult?.avg_hours || 0);
@@ -394,7 +394,7 @@ const getPerformanceKPIs = async () => {
     ? (parseFloat(cogs?.total_quantity || 0) / parseFloat(avgInventory.avg_quantity))
     : 0;
   const targetSatisfaction = await getTargetSetting('customer_satisfaction_target', 90);
-  const completedOrders = await db('printing_orders').where('status', 'Delivered').count('id as count').first();
+  const completedOrders = await db('printing_orders').whereIn('status_id', db('order_statuses').select('id').where('status_code', 'delivered')).count('id as count').first();
   const totalOrders = await db('printing_orders').count('id as count').first();
   const completionRate = totalOrders?.count > 0 ? (completedOrders.count / totalOrders.count) * 100 : 0;
   const actualSatisfaction = Math.min(100, Math.max(60, 70 + (completionRate * 0.3)));
@@ -631,12 +631,12 @@ const getMetricsForPeriod = async (period) => {
   }
   const revenue = await db('pos_sales')
     .whereBetween('sale_date', [startDate, endDate])
-    .where('status', 'Completed')
+    .where('status_id', 1)
     .sum('total_amount as total')
     .first();
   const orders = await db('pos_sales')
     .whereBetween('sale_date', [startDate, endDate])
-    .where('status', 'Completed')
+    .where('status_id', 1)
     .count('id as count')
     .first();
   const profitResult = await getProfitMetricsForDateRange(startDate, endDate);
@@ -707,7 +707,7 @@ const getPrintingMetric = async (metric, period) => {
   if (metric === 'revenue') {
     const result = await db('printing_orders')
       .whereBetween('created_at', [startDate, endDate])
-      .where('status', 'Delivered')
+      .whereIn('status_id', db('order_statuses').select('id').where('status_code', 'delivered'))
       .sum('total_price as total')
       .first();
     return parseFloat(result?.total || 0);
@@ -741,14 +741,14 @@ const getSalesMetric = async (metric, period) => {
   if (metric === 'revenue') {
     const result = await db('pos_sales')
       .whereBetween('sale_date', [startDate, endDate])
-      .where('status', 'Completed')
+      .where('status_id', 1)
       .sum('total_amount as total')
       .first();
     return parseFloat(result?.total || 0);
   } else if (metric === 'orders') {
     const result = await db('pos_sales')
       .whereBetween('sale_date', [startDate, endDate])
-      .where('status', 'Completed')
+      .where('status_id', 1)
       .count('id as count')
       .first();
     return parseInt(result?.count || 0);
@@ -783,7 +783,7 @@ const getTodaySales = async () => {
   const today = new Date().toISOString().split('T')[0];
   const result = await db('pos_sales')
     .whereDate('sale_date', today)
-    .where('status', 'Completed')
+    .where('status_id', 1)
     .sum('total_amount as total')
     .first();
   return parseFloat(result?.total || 0);
@@ -819,7 +819,7 @@ const getRevenueHistorical = async (startDate, endDate, period) => {
       db.raw('SUM(total_amount) as revenue')
     )
     .whereBetween('sale_date', [startDate, endDate])
-    .where('status', 'Completed')
+    .where('status_id', 1)
     .groupByRaw(`DATE_FORMAT(sale_date, '${groupFormat}')`)
     .orderBy('date', 'asc');
   return historical.map(h => ({
@@ -830,12 +830,12 @@ const getRevenueHistorical = async (startDate, endDate, period) => {
 const generateExecutiveReport = async (startDate, endDate) => {
   const revenue = await db('pos_sales')
     .whereBetween('sale_date', [startDate, endDate])
-    .where('status', 'Completed')
+    .where('status_id', 1)
     .sum('total_amount as total')
     .first();
   const printingRevenue = await db('printing_orders')
     .whereBetween('created_at', [startDate, endDate])
-    .where('status', 'Delivered')
+    .whereIn('status_id', db('order_statuses').select('id').where('status_code', 'delivered'))
     .sum('total_price as total')
     .first();
   const expenses = await db('expenses')
@@ -849,7 +849,7 @@ const generateExecutiveReport = async (startDate, endDate) => {
     .first();
   const completedOrders = await db('printing_orders')
     .whereBetween('created_at', [startDate, endDate])
-    .where('status', 'Delivered')
+    .whereIn('status_id', db('order_statuses').select('id').where('status_code', 'delivered'))
     .count('id as count')
     .first();
   const newCustomers = await db('customers')
@@ -858,7 +858,7 @@ const generateExecutiveReport = async (startDate, endDate) => {
     .first();
   const transactions = await db('pos_sales')
     .whereBetween('sale_date', [startDate, endDate])
-    .where('status', 'Completed')
+    .where('status_id', 1)
     .count('id as count')
     .first();
   const totalRevenue = parseFloat(revenue.total || 0) + parseFloat(printingRevenue.total || 0);
@@ -884,7 +884,7 @@ const generateExecutiveReport = async (startDate, endDate) => {
       db.raw('SUM(total_amount) as revenue')
     )
     .whereBetween('sale_date', [startDate, endDate])
-    .where('status', 'Completed')
+    .where('status_id', 1)
     .groupByRaw('DATE_FORMAT(sale_date, "%Y-%m")')
     .orderBy('month', 'asc');
   return {

@@ -1,11 +1,13 @@
-/* ── Container ─────────────────────────────────────────────────── */
 .analyticsContainer {
   font-family: 'Inter', sans-serif;
   color: #1e293b;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
 }
 
 .pageHeader {
-  margin-bottom: 2rem;
+  margin-bottom: 0.5rem;
 }
 
 .pageTitle {
@@ -14,6 +16,18 @@
   color: #0f172a;
   margin: 0 0 0.35rem;
   letter-spacing: -0.025em;
+}
+
+@media (max-width: 768px) {
+  .pageTitle {
+    font-size: 1.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .pageTitle {
+    font-size: 1.25rem;
+  }
 }
 
 .pageSubtitle {
@@ -33,32 +47,29 @@
   display: inline-block;
 }
 
-/* ── Loading ───────────────────────────────────────────────────── */
 .loadingContainer {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   padding: 5rem 2rem;
-  gap: 1rem;
+  gap: 1.5rem;
   color: #64748b;
   font-size: 0.95rem;
 }
 
-.spinner {
-  width: 36px;
-  height: 36px;
-  border: 3px solid #e2e8f0;
-  border-top-color: #6366f1;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
+.skeletonCard {
+  background: #ffffff;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  animation: pulse 1.5s infinite;
 }
 
-@keyframes spin {
-  to { transform: rotate(360deg); }
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
 }
 
-/* ── Layout Grid ───────────────────────────────────────────────── */
 .analyticsGrid {
   display: grid;
   grid-template-columns: 1fr;
@@ -77,7 +88,6 @@
   gap: 1.5rem;
 }
 
-/* ── Card Base ─────────────────────────────────────────────────── */
 .card {
   background: #ffffff;
   border-radius: 16px;
@@ -86,6 +96,10 @@
   border: 1px solid #f1f5f9;
   display: flex;
   flex-direction: column;
+}
+
+.chartLarge {
+  min-height: 420px;
 }
 
 .cardHeader {
@@ -111,11 +125,7 @@
   color: #64748b;
   letter-spacing: 0.02em;
   text-transform: uppercase;
-}
-
-/* ── Chart Areas ───────────────────────────────────────────────── */
-.chartLarge {
-  min-height: 420px;
+  white-space: nowrap;
 }
 
 .chartArea {
@@ -130,13 +140,19 @@
   margin-bottom: 1rem;
 }
 
-/* ── Chart Footer ──────────────────────────────────────────────── */
 .chartFooter {
   display: flex;
   gap: 0;
   margin-top: 1.25rem;
   border-top: 1px solid #f1f5f9;
   padding-top: 1rem;
+}
+
+@media (max-width: 640px) {
+  .chartFooter {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
 }
 
 .footerStat {
@@ -151,6 +167,17 @@
   border-right: 1px solid #f1f5f9;
 }
 
+@media (max-width: 640px) {
+  .footerStat {
+    border-right: none;
+    border-bottom: 1px solid #f1f5f9;
+    padding: 0.5rem 0;
+  }
+  .footerStat:last-child {
+    border-bottom: none;
+  }
+}
+
 .footerStat:last-child {
   border-right: none;
 }
@@ -161,7 +188,24 @@
   color: #1e293b;
 }
 
-/* ── Sector Table ──────────────────────────────────────────────── */
+.forecastSection {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+.forecastMeta {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.forecastTrend {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #16a34a;
+}
+
 .sectorTable {
   display: flex;
   flex-direction: column;
@@ -203,7 +247,6 @@
   text-align: right;
 }
 
-/* ── Satisfaction Card ─────────────────────────────────────────── */
 .satisfactionCard {
   background: linear-gradient(160deg, #0f172a 0%, #1e293b 100%);
   border: none;
@@ -221,7 +264,6 @@
 
 .satisfactionNote {
   font-size: 0.82rem;
-  color: #64748b;
   margin: 0.75rem 0 0;
   line-height: 1.6;
   color: #94a3b8;
@@ -231,7 +273,6 @@
   color: #cbd5e1;
 }
 
-/* ── Gauge ─────────────────────────────────────────────────────── */
 .gaugeWrapper {
   display: flex;
   flex-direction: column;
@@ -240,10 +281,18 @@
   flex: 1;
 }
 
-.gaugeChart {
+.gaugeSemi {
   position: relative;
-  width: 180px;
-  height: 130px;
+  width: 200px;
+  height: 100px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.gaugeSvg {
+  width: 200px;
+  height: 110px;
 }
 
 .gaugeCenter {
@@ -257,19 +306,18 @@
 
 .gaugeValue {
   display: block;
-  font-size: 1.75rem;
+  font-size: 1.6rem;
   font-weight: 800;
   line-height: 1;
 }
 
 .gaugeLabel {
   display: block;
-  font-size: 0.72rem;
-  color: #64748b;
+  font-size: 0.7rem;
+  color: #94a3b8;
   margin-top: 0.2rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: #94a3b8;
 }
 
 .gaugeStats {
@@ -307,4 +355,246 @@
   width: 1px;
   background: rgba(255,255,255,0.08);
   margin: 0.4rem 0;
+}
+
+.comparisonTable {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #f1f5f9;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.comparisonHeader {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr 1fr 60px 100px;
+  gap: 0;
+  background: #f8fafc;
+  padding: 0.75rem 1rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+@media (max-width: 1024px) {
+  .comparisonHeader {
+    display: none;
+  }
+}
+
+.comparisonRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr 1fr 60px 100px;
+  gap: 0;
+  padding: 0.7rem 1rem;
+  font-size: 0.85rem;
+  color: #1e293b;
+  border-bottom: 1px solid #f1f5f9;
+  align-items: center;
+  transition: background 0.1s;
+}
+
+@media (max-width: 1024px) {
+  .comparisonRow {
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+    padding: 1rem;
+    border: 1px solid #f1f5f9;
+    border-radius: 8px;
+    margin-bottom: 0.5rem;
+    background: #fafafa;
+  }
+  .comparisonRow:last-child {
+    border-bottom: 1px solid #f1f5f9;
+  }
+}
+
+.comparisonRow:last-child {
+  border-bottom: none;
+}
+
+.comparisonRow:hover {
+  background: #f8fafc;
+}
+
+@media (max-width: 1024px) {
+  .comparisonRow:hover {
+    background: #fafafa;
+  }
+}
+
+.comparisonCol {
+  display: flex;
+  align-items: center;
+}
+
+@media (max-width: 1024px) {
+  .comparisonTable {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+}
+
+.textUp {
+  color: #16a34a;
+}
+
+.textDown {
+  color: #dc2626;
+}
+
+.trendUp {
+  color: #16a34a;
+  font-size: 1rem;
+}
+
+.trendDown {
+  color: #dc2626;
+  font-size: 1rem;
+}
+
+.trendNeutral {
+  color: #64748b;
+  font-size: 1rem;
+}
+
+.significanceBadge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.15rem 0.5rem;
+  border-radius: 99px;
+}
+
+.badgeSignificant {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.badgeModerate {
+  background: #fffbeb;
+  color: #d97706;
+}
+
+.badgeStable {
+  background: #f0fdf4;
+  color: #16a34a;
+}
+
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.modalContent {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 2rem;
+  max-width: 500px;
+  width: 100%;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+  position: relative;
+}
+
+.modalClose {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: #f1f5f9;
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: #64748b;
+  transition: background 0.15s;
+}
+
+.modalClose:hover {
+  background: #e2e8f0;
+}
+
+.modalTitle {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 1.25rem;
+}
+
+.modalBody {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.modalGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+}
+
+@media (max-width: 640px) {
+  .modalGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.modalDetailItem {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.6rem 0.75rem;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #f1f5f9;
+}
+
+.modalDetailLabel {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.modalDetailValue {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.exportBtn {
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  padding: 0.6rem 1rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #1e293b;
+  cursor: pointer;
+  transition: background 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+}
+
+.exportBtn:hover {
+  background: #e2e8f0;
 }

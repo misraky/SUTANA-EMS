@@ -283,3 +283,35 @@
   font-size: 1.25rem;
   color: #6b7280;
 }
+
+@media (max-width: 1024px) {
+  .container { flex-direction: column; height: auto; gap: 1rem; }
+  .sidebar { width: 100%; max-height: 50vh; }
+  .searchBox { width: 100%; }
+  .searchHeader { flex-direction: column; gap: 0.75rem; align-items: stretch; }
+  .title { font-size: 1.25rem; }
+  .productGrid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+}
+
+@media (max-width: 640px) {
+  .container { gap: 0.75rem; }
+  .mainArea { padding: 1rem; }
+  .sidebar { max-height: 45vh; }
+  .cartHeader { padding: 1rem; }
+  .customerSelect { padding: 0.75rem 1rem; }
+  .cartItems { padding: 0.75rem 1rem; }
+  .cartFooter { padding: 1rem; }
+  .productGrid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 0.5rem; }
+  .productCard { padding: 0.75rem; }
+  .productName { font-size: 0.8rem; }
+  .productPrice { font-size: 1rem; }
+  .cartItem { flex-direction: column; gap: 0.5rem; align-items: flex-start; }
+  .itemControls { width: 100%; justify-content: flex-end; }
+  .summaryRow.totalRow { font-size: 1rem; }
+  .btnCheckout { font-size: 0.9rem; padding: 0.75rem; }
+}
+
+@media (max-width: 480px) {
+  .productGrid { grid-template-columns: repeat(2, 1fr); }
+  .sidebar { max-height: 40vh; }
+}

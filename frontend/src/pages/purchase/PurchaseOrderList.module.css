@@ -150,3 +150,21 @@
   font-size: 1.125rem;
   color: #6b7280;
 }
+.emptyState {
+  text-align: center;
+  padding: 3rem 1.5rem;
+  color: #94a3b8;
+}
+.emptyIcon {
+  font-size: 40px;
+  margin-bottom: 12px;
+}
+@media (max-width: 768px) {
+  .container { padding: 1rem; }
+  .header { flex-direction: column; align-items: flex-start; gap: 1rem; }
+  .title { font-size: 1.25rem; }
+  .btnPrimary { padding: 0.5rem 1rem; font-size: 0.8rem; }
+}
+@media (max-width: 480px) {
+  .container { padding: 0.75rem; }
+}

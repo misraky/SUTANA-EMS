@@ -120,7 +120,7 @@ class PosRepository extends BaseRepository {
     try {
       const summary = await db('pos_sales')
         .whereDate('sale_date', date)
-        .where('status', 'Completed')
+        .where('status_id', 1)
         .select(
           db.raw('COUNT(*) as total_transactions'),
           db.raw('SUM(total_amount) as total_revenue'),
@@ -139,7 +139,7 @@ class PosRepository extends BaseRepository {
         .groupBy('ps.payment_method_id', 'pm.name');
       const hourlyBreakdown = await db('pos_sales')
         .whereDate('sale_date', date)
-        .where('status', 'Completed')
+        .where('status_id', 1)
         .select(
           db.raw('HOUR(sale_date) as hour'),
           db.raw('COUNT(*) as count'),
@@ -191,7 +191,7 @@ class PosRepository extends BaseRepository {
           db.raw('SUM(discount_amount) as total_discount')
         )
         .whereBetween('sale_date', [startDate, endDate])
-        .where('status', 'Completed')
+        .where('status_id', 1)
         .groupByRaw(`DATE_FORMAT(sale_date, '${dateFormat}')`)
         .orderBy('period', 'asc');
       return sales;
@@ -206,13 +206,13 @@ class PosRepository extends BaseRepository {
     try {
       const query = this.query()
         .where('customer_id', customerId)
-        .where('status', 'Completed')
+        .where('status_id', 1)
         .orderBy('sale_date', 'desc');
       const total = await query.clone().count('id as total').first();
       const sales = await query.limit(limit).offset(offset);
       const customerSummary = await this.query()
         .where('customer_id', customerId)
-        .where('status', 'Completed')
+        .where('status_id', 1)
         .select(
           db.raw('COUNT(*) as total_orders'),
           db.raw('SUM(total_amount) as total_spent'),
@@ -267,7 +267,7 @@ class PosRepository extends BaseRepository {
       const startDate = db.raw(`DATE_SUB(NOW(), INTERVAL ${days} DAY)`);
       const stats = await this.query()
         .where('created_at', '>=', startDate)
-        .where('status', 'Completed')
+        .where('status_id', 1)
         .select(
           db.raw('COUNT(*) as total_transactions'),
           db.raw('SUM(total_amount) as total_revenue'),
@@ -350,7 +350,7 @@ class PosRepository extends BaseRepository {
       const sales = await this.query()
         .where('cashier_id', cashierId)
         .whereBetween('sale_date', [startDate, endDate])
-        .where('status', 'Completed')
+        .where('status_id', 1)
         .select(
           db.raw('COUNT(*) as transaction_count'),
           db.raw('SUM(total_amount) as total_revenue'),
@@ -402,7 +402,7 @@ class PosRepository extends BaseRepository {
     try {
       const summary = await this.query()
         .where('customer_id', customerId)
-        .where('status', 'Completed')
+        .where('status_id', 1)
         .select(
           db.raw('COUNT(*) as total_orders'),
           db.raw('SUM(total_amount) as total_spent'),

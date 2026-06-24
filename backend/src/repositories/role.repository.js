@@ -157,6 +157,7 @@ class RoleRepository extends BaseRepository {
         permissions: {
           reports: ['read', 'export'],
           dashboard: ['read'],
+          expenses: ['read'],
           approvals: ['discount', 'po']
         }
       },
@@ -183,7 +184,7 @@ class RoleRepository extends BaseRepository {
         description: 'Supplier and PO management',
         permissions: {
           suppliers: ['create', 'read', 'update'],
-          purchase_orders: ['create', 'read', 'update', 'approve']
+          purchase_orders: ['create', 'read', 'update']
         }
       },
       {

@@ -1,0 +1,32 @@
+/* ═══════════════════════════════════════════════════════════════
+   FINANCE SHARED DESIGN TOKENS
+   Applied via: @import './financeShared.module.css' (where needed)
+   Or reference these values directly in each module file.
+═══════════════════════════════════════════════════════════════ */
+
+/* Color tokens (used for consistency) */
+:root {
+  --fin-blue:        #2563eb;
+  --fin-blue-dark:   #1d4ed8;
+  --fin-blue-light:  #eff6ff;
+  --fin-green:       #10b981;
+  --fin-green-dark:  #059669;
+  --fin-red:         #ef4444;
+  --fin-amber:       #f59e0b;
+  --fin-slate-950:   #020617;
+  --fin-slate-900:   #0f172a;
+  --fin-slate-800:   #1e293b;
+  --fin-slate-700:   #334155;
+  --fin-slate-600:   #475569;
+  --fin-slate-400:   #94a3b8;
+  --fin-slate-200:   #e2e8f0;
+  --fin-slate-100:   #f1f5f9;
+  --fin-slate-50:    #f8fafc;
+  --fin-white:       #ffffff;
+  --fin-radius-sm:   6px;
+  --fin-radius:      10px;
+  --fin-radius-lg:   14px;
+  --fin-shadow-sm:   0 1px 3px rgba(0,0,0,0.06);
+  --fin-shadow:      0 4px 16px rgba(0,0,0,0.08);
+  --fin-shadow-lg:   0 12px 40px rgba(0,0,0,0.14);
+}

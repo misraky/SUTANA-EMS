@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import customerService from '../../services/customerService';
 import styles from './CustomerOrderForm.module.css';
@@ -26,6 +26,9 @@ const CustomerOrderForm = () => {
   // File upload states
   const [fileDeliveryMethod, setFileDeliveryMethod] = useState('upload');
   const [selectedFiles, setSelectedFiles] = useState([]);
+  const [fileInputKey, setFileInputKey] = useState(0);
+
+  const today = new Date().toISOString().split('T')[0];
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setForm((f) => ({ ...f, [name]: type === 'checkbox' ? checked : value }));
@@ -37,6 +40,10 @@ const CustomerOrderForm = () => {
     }
   };
   const handleGetQuote = async () => {
+    if (form.dueDate && form.dueDate < today) {
+      setError('Due date cannot be in the past.');
+      return;
+    }
     setSubmitting(true);
     setError('');
     try {
@@ -57,6 +64,10 @@ const CustomerOrderForm = () => {
   };
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (form.dueDate && form.dueDate < today) {
+      setError('Due date cannot be in the past.');
+      return;
+    }
     if (fileDeliveryMethod === 'upload' && selectedFiles.length === 0) {
       setError('Please select at least one file to upload, or choose to bring it physically.');
       return;
@@ -111,6 +122,7 @@ const CustomerOrderForm = () => {
             setForm(defaultForm); 
             setQuoteMode(false); 
             setSelectedFiles([]); 
+            setFileInputKey(k => k + 1);
           }}>
             Place Another Order
           </button>
@@ -217,6 +229,7 @@ const CustomerOrderForm = () => {
             <div className={styles.formGroup} style={{ marginTop: '1rem' }}>
               <label className={styles.label}>Select Files to Upload *</label>
               <input
+                key={fileInputKey}
                 type="file"
                 multiple
                 onChange={handleFileChange}
@@ -260,7 +273,7 @@ const CustomerOrderForm = () => {
             className={styles.btnPrimary}
             disabled={submitting}
           >
-            {submitting && !quoteMode ? 'Placing Order...' : 'Place Order'}
+            {submitting ? (quoteMode ? 'Confirming...' : 'Placing Order...') : (quoteMode ? 'Confirm Order' : 'Place Order')}
           </button>
         </div>
       </form>

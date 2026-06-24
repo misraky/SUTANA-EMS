@@ -1,47 +1,54 @@
+/* ══════════════════════════
+   AuditLogs.module.css
+   ERP Software – Light Theme
+══════════════════════════ */
+
 .auditLogs {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1.25rem;
 }
 
 .sectionHeader {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: white;
-  padding: 1.5rem;
-  border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  background: #FFFFFF;
+  padding: 1.25rem 1.5rem;
+  border-radius: 12px;
+  border: 1px solid #E5E7EB;
+  box-shadow: 0 1px 3px rgba(0,0,0,.06);
 }
 
 .sectionHeader h2 {
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: #1e293b;
-  margin: 0 0 0.25rem 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 0.2rem 0;
 }
 
 .sectionHeader p {
-  color: #64748b;
+  color: #6B7280;
   margin: 0;
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
 }
 
 .totalBadge {
-  background: #e0e7ff;
-  color: #3730a3;
-  padding: 0.35rem 0.85rem;
+  background: #E1EFFE;
+  color: #1E40AF;
+  padding: 0.3rem 0.75rem;
   border-radius: 9999px;
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
   font-weight: 600;
 }
 
-/* Filter Bar */
+/* ── Filter Bar ─── */
 .filterBar {
-  background: white;
-  padding: 1rem 1.5rem;
-  border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  background: #FFFFFF;
+  padding: 1rem 1.25rem;
+  border-radius: 12px;
+  border: 1px solid #E5E7EB;
+  box-shadow: 0 1px 3px rgba(0,0,0,.06);
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
@@ -60,43 +67,46 @@
 }
 
 .filterInput {
-  padding: 0.45rem 0.75rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 6px;
-  background: #f8fafc;
-  color: #1e293b;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  background: #F9FAFB;
+  color: #111827;
   font-size: 0.875rem;
+  font-family: inherit;
   outline: none;
   flex-grow: 1;
   min-width: 120px;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
 }
-
 .filterInput:focus {
-  border-color: #6366f1;
-  box-shadow: 0 0 0 2px rgba(99,102,241,0.15);
+  border-color: #1C64F2;
+  box-shadow: 0 0 0 3px rgba(28,100,242,0.1);
+  background: #FFFFFF;
 }
 
 .btnSecondary {
-  background: #f1f5f9;
-  color: #475569;
-  border: 1px solid #cbd5e1;
-  padding: 0.45rem 1rem;
-  border-radius: 6px;
+  background: #F9FAFB;
+  color: #374151;
+  border: 1px solid #E5E7EB;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
   font-size: 0.875rem;
   font-weight: 500;
   cursor: pointer;
   white-space: nowrap;
-  transition: all 0.2s;
+  transition: all 150ms ease;
+  font-family: inherit;
 }
-
-.btnSecondary:hover:not(:disabled) { background: #e2e8f0; }
+.btnSecondary:hover:not(:disabled) { background: #F3F4F6; color: #111827; }
 .btnSecondary:disabled { opacity: 0.5; cursor: not-allowed; }
 
-/* Table */
+/* ── Table ─── */
 .tableContainer {
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  background: #FFFFFF;
+  border-radius: 12px;
+  border: 1px solid #E5E7EB;
+  box-shadow: 0 1px 3px rgba(0,0,0,.06);
   overflow-x: auto;
 }
 
@@ -107,60 +117,62 @@
 }
 
 .dataTable th, .dataTable td {
-  padding: 0.875rem 1.25rem;
-  border-bottom: 1px solid #e2e8f0;
+  padding: 0.75rem 1.25rem;
+  border-bottom: 1px solid #F3F4F6;
 }
 
 .dataTable th {
-  background-color: #f8fafc;
-  color: #475569;
+  background: #F9FAFB;
+  color: #6B7280;
   font-weight: 600;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.06em;
+  border-bottom: 1px solid #E5E7EB;
 }
 
-.row:hover { background: #f8fafc; }
-.rowExpanded { background: #eef2ff; }
+.row:hover td { background: #F9FAFB; }
+.rowExpanded td { background: #EFF6FF; }
 
-/* Badges */
+/* ── Badges ─── */
 .badge {
-  padding: 0.2rem 0.6rem;
-  border-radius: 4px;
+  padding: 0.2rem 0.65rem;
+  border-radius: 6px;
   font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.03em;
   display: inline-block;
 }
 
-.badgeDefault { background: #f1f5f9; color: #475569; }
-.badgeSuccess { background: #dcfce7; color: #166534; }
-.badgeDanger  { background: #fee2e2; color: #991b1b; }
-.badgeWarning { background: #fef9c3; color: #92400e; }
+.badgeDefault { background: #F3F4F6; color: #6B7280; }
+.badgeSuccess { background: #DEF7EC; color: #057A55; }
+.badgeDanger  { background: #FDE8E8; color: #C81E1E; }
+.badgeWarning { background: #FDF6B2; color: #92400E; }
 
-/* Text helpers */
-.textMuted   { color: #64748b; }
+/* ── Text Helpers ─── */
+.textMuted   { color: #6B7280; }
 .textXs      { font-size: 0.75rem; }
 .textSm      { font-size: 0.875rem; }
-.textDanger  { color: #dc2626; font-size: 0.875rem; }
-.textSuccess { color: #16a34a; font-size: 0.875rem; }
+.textDanger  { color: #C81E1E; font-size: 0.875rem; }
+.textSuccess { color: #057A55; font-size: 0.875rem; }
 
-/* Expand button */
+/* ── Expand Button ─── */
 .btnExpand {
   background: none;
-  border: 1px solid #c7d2fe;
-  color: #4f46e5;
-  padding: 0.2rem 0.65rem;
-  border-radius: 4px;
+  border: 1px solid #BFDBFE;
+  color: #1C64F2;
+  padding: 0.2rem 0.6rem;
+  border-radius: 6px;
   font-size: 0.8rem;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 150ms ease;
+  font-family: inherit;
 }
-.btnExpand:hover { background: #e0e7ff; }
+.btnExpand:hover { background: #EFF6FF; }
 
-/* Diff Viewer */
+/* ── Diff Viewer ─── */
 .expandedContent td {
-  background: #f8fafc;
+  background: #F9FAFB;
   padding: 1rem 1.5rem;
 }
 
@@ -173,32 +185,32 @@
 .diffBefore, .diffAfter {
   flex: 1;
   min-width: 240px;
-  border-radius: 6px;
+  border-radius: 8px;
   overflow: hidden;
-  border: 1px solid #e2e8f0;
+  border: 1px solid #E5E7EB;
 }
 
-.diffBefore { border-top: 3px solid #f87171; }
-.diffAfter  { border-top: 3px solid #4ade80; }
+.diffBefore { border-top: 3px solid #FCA5A5; }
+.diffAfter  { border-top: 3px solid #6EE7B7; }
 
 .diffLabel {
   display: block;
   padding: 0.4rem 0.75rem;
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 
-.diffBefore .diffLabel { background: #fef2f2; color: #b91c1c; }
-.diffAfter  .diffLabel { background: #f0fdf4; color: #15803d; }
+.diffBefore .diffLabel { background: #FEF2F2; color: #B91C1C; }
+.diffAfter  .diffLabel { background: #F0FDF4; color: #15803D; }
 
 .diffCode {
   margin: 0;
   padding: 0.75rem;
   font-size: 0.78rem;
   font-family: 'Courier New', monospace;
-  background: white;
+  background: #FFFFFF;
   overflow-x: auto;
   white-space: pre-wrap;
   word-break: break-all;
@@ -206,19 +218,18 @@
   overflow-y: auto;
 }
 
-/* Empty state */
+/* ── Empty / Loading / Pagination ─── */
 .emptyState {
   text-align: center;
   padding: 3rem;
-  color: #94a3b8;
+  color: #9CA3AF;
 }
 
-/* Pagination */
 .pagination {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 1rem;
+  gap: 0.75rem;
 }
 
 .loading {
@@ -226,6 +237,6 @@
   justify-content: center;
   align-items: center;
   padding: 3rem;
-  color: #64748b;
-  font-size: 1.125rem;
+  color: #6B7280;
+  font-size: 0.9375rem;
 }
