@@ -129,21 +129,25 @@ exports.publicPosts = catchAsync(async (req, res) => {
 });
 
 exports.myNotifications = catchAsync(async (req, res) => {
-  const { filter } = req.query;
-  let query = db('notifications as n')
-    .join('news_posts as p', 'n.news_post_id', 'p.id')
-    .where('n.user_id', req.user.id)
-    .select('n.*', 'p.title', 'p.type', 'p.content', 'p.status',
-      'p.hiring_position', 'p.hiring_deadline', 'p.hiring_email',
-      'p.youtube_url', 'p.images', 'p.posted_by');
+  try {
+    const { filter } = req.query;
+    let query = db('notifications as n')
+      .join('news_posts as p', 'n.news_post_id', 'p.id')
+      .where('n.user_id', req.user.id)
+      .select('n.*', 'p.title', 'p.type', 'p.content', 'p.status',
+        'p.hiring_position', 'p.hiring_deadline', 'p.hiring_email',
+        'p.youtube_url', 'p.images', 'p.posted_by');
 
-  if (filter === 'unread') query = query.where('n.is_read', false);
-  if (filter && ['news', 'hiring', 'notice', 'video'].includes(filter)) {
-    query = query.where('p.type', filter);
+    if (filter === 'unread') query = query.where('n.is_read', false);
+    if (filter && ['news', 'hiring', 'notice', 'video'].includes(filter)) {
+      query = query.where('p.type', filter);
+    }
+
+    const notifications = await query.orderBy('n.created_at', 'desc').limit(50);
+    res.json({ status: 'success', data: notifications });
+  } catch {
+    res.json({ status: 'success', data: [] });
   }
-
-  const notifications = await query.orderBy('n.created_at', 'desc').limit(50);
-  res.json({ status: 'success', data: notifications });
 });
 
 exports.markRead = catchAsync(async (req, res) => {

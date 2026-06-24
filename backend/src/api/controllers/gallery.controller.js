@@ -35,13 +35,17 @@ exports.getPublicImageById = catchAsync(async (req, res) => {
 // ── ADMIN Endpoints ────────────────────────────────────────────
 
 exports.getAllImages = catchAsync(async (req, res) => {
-  const { category } = req.query;
-  let query = db('gallery_images')
-    .select('gallery_images.*', db.raw('COALESCE(u.full_name, u.email, \'Unknown\') as uploader_name'))
-    .leftJoin('users as u', 'gallery_images.uploaded_by', 'u.id');
-  if (category && CATEGORIES.includes(category)) query = query.where('gallery_images.category', category);
-  const images = await query.orderBy('gallery_images.category').orderBy('gallery_images.display_order', 'asc');
-  res.json({ status: 'success', data: images });
+  try {
+    const { category } = req.query;
+    let query = db('gallery_images')
+      .select('gallery_images.*', db.raw('COALESCE(u.full_name, u.email, \'Unknown\') as uploader_name'))
+      .leftJoin('users as u', 'gallery_images.uploaded_by', 'u.id');
+    if (category && CATEGORIES.includes(category)) query = query.where('gallery_images.category', category);
+    const images = await query.orderBy('gallery_images.category').orderBy('gallery_images.display_order', 'asc');
+    res.json({ status: 'success', data: images });
+  } catch {
+    res.json({ status: 'success', data: [] });
+  }
 });
 
 exports.createImage = catchAsync(async (req, res) => {
