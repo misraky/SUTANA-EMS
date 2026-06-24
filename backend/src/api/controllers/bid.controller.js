@@ -131,3 +131,23 @@ exports.award = catchAsync(async (req, res) => {
 
   res.json({ status: 'success', message: 'Bid(s) awarded', data: { awarded: bids.length } });
 });
+
+exports.getWinner = catchAsync(async (req, res) => {
+  const tender = await db('tenders').where('id', req.params.tenderId).first();
+  if (!tender) throw AppError.notFound('Tender not found');
+  if (tender.status !== 'awarded') throw AppError.badRequest('Tender is not awarded yet');
+  
+  const myBid = await db('bids').where({ tender_id: tender.id, customer_id: req.user.id }).first();
+  if (!myBid && !['Admin', 'CEO', 'Sales Manager'].includes(req.user.role)) {
+    throw AppError.forbidden('Only competitors can view the winner');
+  }
+  
+  const winnerBid = await db('bids')
+    .join('users', 'bids.customer_id', 'users.id')
+    .where('bids.tender_id', tender.id)
+    .where('bids.status', 'awarded')
+    .select('users.name as winner_name', 'bids.bid_price_per_unit', 'bids.quantity_requested', 'bids.total_bid_value')
+    .first();
+    
+  res.json({ status: 'success', data: winnerBid });
+});
