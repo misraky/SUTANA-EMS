@@ -48,7 +48,7 @@ exports.create = catchAsync(async (req, res) => {
     reference_number: ref, title, description, category: category || null,
     item_name: item_name || null, quantity, starting_bid_price,
     deadline: new Date(deadline), terms_conditions,
-    status: 'draft', created_by: req.user.id,
+    status: 'open', created_by: req.user.id,
     attachments: files.length ? JSON.stringify(files) : null,
   });
   const tender = await db('tenders').where('id', id).first();
