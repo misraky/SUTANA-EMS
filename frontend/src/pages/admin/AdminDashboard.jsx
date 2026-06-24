@@ -26,7 +26,6 @@ const AdminDashboard = () => {
     { label: 'API Keys', path: '/admin/api-keys', icon: 'settings' },
     { label: 'Audit Logs', path: '/admin/audit', icon: 'clipboard' },
     { label: 'Alert Center', path: '/admin/alerts', icon: 'bell' },
-    { label: 'Audit Logs (System)', path: '/admin/audit', icon: 'clipboard' },
     { label: 'Gallery', path: '/admin/gallery', icon: 'file-text' },
     { label: 'News & Notices', path: '/admin/news', icon: 'clipboard' },
     { label: 'Contact Messages', path: '/admin/contact-messages', icon: 'message-circle' },

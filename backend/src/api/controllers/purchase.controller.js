@@ -681,36 +681,6 @@ exports.submitForApproval = catchAsync(async (req, res) => {
         approvalUrl: `${process.env.FRONTEND_URL}/ceo/purchases`
       }
     }).catch(err => console.error('Failed to send approval email:', err.message));
-  const approvers = await db('users')
-    .leftJoin('user_roles', 'users.id', 'user_roles.user_id')
-    .leftJoin('roles', 'user_roles.role_id', 'roles.id')
-    .where('roles.name', 'CEO')
-    .select('users.id', 'users.email', 'users.full_name');
-  for (const approver of approvers) {
-    // If it's for Farming, maybe use in-system notifications instead. 
-    // We'll use both or let the client decide, but requirements state "no emails" for farming.
-    if (purchaseOrder.sector_name === 'Farming') {
-      await notificationRepository.create({
-        userId: approver.id || null, // Assuming approver has id
-        roleTarget: 'CEO',
-        title: 'New Purchase Order Approval',
-        message: `PO ${purchaseOrder.po_number} requires your approval.`
-      });
-    } else {
-      await sendEmail({
-        to: approver.email,
-        subject: `Purchase Order Approval Required: ${purchaseOrder.po_number}`,
-        template: 'po-approval-request',
-        data: {
-          approverName: approver.full_name,
-          poNumber: purchaseOrder.po_number,
-          totalAmount: purchaseOrder.total_amount,
-          supplierName: purchaseOrder.supplier_name,
-          requesterName: req.user.full_name,
-          approvalUrl: `${process.env.FRONTEND_URL}/purchase/orders/${id}/approve`
-        }
-      }).catch(err => console.error('Failed to send approval email:', err.message));
-    }
   }
   await audit('PURCHASE_ORDER_SUBMITTED', id, {
     ip,
@@ -777,41 +747,40 @@ exports.approvePurchaseOrder = catchAsync(async (req, res) => {
         created_at: db.fn.now()
       }).catch(err => console.error('Failed to create in-app notification:', err.message));
 
-      // 2. Email Notification
+      // 2. Email Notification (if not farming)
       if (requester.email) {
-    const sector = await db('sectors').where('id', purchaseOrder.sector_id).first();
-    const isFarming = sector && sector.name === 'Farming';
+        const sector = await db('sectors').where('id', purchaseOrder.sector_id).first();
+        const isFarming = sector && sector.name === 'Farming';
 
-    if (requester) {
-      if (isFarming) {
-        await notificationRepository.create({
-          userId: requester.id,
-          title: `Purchase Order ${approved ? 'Approved' : 'Rejected'}`,
-          message: `PO ${purchaseOrder.po_number} was ${approved ? 'approved' : 'rejected'}.`
-        });
-        
-        if (approved) {
-          // Notify Finance to prepare money
+        if (isFarming) {
           await notificationRepository.create({
-            roleTarget: 'FINANCE',
-            title: 'Purchase Order Approved',
-            message: `PO ${purchaseOrder.po_number} was approved. Please prepare payment.`
+            userId: requester.id,
+            title: `Purchase Order ${approved ? 'Approved' : 'Rejected'}`,
+            message: `PO ${purchaseOrder.po_number} was ${approved ? 'approved' : 'rejected'}.`
+          });
+          
+          if (approved) {
+            await notificationRepository.create({
+              roleTarget: 'FINANCE',
+              title: 'Purchase Order Approved',
+              message: `PO ${purchaseOrder.po_number} was approved. Please prepare payment.`
+            });
+          }
+        } else {
+          await sendEmail({
+            to: requester.email,
+            subject: `Purchase Order ${purchaseOrder.po_number} - ${approved ? 'Approved' : 'Rejected'}`,
+            template: 'po-approval-result',
+            data: {
+              requesterName: requester.full_name,
+              poNumber: purchaseOrder.po_number,
+              status: approved ? 'Approved' : 'Rejected',
+              reason: rejectionReason,
+              totalAmount: purchaseOrder.total_amount,
+              supplierName: purchaseOrder.supplier_name
+            }
           });
         }
-      } else if (requester.email) {
-        await sendEmail({
-          to: requester.email,
-          subject: `Purchase Order ${purchaseOrder.po_number} - ${approved ? 'Approved' : 'Rejected'}`,
-          template: 'po-approval-result',
-          data: {
-            requesterName: requester.full_name,
-            poNumber: purchaseOrder.po_number,
-            status: approved ? 'Approved' : 'Rejected',
-            reason: rejectionReason,
-            totalAmount: purchaseOrder.total_amount,
-            supplierName: purchaseOrder.supplier_name
-          }
-        });
       }
     }
   } catch (emailErr) {

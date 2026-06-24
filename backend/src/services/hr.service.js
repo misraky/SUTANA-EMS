@@ -1,28 +1,5 @@
 const { db } = require('../config/database');
-  const genderBreakdown = await db('employees').select('gender').count('id as count').groupBy('gender');
-  const payrollTotal = await db('payroll').where('status', 'paid').sum('net_pay as total').first();
-  const recentHires = await db('employees').where('status', 'Active').orderBy('join_date', 'desc').limit(5);
-  const recentDepartures = await db('employees').where('status', 'Inactive').orderBy('created_at', 'desc').limit(5);
-
-  let deptList = [];
-  for (const d of byDepartment) {
-    const payroll = await db('payroll as p').join('employees as e', 'p.employee_id', 'e.id').where('e.department', d.department).where('p.status', 'paid').avg('p.net_pay as avg').first();
-    deptList.push({ department: d.department, count: parseInt(d.count), avgSalary: Math.round(parseFloat(payroll?.avg || 0)) });
-  }
-
-  return {
-    totalEmployees: parseInt(total.count),
-    activeEmployees: parseInt(active.count),
-    inactiveEmployees: parseInt(inactive.count),
-    hiredThisYear: parseInt(hiredThisYear.count),
-    departedThisYear: parseInt(departedThisYear.count),
-    genderBreakdown: genderBreakdown.map(g => ({ gender: g.gender || 'Unspecified', count: parseInt(g.count) })),
-    totalPayrollPaid: Math.round(parseFloat(payrollTotal?.total || 0)),
-    byDepartment: deptList,
-    recentHires,
-    recentDepartures
-  };
-};
+const bcrypt = require('bcrypt');
 
 const getAttritionData = async (period = 'quarter') => {
   const now = new Date();
@@ -152,8 +129,6 @@ const getDEIMetrics = async () => {
     byDepartment: Object.values(deptMap)
   };
 };
-
-const bcrypt = require('bcrypt');
 
 // ─────────────────────────────────────────────────────────────
 // Employee ID Generator

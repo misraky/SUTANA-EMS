@@ -1,4 +1,7 @@
 const hrService = require('../../services/hr.service');
+const HrService = require('../../services/hr.service');
+const { audit } = require('../../config/logger');
+const AppError = require('../../utils/AppError');
 const { catchAsync } = require('../../utils/catchAsync');
 
 exports.getHRSummary = catchAsync(async (req, res) => {
@@ -25,10 +28,7 @@ exports.getSuccessionPipeline = catchAsync(async (req, res) => {
 exports.getDEIMetrics = catchAsync(async (req, res) => {
   const data = await hrService.getDEIMetrics();
   res.json({ success: true, data });
-const HrService = require('../../services/hr.service');
-const { audit } = require('../../config/logger');
-const AppError = require('../../utils/AppError');
-const { catchAsync } = require('../../utils/catchAsync');
+});
 
 exports.createEmployee = catchAsync(async (req, res) => {
   const id = await HrService.createEmployee(req.body);
@@ -161,4 +161,4 @@ exports.authenticate = catchAsync(async (req, res) => {
     { expiresIn: '12h' }
   );
   res.json({ status: 'success', data: { token, employee: emp } });
-}));
+});

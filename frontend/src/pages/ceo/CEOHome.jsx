@@ -4,7 +4,16 @@ import {
   PieChart, Pie, Cell, ComposedChart, Line, AreaChart, Area
 } from 'recharts';
 import { formatDistanceToNow } from 'date-fns';
+import { useNavigate } from 'react-router-dom';
+import {
+  Printer, Pill, Car, Sprout, Store, ClipboardList, Monitor,
+  Users, UserCheck, UserX, CalendarCheck, DollarSign, Building2,
+  FileText, TrendingUp, Download, CheckCircle, XCircle, ArrowDown,
+  Calculator, Trophy, Coffee, Mail, Briefcase, Eye, Clock, Timer,
+  Calendar, LogIn, LogOut, Circle, Phone
+} from 'lucide-react';
 import ceoService from '../../services/ceoService';
+import hrService from '../../services/hrService';
 import { formatCurrency, formatNumber, formatPercentage } from '../../utils/formatters';
 import styles from './CEOHome.module.css';
 

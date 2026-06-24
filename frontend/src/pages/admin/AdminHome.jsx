@@ -33,8 +33,6 @@ const AdminHome = () => {
           dr: drRes.value?.data,
           apiKeys: apiKeysRes.value?.data,
         });
-        const response = await apiClient.get('/admin/dashboard/stats');
-        setStats(response.data?.data || response.data);
       } catch (error) {
         console.error('Failed to fetch admin stats:', error);
       } finally {
@@ -63,6 +61,7 @@ const AdminHome = () => {
   const bh2 = stats?.graphs?.backupHistory || { successful: 0, total: 30 };
   const backupPct2 = bh2.total > 0 ? Math.round((bh2.successful / bh2.total) * 100) : 0;
   const backupColor2 = backupPct2 >= 97 ? '#10b981' : backupPct2 >= 90 ? '#f59e0b' : '#ef4444';
+  const graphs = stats?.graphs || {};
 
   return (
     <div style={{ padding: '4px 0' }}>
@@ -191,30 +190,30 @@ const AdminHome = () => {
         <div className="card" style={{ textAlign: 'center' }}>
           <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 6, color: '#0f172a', textAlign: 'left' }}>Backup Success Rate</h3>
           <p style={{ fontSize: 12, color: '#64748b', marginBottom: 12, textAlign: 'left' }}>30-day rolling</p>
-          {bh.total > 0 && (
+          {bh2.total > 0 && (
             <>
               <div style={{ position: 'relative', width: 160, height: 160, margin: '0 auto 12px' }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie data={[
-                      { name: 'Successful', value: bh.successful },
-                      { name: 'Failed', value: Math.max(0, bh.total - bh.successful) }
+                      { name: 'Successful', value: bh2.successful },
+                      { name: 'Failed', value: Math.max(0, bh2.total - bh2.successful) }
                     ]} cx="50%" cy="50%" innerRadius={50} outerRadius={70} startAngle={90} endAngle={-270} dataKey="value">
-                      <Cell fill={backupColor} />
+                      <Cell fill={backupColor2} />
                       <Cell fill="#e2e8f0" />
                     </Pie>
                   </PieChart>
                 </ResponsiveContainer>
                 <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center' }}>
-                  <div style={{ fontSize: 24, fontWeight: 800, color: backupColor }}>{backupPct}%</div>
+                  <div style={{ fontSize: 24, fontWeight: 800, color: backupColor2 }}>{backupPct2}%</div>
                   <div style={{ fontSize: 10, color: '#94a3b8' }}>success</div>
                 </div>
               </div>
               <div style={{ fontSize: 12, color: '#475569' }}>
-                <strong>{bh.successful}/{bh.total}</strong> Successful
+                <strong>{bh2.successful}/{bh2.total}</strong> Successful
               </div>
               <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 4 }}>
-                Last: {bh.lastSuccess ? formatDate(bh.lastSuccess) : 'N/A'} &middot; Next: {backup.nextBackup || 'Not scheduled'}
+                Last: {bh2.lastSuccess ? formatDate(bh2.lastSuccess) : 'N/A'} &middot; Next: {backup2.nextBackup || 'Not scheduled'}
               </div>
             </>
           )}

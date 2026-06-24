@@ -33,7 +33,7 @@ const environment = {
     frontendUrl: process.env.FRONTEND_URL || 'http://localhost:3000',
     allowedOrigins: process.env.ALLOWED_ORIGINS 
       ? process.env.ALLOWED_ORIGINS.split(',')
-      : ['http://localhost:3000', 'http://localhost:3001'],
+      : ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:5173'],
   },
   fileUpload: {
     maxFileSizeMB: parseInt(process.env.MAX_FILE_SIZE_MB || '50', 10),

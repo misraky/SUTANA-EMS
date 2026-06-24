@@ -42,7 +42,6 @@ const CEODashboard = () => {
     { type: 'section', label: 'Oversight' },
     { label: 'Risk & Compliance',  path: '/ceo/risk',      icon: 'alert-triangle' },
     { label: 'Crisis Management',  path: '/ceo/crisis',    icon: 'alert-octagon' },
-    { label: 'Overview', path: '/ceo/overview', icon: 'home' },
     { label: 'Requests', path: '/ceo/requests', icon: 'shopping-cart', activeMatch: ['/ceo/requests', '/ceo/farming-requests', '/ceo/pharmacy-requests'] },
     { label: 'Purchase Research', path: '/ceo/purchase-research', icon: 'shopping-cart' },
     { label: 'Budget Workflow', path: '/ceo/budget-workflow', icon: 'credit-card' },

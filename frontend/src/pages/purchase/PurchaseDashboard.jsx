@@ -32,10 +32,7 @@ const PurchaseDashboard = () => {
     { type: 'section', label: 'Intelligence' },
     { label: 'Analytics & KPIs', path: '/purchase/analytics', icon: 'bar-chart' },
     { label: 'Fraud Detection', path: '/purchase/fraud', icon: 'shield' },
-    { label: 'Purchasing Summary', path: '/purchase/overview', icon: 'truck' },
     { label: 'Purchase Research', path: '/purchase/research', icon: 'clipboard' },
-    { label: 'Suppliers', path: '/purchase/suppliers', icon: 'briefcase' },
-    { label: 'Purchase Orders', path: '/purchase/orders', icon: 'file-plus' },
     { label: 'Receiving', path: '/purchase/receiving', icon: 'package' },
     { label: 'Budget Workflow', path: '/purchase/workflow', icon: 'credit-card' },
     { label: 'Post Purchase Tender', path: '/purchase/tenders', icon: 'file-text' },
@@ -57,11 +54,9 @@ const PurchaseDashboard = () => {
           <Route path="scorecard" element={<SupplierScorecard />} />
           <Route path="analytics" element={<ProcurementAnalytics />} />
           <Route path="fraud" element={<FraudDetection />} />
-          <Route path="/" element={<Navigate to="overview" replace />} />
             <Route path="receiving" element={<Receiving />} />
             <Route path="workflow" element={<PurchaseWorkflow />} />
             <Route path="tenders" element={<PurchaseTenderPage />} />
-            <Route path="/" element={<Navigate to="overview" replace />} />
         </Routes>
       </DashboardLayout>
     </div>

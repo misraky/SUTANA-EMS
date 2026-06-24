@@ -251,6 +251,7 @@ exports.setCartCustomer = catchAsync(async (req, res) => {
 exports.checkout = catchAsync(async (req, res) => {
   const result = await posService.checkout(req.user.id, req.body, req.ip);
   res.status(201).json({ status: 'success', message: 'Sale completed successfully', data: result });
+});
 exports.checkout = catchAsync(async (req, res) => {
   const shift = await db('pos_shifts').where({ cashier_id: req.user.id, status: 'OPEN' }).first();
   if (!shift) throw new AppError('No open shift. Please start a shift before processing sales.', 400);

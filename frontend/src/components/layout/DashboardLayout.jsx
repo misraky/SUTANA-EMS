@@ -267,17 +267,6 @@ const DashboardLayout = ({ children, menuItems, title, hideTopbar }) => {
               </button>
             );
           })}
-          {menuItems.map((item) => (
-            <button
-              key={item.path}
-              className={`dash-nav-item ${isActive(item) ? 'active' : ''}`}
-              onClick={() => handleNav(item.path)}
-              title={sidebarCollapsed ? item.label : ''}
-            >
-              <span className="nav-icon">{ICONS[item.icon] || ICONS.default}</span>
-              <span>{item.label}</span>
-            </button>
-          ))}
         </nav>
       </aside>
       {/* ── Main Content Area ── */}

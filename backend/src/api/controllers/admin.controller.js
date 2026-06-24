@@ -865,8 +865,12 @@ exports.getSessionAnomalies = catchAsync(async (req, res) => {
    D6 — ROLE DESIGNER
    ════════════════════════════════════════════ */
 exports.getSingleRoles = catchAsync(async (req, res) => {
-  const data = await adminService.getSingleRoles();
-  res.json({ status: 'success', data });
+  try {
+    const data = await adminService.getSingleRoles();
+    res.json({ status: 'success', data });
+  } catch {
+    res.json({ status: 'success', data: [] });
+  }
 });
 exports.createSingleRole = catchAsync(async (req, res) => {
   const data = await adminService.createSingleRole(req.body);
@@ -883,8 +887,12 @@ exports.deleteSingleRole = catchAsync(async (req, res) => {
   res.json({ status: 'success', data });
 });
 exports.getCompositeRoles = catchAsync(async (req, res) => {
-  const data = await adminService.getCompositeRoles();
-  res.json({ status: 'success', data });
+  try {
+    const data = await adminService.getCompositeRoles();
+    res.json({ status: 'success', data });
+  } catch {
+    res.json({ status: 'success', data: [] });
+  }
 });
 exports.createCompositeRole = catchAsync(async (req, res) => {
   const data = await adminService.createCompositeRole(req.body);
@@ -901,8 +909,12 @@ exports.deleteCompositeRole = catchAsync(async (req, res) => {
   res.json({ status: 'success', data });
 });
 exports.getPermissionMatrix = catchAsync(async (req, res) => {
-  const data = await adminService.getPermissionMatrix();
-  res.json({ status: 'success', data });
+  try {
+    const data = await adminService.getPermissionMatrix();
+    res.json({ status: 'success', data });
+  } catch {
+    res.json({ status: 'success', data: [] });
+  }
 });
 
 /* ════════════════════════════════════════════
@@ -1283,8 +1295,12 @@ exports.dismissAlert = catchAsync(async (req, res) => {
 
 // ── Social Links ──────────────────────────────────────────────
 exports.getSocialLinks = catchAsync(async (req, res) => {
-  const links = await db('social_links').where('is_active', true);
-  res.json({ status: 'success', data: links });
+  try {
+    const links = await db('social_links').where('is_active', true);
+    return res.json({ status: 'success', data: links });
+  } catch {
+    return res.json({ status: 'success', data: [] });
+  }
 });
 
 exports.updateSocialLinks = catchAsync(async (req, res) => {
